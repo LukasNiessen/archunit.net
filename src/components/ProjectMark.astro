@@ -1,0 +1,32 @@
+---
+interface Props {
+  monogram: string;
+  name: string;
+  accent: string;
+  accentSoft: string;
+  size?: 'small' | 'medium' | 'large';
+  logo?: 'typescript' | 'python' | undefined;
+}
+
+const { monogram, name, accent, accentSoft, size = 'medium', logo } = Astro.props;
+const style = '--mark-accent:' + accent + ';--mark-soft:' + accentSoft;
+---
+
+<span
+  class:list={['project-mark', 'project-mark--' + size, { 'project-mark--image': logo }]}
+  style={style}
+  aria-hidden="true"
+>
+  {logo ? (
+    <img
+      src={logo === 'typescript' ? '/logos/archunitts.png' : '/logos/archunitpython.png'}
+      alt=""
+      width="96"
+      height="96"
+      loading="lazy"
+    />
+  ) : (
+    <span>{monogram}</span>
+  )}
+  <span class="sr-only">{name}</span>
+</span>

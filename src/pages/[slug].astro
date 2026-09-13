@@ -1,0 +1,250 @@
+---
+import CodeWindow from '@components/CodeWindow.astro';
+import ProjectCard from '@components/ProjectCard.astro';
+import ProjectMark from '@components/ProjectMark.astro';
+import SectionHeading from '@components/SectionHeading.astro';
+import { projects, type ArcUnitProject } from '@data/projects';
+import BaseLayout from '@layouts/BaseLayout.astro';
+
+export function getStaticPaths() {
+  return projects.map((project) => ({
+    params: { slug: project.slug },
+    props: { project },
+  }));
+}
+
+interface Props {
+  project: ArcUnitProject;
+}
+
+const { project } = Astro.props;
+const logo =
+  project.slug === 'typescript' ? 'typescript' : project.slug === 'python' ? 'python' : undefined;
+const related = projects
+  .filter((candidate) => candidate.slug !== project.slug)
+  .sort((a, b) => {
+    if (a.status === project.status && b.status !== project.status) return -1;
+    if (a.status !== project.status && b.status === project.status) return 1;
+    return a.name.localeCompare(b.name);
+  })
+  .slice(0, 3);
+const style = '--project-accent:' + project.accent + ';--project-soft:' + project.accentSoft;
+const schema = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'SoftwareSourceCode',
+    name: project.name,
+    description: project.longDescription,
+    codeRepository: project.repo,
+    programmingLanguage: project.language,
+    license: project.license,
+    runtimePlatform: project.runtime,
+    url: 'https://www.archunit.net/' + project.slug + '/',
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://www.archunit.net/' },
+      {
+        '@type': 'ListItem',
+        position: 2,
+        name: project.name,
+        item: 'https://www.archunit.net/' + project.slug + '/',
+      },
+    ],
+  },
+];
+---
+
+<BaseLayout
+  title={project.name + ' architecture testing for ' + project.language}
+  description={project.description}
+  canonicalPath={'/' + project.slug + '/'}
+  schema={schema}
+>
+  <div style={style}>
+    <section class="detail-hero">
+      <div class="shell">
+        <nav class="breadcrumbs" aria-label="Breadcrumb">
+          <a href="/">ArchUnitEverything</a>
+          <span>/</span>
+          <span>{project.language}</span>
+        </nav>
+        <div class="detail-hero__grid">
+          <div>
+            <p class="eyebrow detail-language">Architecture testing for {project.language}</p>
+            <div class="detail-title-row">
+              <ProjectMark
+                monogram={project.monogram}
+                name={project.name}
+                accent={project.accent}
+                accentSoft={project.accentSoft}
+                size="large"
+                logo={logo}
+              />
+              <h1>{project.name}</h1>
+            </div>
+            <p class="detail-lede">{project.longDescription}</p>
+            <div class="detail-meta">
+              <span>{project.statusLabel}</span>
+              <span>{project.runtime}</span>
+              <span>{project.license}</span>
+            </div>
+            <div class="detail-actions">
+              <a class="button button--light" href={project.repo} target="_blank" rel="noreferrer">
+                View repository ↗
+              </a>
+              {project.docsUrl && (
+                <a
+                  class="button button--ghost"
+                  href={project.docsUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  Documentation ↗
+                </a>
+              )}
+            </div>
+            <div class="install-block">
+              <p>{project.installLabel}</p>
+              <div class="install-command">
+                <code>{project.install}</code>
+                <button type="button" data-copy-install={project.install}>
+                  Copy
+                </button>
+              </div>
+            </div>
+          </div>
+          <CodeWindow
+            code={project.code}
+            filename={project.codeFilename}
+            language={project.codeLanguage}
+            copy
+          />
+        </div>
+      </div>
+    </section>
+
+    <section class="project-content-section">
+      <div class="shell">
+        <SectionHeading
+          eyebrow="Capabilities"
+          title={'What ' + project.name + ' brings to the test suite.'}
+          copy="The family shares a recognizable architecture vocabulary while each implementation stays honest about its language, toolchain, and maturity."
+        />
+        <div class="feature-grid">
+          {project.features.map((feature, index) => (
+            <article class="feature-item" data-reveal>
+              <span class="feature-number">{String(index + 1).padStart(2, '0')}</span>
+              <p>{feature}</p>
+            </article>
+          ))}
+        </div>
+      </div>
+    </section>
+
+    <section class="project-content-section">
+      <div class="shell">
+        <div class="maturity-panel" data-reveal>
+          <div class="maturity-copy">
+            <p class="eyebrow">Current maturity</p>
+            <h2>{project.statusLabel}</h2>
+            <p>{project.maturityNote}</p>
+            {project.packageUrl && (
+              <div class="detail-actions">
+                <a
+                  class="button button--ghost"
+                  href={project.packageUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  {project.packageLabel ?? 'Package details'} ↗
+                </a>
+              </div>
+            )}
+          </div>
+          <div class="fact-list">
+            <div class="fact">
+              <span>Language</span>
+              <strong>{project.language}</strong>
+            </div>
+            <div class="fact">
+              <span>Release</span>
+              <strong>{project.release}</strong>
+            </div>
+            <div class="fact">
+              <span>Runtime</span>
+              <strong>{project.runtime}</strong>
+            </div>
+            <div class="fact">
+              <span>License</span>
+              <strong>{project.license}</strong>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="project-content-section">
+      <div class="shell">
+        <SectionHeading
+          eyebrow="Where it fits"
+          title="Put boundaries next to the code they protect."
+          copy={
+            'Common starting points for ' + project.name + ' include the following project shapes.'
+          }
+        />
+        <div class="use-case-list">
+          {project.useCases.map((useCase) => (
+            <span>{useCase}</span>
+          ))}
+        </div>
+      </div>
+    </section>
+
+    <section class="project-content-section">
+      <div class="shell">
+        <SectionHeading
+          eyebrow="More ecosystems"
+          title="The same intent, expressed natively."
+          copy="Explore sibling implementations and carry the architecture vocabulary across a polyglot system."
+        />
+        <div class="related-grid">
+          {related.map((candidate) => (
+            <ProjectCard project={candidate} />
+          ))}
+        </div>
+      </div>
+    </section>
+
+    <section class="cta-section">
+      <div class="shell">
+        <h2>
+          Make the first boundary <em>executable.</em>
+        </h2>
+        <p>
+          Add one meaningful rule, run it with the existing tests, and grow the architecture suite
+          as the system reveals where it needs protection.
+        </p>
+        <a class="button button--lime" href={project.repo} target="_blank" rel="noreferrer">
+          Start with {project.name} ↗
+        </a>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    document.querySelectorAll<HTMLButtonElement>('[data-copy-install]').forEach((button) => {
+      button.addEventListener('click', async () => {
+        const value = button.dataset.copyInstall;
+        if (!value) return;
+        await navigator.clipboard.writeText(value);
+        button.textContent = 'Copied';
+        window.setTimeout(() => {
+          button.textContent = 'Copy';
+        }, 1600);
+      });
+    });
+  </script>
+</BaseLayout>

@@ -1,0 +1,154 @@
+name: CI / CD
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: archunit-net-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    name: Quality gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v7.0.1
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7.0.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint and format check
+        run: npm run lint
+
+      - name: Astro and TypeScript diagnostics
+        run: npm run check
+
+      - name: Unit and content tests
+        run: npm test
+
+      - name: Production build
+        run: npm run build
+
+      - name: Verify generated routes and metadata
+        run: npm run test:build
+
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Browser tests
+        run: npm run test:e2e
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v4.0.1
+        with:
+          terraform_version: 1.15.5
+
+      - name: Check Terraform formatting
+        run: terraform fmt -check -recursive
+
+      - name: Validate Terraform
+        run: |
+          terraform -chdir=infra/bootstrap init -backend=false
+          terraform -chdir=infra/bootstrap validate
+          terraform -chdir=infra/site init -backend=false
+          terraform -chdir=infra/site validate
+
+  deploy:
+    name: Deploy production
+    if: github.event_name != 'pull_request'
+    needs: quality
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    environment:
+      name: production
+      url: ${{ steps.infrastructure.outputs.url }}
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v7.0.1
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7.0.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install and build
+        run: |
+          npm ci
+          npm run build
+
+      - name: Configure short-lived AWS credentials
+        uses: aws-actions/configure-aws-credentials@v6.2.4
+        with:
+          role-to-assume: arn:aws:iam::333053099282:role/archunit-net-github-deploy
+          role-session-name: archunit-net-${{ github.run_id }}
+          aws-region: eu-central-1
+          allowed-account-ids: 333053099282
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v4.0.1
+        with:
+          terraform_version: 1.15.5
+          terraform_wrapper: false
+
+      - name: Plan and apply bootstrap changes
+        run: |
+          terraform -chdir=infra/bootstrap init -input=false
+          terraform -chdir=infra/bootstrap plan -input=false -out=bootstrap.tfplan
+          terraform -chdir=infra/bootstrap show -json bootstrap.tfplan > bootstrap-plan.json
+          node scripts/check-terraform-plan.mjs bootstrap-plan.json
+          terraform -chdir=infra/bootstrap apply -input=false bootstrap.tfplan
+
+      - name: Plan and apply site changes
+        run: |
+          terraform -chdir=infra/site init -input=false
+          terraform -chdir=infra/site plan -input=false -out=site.tfplan
+          terraform -chdir=infra/site show -json site.tfplan > site-plan.json
+          node scripts/check-terraform-plan.mjs site-plan.json
+          terraform -chdir=infra/site apply -input=false site.tfplan
+
+      - name: Read deployment targets
+        id: infrastructure
+        run: |
+          echo "bucket=$(terraform -chdir=infra/site output -raw site_bucket_name)" >> "$GITHUB_OUTPUT"
+          echo "distribution=$(terraform -chdir=infra/site output -raw cloudfront_distribution_id)" >> "$GITHUB_OUTPUT"
+          echo "origin_url=https://$(terraform -chdir=infra/site output -raw cloudfront_domain_name)/" >> "$GITHUB_OUTPUT"
+          echo "url=$(terraform -chdir=infra/site output -raw public_url)" >> "$GITHUB_OUTPUT"
+
+      - name: Publish static website
+        env:
+          SITE_BUCKET: ${{ steps.infrastructure.outputs.bucket }}
+        run: |
+          aws s3 sync dist "s3://${SITE_BUCKET}" --delete --cache-control "public,max-age=0,must-revalidate"
+          aws s3 cp dist/_astro "s3://${SITE_BUCKET}/_astro" --recursive --cache-control "public,max-age=31536000,immutable"
+
+      - name: Invalidate CloudFront
+        env:
+          DISTRIBUTION_ID: ${{ steps.infrastructure.outputs.distribution }}
+        run: aws cloudfront create-invalidation --distribution-id "$DISTRIBUTION_ID" --paths "/*"
+
+      - name: Smoke-test production
+        env:
+          ORIGIN_URL: ${{ steps.infrastructure.outputs.origin_url }}
+        run: |
+          curl --fail --silent --show-error --retry 8 --retry-all-errors --retry-delay 15 "$ORIGIN_URL" \
+            | grep --fixed-strings --quiet "ArchUnitEverything"

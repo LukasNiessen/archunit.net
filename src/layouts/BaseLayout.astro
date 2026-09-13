@@ -1,0 +1,94 @@
+---
+import Footer from '@components/Footer.astro';
+import Header from '@components/Header.astro';
+import '@styles/global.css';
+
+interface Props {
+  title: string;
+  description: string;
+  image?: string;
+  canonicalPath?: string;
+  schema?: Record<string, unknown> | Record<string, unknown>[];
+}
+
+const {
+  title,
+  description,
+  image = '/images/og-card.png',
+  canonicalPath = Astro.url.pathname,
+  schema,
+} = Astro.props;
+const siteTitle = title === 'ArchUnitEverything' ? title : title + ' — ArchUnitEverything';
+const canonical = new URL(canonicalPath, Astro.site);
+const socialImage = new URL(image, Astro.site);
+const defaultSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'WebSite',
+  name: 'ArchUnitEverything',
+  url: 'https://www.archunit.net/',
+  description:
+    'Architecture testing libraries for TypeScript, Python, .NET, Ruby, Rust, Zig, Go, Java, and PHP.',
+};
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width" />
+    <meta name="theme-color" content="#080a0d" />
+    <meta name="color-scheme" content="dark" />
+    <meta name="generator" content={Astro.generator} />
+    <title>{siteTitle}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="manifest" href="/site.webmanifest" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="ArchUnitEverything" />
+    <meta property="og:title" content={siteTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={socialImage} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={siteTitle} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={socialImage} />
+    <script
+      type="application/ld+json"
+      is:inline
+      set:html={JSON.stringify(schema ?? defaultSchema)}
+    ></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main-content">
+      Skip to content
+    </a>
+    <Header />
+    <main id="main-content">
+      <slot />
+    </main>
+    <Footer />
+    <script>
+      const observed = document.querySelectorAll<HTMLElement>('[data-reveal]');
+      if ('IntersectionObserver' in window) {
+        const observer = new IntersectionObserver(
+          (entries) => {
+            entries.forEach((entry) => {
+              if (entry.isIntersecting) {
+                (entry.target as HTMLElement).dataset.visible = 'true';
+                observer.unobserve(entry.target);
+              }
+            });
+          },
+          { threshold: 0.12 },
+        );
+        observed.forEach((element) => observer.observe(element));
+      } else {
+        observed.forEach((element) => {
+          element.dataset.visible = 'true';
+        });
+      }
+    </script>
+  </body>
+</html>

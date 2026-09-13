@@ -1,0 +1,68 @@
+---
+import GithubIcon from './GithubIcon.astro';
+
+const path = Astro.url.pathname;
+const links = [
+  { href: '/#libraries', label: 'Libraries' },
+  { href: '/why-architecture-tests/', label: 'Why architecture tests' },
+  { href: '/team/', label: 'Team' },
+];
+---
+
+<header class="site-header" data-header>
+  <div class="header-inner">
+    <a class="brand" href="/" aria-label="ArchUnit home">
+      <span class="brand-mark" aria-hidden="true">
+        <span></span>
+        <span></span>
+        <span></span>
+      </span>
+      <span class="brand-wordmark">
+        ArchUnit<span>Everything</span>
+      </span>
+    </a>
+
+    <button class="menu-button" type="button" aria-expanded="false" aria-controls="primary-nav">
+      <span class="sr-only">Toggle navigation</span>
+      <span></span>
+      <span></span>
+    </button>
+
+    <nav id="primary-nav" class="primary-nav" aria-label="Primary navigation">
+      {links.map((link) => (
+        <a
+          href={link.href}
+          class:list={{ active: link.href !== '/#libraries' && path.startsWith(link.href) }}
+        >
+          {link.label}
+        </a>
+      ))}
+      <a
+        class="button button--small button--light"
+        href="https://github.com/LukasNiessen"
+        target="_blank"
+        rel="noreferrer"
+      >
+        <GithubIcon />
+        GitHub
+      </a>
+    </nav>
+  </div>
+</header>
+
+<script>
+  const button = document.querySelector<HTMLButtonElement>('.menu-button');
+  const nav = document.querySelector<HTMLElement>('.primary-nav');
+  button?.addEventListener('click', () => {
+    const isOpen = button.getAttribute('aria-expanded') === 'true';
+    button.setAttribute('aria-expanded', String(!isOpen));
+    nav?.toggleAttribute('data-open', !isOpen);
+  });
+
+  nav?.querySelectorAll('a').forEach((link) => {
+    link.addEventListener('click', () => {
+      button?.setAttribute('aria-expanded', 'false');
+      nav.removeAttribute('data-open');
+    });
+  });
+</script>

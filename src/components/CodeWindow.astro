@@ -1,0 +1,42 @@
+---
+interface Props {
+  code: string;
+  filename: string;
+  language?: string;
+  copy?: boolean;
+}
+
+const { code, filename, language = '', copy = false } = Astro.props;
+---
+
+<div class="code-window" data-code-window>
+  <div class="code-window__bar">
+    <span class="window-dots" aria-hidden="true">
+      <i></i>
+      <i></i>
+      <i></i>
+    </span>
+    <span class="code-window__filename">{filename}</span>
+    {copy && (
+      <button class="copy-button" type="button" data-copy={code} aria-label="Copy code">
+        Copy
+      </button>
+    )}
+  </div>
+  <pre class={'language-' + language}><code>{code}</code></pre>
+</div>
+
+{copy && <script>
+  document.querySelectorAll<HTMLButtonElement>('[data-copy]').forEach((copyButton) => {
+    copyButton.addEventListener('click', async () => {
+      const value = copyButton.dataset.copy;
+      if (!value) return;
+      await navigator.clipboard.writeText(value);
+      const previous = copyButton.textContent;
+      copyButton.textContent = 'Copied';
+      window.setTimeout(() => {
+        copyButton.textContent = previous;
+      }, 1600);
+    });
+  });
+</script>}

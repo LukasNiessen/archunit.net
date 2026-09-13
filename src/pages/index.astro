@@ -1,0 +1,296 @@
+---
+import CodeWindow from '@components/CodeWindow.astro';
+import ProjectCard from '@components/ProjectCard.astro';
+import SectionHeading from '@components/SectionHeading.astro';
+import { contributors } from '@data/contributors';
+import { projects, stableProjects } from '@data/projects';
+import BaseLayout from '@layouts/BaseLayout.astro';
+
+const previewProjects = projects.filter((project) => project.status !== 'stable');
+const codeProjectSlugs = new Set(['typescript', 'python', 'rust']);
+const codeProjects = projects.filter((project) => codeProjectSlugs.has(project.slug));
+const homeSchema = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'Organization',
+    name: 'ArchUnitEverything',
+    url: 'https://www.archunit.net/',
+    sameAs: projects.map((project) => project.repo),
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    name: 'ArchUnit architecture testing libraries',
+    numberOfItems: projects.length,
+    itemListElement: projects.map((project, index) => ({
+      '@type': 'ListItem',
+      position: index + 1,
+      url: 'https://www.archunit.net/' + project.slug + '/',
+      name: project.name,
+    })),
+  },
+];
+---
+
+<BaseLayout
+  title="ArchUnitEverything"
+  description="Architecture testing libraries for TypeScript, Python, .NET, Ruby, Rust, Zig, Go, Java, and PHP. Turn architecture decisions into tests that run with every commit."
+  schema={homeSchema}
+>
+  <section class="hero">
+    <div class="hero-grid shell">
+      <div class="hero-copy" data-reveal>
+        <p class="hero-kicker">Nine ecosystems. One architecture grammar.</p>
+        <h1>
+          Architecture is a behavior. <em>Test it.</em>
+        </h1>
+        <p class="hero-lede">
+          Guard boundaries, detect cycles, measure design health, and keep architecture honest as
+          code changes — inside the test suite your team already runs.
+        </p>
+        <div class="hero-actions">
+          <a class="button button--lime" href="#libraries">
+            Choose your library <span>↓</span>
+          </a>
+          <a
+            class="button button--ghost"
+            href="https://github.com/LukasNiessen/ArchUnitTS"
+            target="_blank"
+            rel="noreferrer"
+          >
+            Explore on GitHub <span>↗</span>
+          </a>
+        </div>
+        <p class="hero-note">Open source · Test-runner native · CI ready</p>
+      </div>
+
+      <div class="architecture-visual" aria-label="Three application layers with a passing rule">
+        <span class="visual-glow"></span>
+        <div class="layer-stack">
+          <div class="visual-layer" style="--layer-color:#86e3ff">
+            <div>
+              <strong>Interface</strong>
+              <p>Presentation</p>
+            </div>
+            <code>24 files</code>
+          </div>
+          <div class="visual-layer" style="--layer-color:#c8ff65">
+            <div>
+              <strong>Domain</strong>
+              <p>Business rules</p>
+            </div>
+            <code>37 files</code>
+          </div>
+          <div class="visual-layer" style="--layer-color:#c9a7ff">
+            <div>
+              <strong>Infrastructure</strong>
+              <p>Adapters</p>
+            </div>
+            <code>19 files</code>
+          </div>
+        </div>
+        <div class="rule-chip">
+          <span>✓ Rule passes</span>
+          domain.shouldNot().dependOn(infrastructure)
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="proof-strip" aria-label="Supported ecosystems">
+    <div class="proof-inner shell">
+      <p class="proof-label">Built for</p>
+      <div class="language-ticker">
+        {projects.map((project) => (
+          <a href={'/' + project.slug + '/'} style={'--ticker-accent:' + project.accent}>
+            {project.language}
+          </a>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <section id="libraries" class="home-section libraries-section">
+    <div class="shell">
+      <SectionHeading
+        eyebrow="The library family"
+        title="Architecture tests in the language you already ship."
+        copy="Start with the mature TypeScript and Python libraries, evaluate the active previews, or help shape the next ecosystem."
+      />
+      <div class="featured-projects">
+        {stableProjects.map((project) => (
+          <ProjectCard project={project} featured />
+        ))}
+      </div>
+      <div class="project-grid">
+        {previewProjects.map((project) => (
+          <ProjectCard project={project} />
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <section class="home-section grammar-section">
+    <div class="grammar-grid shell">
+      <div class="grammar-copy" data-reveal>
+        <p class="eyebrow">One mental model</p>
+        <h2>Rules that read like the decision.</h2>
+        <p>
+          Different language conventions, one recognizable flow: select code, state the expectation,
+          then let the existing test runner enforce it.
+        </p>
+        <ul class="grammar-list">
+          <li>
+            <span>01</span> Select files, folders, classes, layers, or slices.
+          </li>
+          <li>
+            <span>02</span> Describe an allowed direction, forbidden edge, metric, or diagram.
+          </li>
+          <li>
+            <span>03</span> Run the rule locally and in CI with actionable evidence.
+          </li>
+        </ul>
+      </div>
+      <div data-code-demo>
+        <div class="code-tabs" role="tablist" aria-label="Language examples">
+          {codeProjects.map((project, index) => (
+            <button
+              class="code-tab"
+              role="tab"
+              type="button"
+              aria-selected={index === 0 ? 'true' : 'false'}
+              aria-controls={'code-' + project.slug}
+              id={'tab-' + project.slug}
+              data-code-tab={project.slug}
+            >
+              {project.language}
+            </button>
+          ))}
+        </div>
+        {codeProjects.map((project, index) => (
+          <div
+            class="code-panel"
+            id={'code-' + project.slug}
+            role="tabpanel"
+            aria-labelledby={'tab-' + project.slug}
+            hidden={index !== 0}
+            data-code-panel={project.slug}
+          >
+            <CodeWindow
+              code={project.code}
+              filename={project.codeFilename}
+              language={project.codeLanguage}
+            />
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <section class="home-section">
+    <div class="shell">
+      <SectionHeading
+        eyebrow="Beyond import rules"
+        title="A feedback system for architectural intent."
+        copy="Architecture tests turn diagrams and conventions into fast, repeatable evidence for people, pull requests, and coding agents."
+      />
+      <div class="principles-grid">
+        <article class="principle-card principle-card--lime" data-reveal>
+          <span class="principle-card__number">01 / Boundaries</span>
+          <h3>Stop forbidden dependencies before review.</h3>
+          <p>
+            Define who may depend on whom and fail on the exact source edge that crosses the line.
+          </p>
+        </article>
+        <article class="principle-card" data-reveal>
+          <span class="principle-card__number">02 / Cycles</span>
+          <h3>Keep the graph directional.</h3>
+          <p>Detect circular dependencies while the loop is still small enough to remove.</p>
+        </article>
+        <article class="principle-card principle-card--diagram" data-reveal>
+          <span class="principle-card__number">03 / Diagrams</span>
+          <h3>Compare code with the map.</h3>
+          <p>Validate slices against PlantUML or export the architecture that actually exists.</p>
+        </article>
+        <article class="principle-card" data-reveal>
+          <span class="principle-card__number">04 / Metrics</span>
+          <h3>See design pressure early.</h3>
+          <p>
+            Track coupling, cohesion, file size, abstractness, and distance from the main sequence.
+          </p>
+        </article>
+        <article class="principle-card" data-reveal>
+          <span class="principle-card__number">05 / Reports</span>
+          <h3>One graph, many useful views.</h3>
+          <p>
+            Produce test failures, CI artifacts, structured JSON, dependency diagrams, and
+            standalone HTML reports from the same model.
+          </p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="home-section community-band">
+    <div class="community-grid shell">
+      <div>
+        <p class="eyebrow">Built in the open</p>
+        <h2>A family shaped by contributors.</h2>
+        <p>
+          Maintainers and first-time contributors work across languages, test frameworks, graph
+          algorithms, documentation, and real-world examples.
+        </p>
+        <div class="hero-actions">
+          <a class="button button--lime" href="/team/">
+            Meet the contributors
+          </a>
+          <a class="button" href="https://github.com/LukasNiessen" target="_blank" rel="noreferrer">
+            Contribute on GitHub ↗
+          </a>
+        </div>
+      </div>
+      <div class="avatar-cloud" aria-label="Featured project contributors">
+        {contributors.slice(0, 5).map((contributor) => (
+          <img
+            src={contributor.avatarUrl}
+            alt={contributor.login}
+            width="126"
+            height="126"
+            loading="lazy"
+          />
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <section class="cta-section">
+    <div class="shell">
+      <h2>
+        Your architecture can be more than <em>a promise.</em>
+      </h2>
+      <p>
+        Pick the implementation for your stack and add the first boundary rule to the test suite you
+        already trust.
+      </p>
+      <a class="button button--lime" href="#libraries">
+        Find your library
+      </a>
+    </div>
+  </section>
+
+  <script>
+    const tabs = document.querySelectorAll<HTMLButtonElement>('[data-code-tab]');
+    const panels = document.querySelectorAll<HTMLElement>('[data-code-panel]');
+    tabs.forEach((tab) => {
+      tab.addEventListener('click', () => {
+        const target = tab.dataset.codeTab;
+        tabs.forEach((candidate) =>
+          candidate.setAttribute('aria-selected', String(candidate === tab)),
+        );
+        panels.forEach((panel) => {
+          panel.hidden = panel.dataset.codePanel !== target;
+        });
+      });
+    });
+  </script>
+</BaseLayout>

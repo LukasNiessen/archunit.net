@@ -1,0 +1,119 @@
+---
+import SectionHeading from '@components/SectionHeading.astro';
+import { contributors, coreContributors } from '@data/contributors';
+import BaseLayout from '@layouts/BaseLayout.astro';
+
+const contributionTotal = contributors.reduce(
+  (total, contributor) => total + contributor.contributions,
+  0,
+);
+const schema = {
+  '@context': 'https://schema.org',
+  '@type': 'AboutPage',
+  name: 'ArchUnitEverything contributors',
+  url: 'https://www.archunit.net/team/',
+  description: 'The open-source contributors building the ArchUnitEverything library family.',
+};
+---
+
+<BaseLayout
+  title="Contributors"
+  description="Meet the open-source contributors building architecture testing libraries across nine programming ecosystems."
+  canonicalPath="/team/"
+  schema={schema}
+>
+  <section class="page-hero">
+    <div class="shell">
+      <p class="hero-kicker">Open source, across ecosystems</p>
+      <h1>
+        The people making architecture <em>executable.</em>
+      </h1>
+      <div class="page-hero__copy">
+        <p>
+          ArchUnitEverything is built in public by maintainers and contributors working across
+          language tooling, graph analysis, fluent APIs, testing integrations, and documentation.
+        </p>
+        <p>
+          This page is generated from the human contributor history of the nine primary
+          repositories. Together, these GitHub identities account for{' '}
+          {contributionTotal.toLocaleString('en-US')}+ contributions.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section class="team-section">
+    <div class="shell">
+      <SectionHeading
+        eyebrow="Core contributors"
+        title="Building the family."
+        copy="These contributors have made ten or more commits across one or more primary implementations."
+      />
+      <div class="core-team">
+        {coreContributors.map((contributor) => (
+          <a
+            class="contributor-card"
+            href={contributor.profileUrl}
+            target="_blank"
+            rel="noreferrer"
+          >
+            <div>
+              <img
+                src={contributor.avatarUrl}
+                alt={contributor.login + ' on GitHub'}
+                width="82"
+                height="82"
+                loading="lazy"
+              />
+              <h3>@{contributor.login}</h3>
+              <p>{contributor.repositories.join(' · ')}</p>
+            </div>
+            <div class="contributor-card__meta">
+              <span>{contributor.contributions} contributions</span>
+              <span>↗</span>
+            </div>
+          </a>
+        ))}
+      </div>
+
+      <SectionHeading
+        eyebrow="Every contribution counts"
+        title="The wider contributor community."
+        copy="Documentation, fixes, examples, features, and maintenance all move an open-source project forward."
+      />
+      <div class="all-contributors">
+        {contributors.map((contributor) => (
+          <a
+            class="contributor-chip"
+            href={contributor.profileUrl}
+            target="_blank"
+            rel="noreferrer"
+          >
+            <img src={contributor.avatarUrl} alt="" width="34" height="34" loading="lazy" />
+            <span>@{contributor.login}</span>
+          </a>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <section class="cta-section">
+    <div class="shell">
+      <h2>
+        There is room for your <em>perspective.</em>
+      </h2>
+      <p>
+        Pick an ecosystem you know, explore the issues, and help make architecture tests clearer,
+        faster, and more native to that community.
+      </p>
+      <a
+        class="button button--lime"
+        href="https://github.com/LukasNiessen"
+        target="_blank"
+        rel="noreferrer"
+      >
+        Find a repository ↗
+      </a>
+    </div>
+  </section>
+</BaseLayout>

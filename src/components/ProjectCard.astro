@@ -1,0 +1,48 @@
+---
+import type { ArcUnitProject } from '@data/projects';
+import ProjectMark from './ProjectMark.astro';
+
+interface Props {
+  project: ArcUnitProject;
+  featured?: boolean;
+}
+
+const { project, featured = false } = Astro.props;
+const logo =
+  project.slug === 'typescript' ? 'typescript' : project.slug === 'python' ? 'python' : undefined;
+const href = '/' + project.slug + '/';
+const style = '--card-accent:' + project.accent + ';--card-soft:' + project.accentSoft;
+---
+
+<a
+  class:list={['project-card', { 'project-card--featured': featured }]}
+  href={href}
+  style={style}
+  aria-label={'Explore ' + project.name + ' for ' + project.language}
+>
+  <div class="project-card__top">
+    <ProjectMark
+      monogram={project.monogram}
+      name={project.name}
+      accent={project.accent}
+      accentSoft={project.accentSoft}
+      size={featured ? 'large' : 'medium'}
+      logo={logo}
+    />
+    <span class:list={['status-pill', 'status-pill--' + project.status]}>
+      <span></span>
+      {project.statusLabel}
+    </span>
+  </div>
+  <div class="project-card__body">
+    <span class="eyebrow">{project.language}</span>
+    <h3>{project.name}</h3>
+    <p>{project.description}</p>
+  </div>
+  <div class="project-card__footer">
+    <span>{project.installLabel}</span>
+    <span class="arrow-link" aria-hidden="true">
+      ↗
+    </span>
+  </div>
+</a>

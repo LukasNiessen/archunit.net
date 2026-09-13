@@ -1,0 +1,164 @@
+---
+import BaseLayout from '@layouts/BaseLayout.astro';
+
+const schema = {
+  '@context': 'https://schema.org',
+  '@type': 'TechArticle',
+  headline: 'Why architecture tests belong in your delivery loop',
+  description:
+    'A practical guide to architecture tests, fitness functions, dependency rules, metrics, and CI feedback.',
+  author: { '@type': 'Organization', name: 'ArchUnitEverything' },
+  publisher: { '@type': 'Organization', name: 'ArchUnitEverything' },
+  mainEntityOfPage: 'https://www.archunit.net/why-architecture-tests/',
+};
+---
+
+<BaseLayout
+  title="Why architecture tests belong in your delivery loop"
+  description="Learn how architecture tests turn dependency boundaries, cycles, metrics, and diagrams into fast feedback in the test suite and CI."
+  canonicalPath="/why-architecture-tests/"
+  schema={schema}
+>
+  <section class="page-hero">
+    <div class="shell">
+      <p class="hero-kicker">Architecture fitness functions</p>
+      <h1>
+        Keep design decisions close to the <em>change.</em>
+      </h1>
+      <div class="page-hero__copy">
+        <p>
+          Architecture drifts one reasonable pull request at a time. Tests shorten the distance
+          between a boundary decision and the moment code crosses it.
+        </p>
+        <p>
+          The goal is not to freeze a system. It is to make important constraints visible,
+          reviewable, and easy to change deliberately.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <article class="article-layout shell">
+    <aside class="article-aside">
+      <p class="eyebrow">A practical model</p>
+      <h2>From intention to feedback.</h2>
+      <p>
+        Start with a handful of costly boundaries. Express them as code, run them with every change,
+        and evolve the rule set with the architecture.
+      </p>
+    </aside>
+
+    <div class="article-body">
+      <p class="article-callout">
+        <strong>The compact definition</strong>
+        An architecture test is an executable constraint over the structure or dependency graph of a
+        codebase.
+      </p>
+
+      <h2>Why diagrams and conventions drift</h2>
+      <p>
+        A diagram can explain the intended shape of a system, but it usually cannot react when a new
+        import bypasses a layer. A convention in a wiki has the same problem: it depends on every
+        contributor remembering it at the right moment.
+      </p>
+      <p>
+        Architecture tests do not replace diagrams or review. They give both a feedback loop. The
+        rule runs where the change happens and points to concrete evidence when the implementation
+        and the decision disagree.
+      </p>
+
+      <h2>What is worth testing</h2>
+      <h3>Dependency direction</h3>
+      <p>
+        Keep domain logic independent from delivery and persistence details. Prevent feature modules
+        from reaching into each other. Define the small set of public seams through which layers may
+        collaborate.
+      </p>
+      <h3>Cycles</h3>
+      <p>
+        Cycles turn local changes into coordinated changes. Detecting them early keeps ownership,
+        build behavior, and refactoring paths easier to reason about.
+      </p>
+      <h3>Structure and naming</h3>
+      <p>
+        Location and naming rules are useful when they communicate an architectural role — for
+        example, adapters that must live behind a port or handlers that must use a recognizable
+        suffix.
+      </p>
+      <h3>Metrics and diagrams</h3>
+      <p>
+        Coupling, cohesion, size, and distance metrics reveal pressure before a binary rule is
+        violated. Diagram conformance checks keep a deliberately drawn system map connected to the
+        dependency graph that actually ships.
+      </p>
+
+      <h2>How to introduce architecture tests</h2>
+      <div class="steps">
+        <div class="step">
+          <span>01</span>
+          <h3>Choose one costly boundary</h3>
+          <p>
+            Start where accidental coupling has caused real review, delivery, or ownership pain.
+          </p>
+        </div>
+        <div class="step">
+          <span>02</span>
+          <h3>Make the scope explicit</h3>
+          <p>
+            Use selectors that fail when they match nothing, so a green test cannot hide a typo.
+          </p>
+        </div>
+        <div class="step">
+          <span>03</span>
+          <h3>Baseline honestly</h3>
+          <p>When legacy violations exist, record them and block new debt instead of pretending.</p>
+        </div>
+        <div class="step">
+          <span>04</span>
+          <h3>Run in the normal suite</h3>
+          <p>
+            Keep feedback local, fast, and visible in the same CI signals the team already trusts.
+          </p>
+        </div>
+      </div>
+
+      <h2>Architecture tests and coding agents</h2>
+      <p>
+        Coding agents can move quickly across a repository, which makes machine-checkable boundaries
+        especially valuable. A precise test failure gives an agent the same grounded feedback it
+        gives a human: the rule, the offending edge, and the code that must change.
+      </p>
+      <p>
+        Reports extend the loop. A dependency graph can become a pull-request artifact, a Mermaid
+        diagram, structured JSON for tooling, or a standalone HTML page for architectural review.
+      </p>
+
+      <h2>Keep the rules humane</h2>
+      <ul>
+        <li>Test decisions with a real cost of violation, not personal formatting preferences.</li>
+        <li>Attach a rationale so future maintainers know why the boundary exists.</li>
+        <li>Prefer a small, legible rule vocabulary over a clever internal DSL.</li>
+        <li>Treat a rule change as an architecture decision, not a way to make CI green.</li>
+        <li>Delete constraints that no longer reflect the system you intend to build.</li>
+      </ul>
+
+      <p class="article-callout">
+        <strong>The result</strong>
+        Architecture becomes a living part of delivery: documented in code, exercised on every
+        change, and open to deliberate evolution.
+      </p>
+    </div>
+  </article>
+
+  <section class="cta-section">
+    <div class="shell">
+      <h2>
+        Choose one rule. Make it <em>real.</em>
+      </h2>
+      <p>Find the implementation for your stack and put the first boundary into the test suite.</p>
+      <a class="button button--lime" href="/#libraries">
+        Explore the libraries
+      </a>
+    </div>
+  </section>
+</BaseLayout>

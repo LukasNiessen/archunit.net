@@ -1,0 +1,17 @@
+{
+  "name": "ArchUnitEverything",
+  "short_name": "ArchUnit",
+  "description": "Architecture testing libraries for every language.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#080a0d",
+  "theme_color": "#080a0d",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

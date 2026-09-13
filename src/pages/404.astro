@@ -1,0 +1,23 @@
+---
+import BaseLayout from '@layouts/BaseLayout.astro';
+---
+
+<BaseLayout
+  title="Page not found"
+  description="The requested ArchUnitEverything page could not be found."
+  canonicalPath="/404/"
+>
+  <section class="not-found">
+    <div>
+      <span>404 / dependency unresolved</span>
+      <h1>That node is not in the graph.</h1>
+      <p>
+        The page may have moved, the path may be mistyped, or the architecture has evolved without
+        it.
+      </p>
+      <a class="button button--lime" href="/">
+        Return to the architecture
+      </a>
+    </div>
+  </section>
+</BaseLayout>

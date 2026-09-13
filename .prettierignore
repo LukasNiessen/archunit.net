@@ -1,0 +1,7 @@
+dist
+coverage
+playwright-report
+test-results
+.terraform
+*.tfstate*
+package-lock.json

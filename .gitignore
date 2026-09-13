@@ -1,0 +1,16 @@
+node_modules/
+.certs/
+dist/
+.astro/
+coverage/
+playwright-report/
+test-results/
+qa/
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+crash.log
+.env
+.env.*
+!.env.example

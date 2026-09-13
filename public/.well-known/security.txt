@@ -1,0 +1,4 @@
+Contact: https://github.com/LukasNiessen/archunit.net/security
+Preferred-Languages: en
+Canonical: https://archunit.net/.well-known/security.txt
+Expires: 2027-09-13T00:00:00Z
