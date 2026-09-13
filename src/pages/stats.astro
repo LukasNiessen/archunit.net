@@ -1,0 +1,193 @@
+---
+import ProjectMark from '@components/ProjectMark.astro';
+import { projects } from '@data/projects';
+import { libraryStats, statsSnapshot } from '@data/stats';
+import BaseLayout from '@layouts/BaseLayout.astro';
+
+const maxStars = Math.max(...libraryStats.map((library) => library.stars));
+const projectBySlug = new Map(projects.map((project) => [project.slug, project]));
+const number = new Intl.NumberFormat('en-US');
+const schema = {
+  '@context': 'https://schema.org',
+  '@type': 'Dataset',
+  name: 'ArchUnit open-source adoption snapshot',
+  description:
+    'GitHub stars and publicly reported package downloads for the ArchUnit library family, captured September 13, 2026.',
+  dateModified: statsSnapshot.date,
+  creator: { '@type': 'Organization', name: 'ArchUnit' },
+  url: 'https://www.archunit.net/stats/',
+};
+---
+
+<BaseLayout
+  title="Open-source statistics"
+  description="A September 13, 2026 snapshot of GitHub stars and publicly reported package downloads across the ArchUnit library family."
+  canonicalPath="/stats/"
+  schema={schema}
+  alternateHeader
+>
+  <section class="stats-hero">
+    <div class="shell stats-hero__inner">
+      <p class="hero-kicker">Snapshot of {statsSnapshot.dateLabel}</p>
+      <h1>
+        Adoption, without the <em>guesswork.</em>
+      </h1>
+      <p>
+        Public signals from GitHub and package registries. Every number names its scope, and a blank
+        stays blank when an ecosystem does not publish a comparable metric.
+      </p>
+      <dl class="stats-totals" aria-label="ArchUnit totals">
+        <div>
+          <dt>GitHub stars</dt>
+          <dd>{number.format(statsSnapshot.totalStars)}</dd>
+          <span>Across nine library repositories</span>
+        </div>
+        <div>
+          <dt>Known package downloads</dt>
+          <dd>{number.format(statsSnapshot.knownLifetimeDownloads)}</dd>
+          <span>npm, PyPI, NuGet, and RubyGems</span>
+        </div>
+        <div>
+          <dt>Latest 30-day downloads</dt>
+          <dd>{number.format(statsSnapshot.knownRecentDownloads)}</dd>
+          <span>npm and PyPI, the registries reporting this window</span>
+        </div>
+      </dl>
+    </div>
+  </section>
+
+  <section class="stats-section">
+    <div class="shell stats-editorial-grid">
+      <div>
+        <p class="eyebrow">GitHub</p>
+        <h2>Stars by library.</h2>
+        <p>
+          Stars are a lightweight sign of developer interest, not a quality score. The total only
+          includes the nine library repositories, not examples or this website.
+        </p>
+      </div>
+      <div class="stars-chart" role="img" aria-label="GitHub stars for each ArchUnit library">
+        {libraryStats.map((library) => {
+          const project = projectBySlug.get(library.slug)!;
+          const width = maxStars === 0 ? 0 : Math.max((library.stars / maxStars) * 100, 0.8);
+          const logo =
+            library.slug === 'typescript'
+              ? 'typescript'
+              : library.slug === 'python'
+                ? 'python'
+                : undefined;
+          return (
+            <a class="stars-row" href={'/' + library.slug + '/'}>
+              <ProjectMark
+                monogram={project.monogram}
+                name={project.name}
+                accent={project.accent}
+                accentSoft={project.accentSoft}
+                size="small"
+                logo={logo}
+              />
+              <span class="stars-row__name">{library.name}</span>
+              <span class="stars-row__track" aria-hidden="true">
+                <span
+                  class="stars-row__bar"
+                  style={'--bar-width:' + width + '%;--bar-color:' + project.accent}
+                ></span>
+              </span>
+              <strong>{number.format(library.stars)}</strong>
+            </a>
+          );
+        })}
+      </div>
+    </div>
+  </section>
+
+  <section class="stats-section stats-downloads-section">
+    <div class="shell">
+      <div class="stats-downloads-heading">
+        <div>
+          <p class="eyebrow">Package adoption</p>
+          <h2>Downloads, with context.</h2>
+        </div>
+        <p>
+          Registry counters use different windows and definitions. Totals below are reported as
+          published, without pretending that an unavailable Go or Git installation count is zero.
+        </p>
+      </div>
+      <div class="downloads-table-wrap">
+        <table class="downloads-table">
+          <thead>
+            <tr>
+              <th>Library</th>
+              <th>Latest 30 days</th>
+              <th>Reported total</th>
+              <th>Source and scope</th>
+            </tr>
+          </thead>
+          <tbody>
+            {libraryStats.map((library) => (
+              <tr>
+                <th scope="row">
+                  <a href={'/' + library.slug + '/'}>{library.name}</a>
+                  <span>{library.language}</span>
+                </th>
+                <td>
+                  {library.recentDownloads === null ? (
+                    <span class="stat-unavailable">Not reported</span>
+                  ) : (
+                    <>
+                      <strong>{number.format(library.recentDownloads)}</strong>
+                      <span>{library.recentWindow}</span>
+                    </>
+                  )}
+                </td>
+                <td>
+                  {library.lifetimeDownloads === null ? (
+                    <span class="stat-unavailable">Not reported</span>
+                  ) : (
+                    <>
+                      <strong>{number.format(library.lifetimeDownloads)}</strong>
+                      <span>{library.lifetimeLabel}</span>
+                    </>
+                  )}
+                </td>
+                <td>
+                  <a href={library.sourceUrl} target="_blank" rel="noreferrer">
+                    {library.sourceLabel} ↗
+                  </a>
+                  <span>{library.downloadNote}</span>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section class="stats-method-section">
+    <div class="shell stats-method-grid">
+      <div>
+        <p class="eyebrow">Method</p>
+        <h2>A dated snapshot, not a live counter.</h2>
+      </div>
+      <div>
+        <p>
+          GitHub stars were read from the public repository API on September 13, 2026. npm reports
+          through September 11 and PyPI through September 12 because registry reporting trails the
+          calendar date.
+        </p>
+        <p>
+          The cumulative package total combines 804,221 npm downloads, 156,464 PyPI downloads
+          excluding mirrors, 76 NuGet downloads, and 2,214 RubyGems downloads. The single Zig
+          release-asset download is shown in its source note but is not mixed into the package
+          total.
+        </p>
+        <p>
+          Git-based installs, Go module downloads, and planned packages do not have public counters
+          that are comparable with package-registry downloads. Their cells therefore say “Not
+          reported.”
+        </p>
+      </div>
+    </div>
+  </section>
+</BaseLayout>

@@ -1,0 +1,30 @@
+---
+import BaseLayout from '@layouts/BaseLayout.astro';
+---
+
+<BaseLayout
+  title="Thank you"
+  description="Thank you for supporting, sharing, or contributing to ArchUnit."
+  canonicalPath="/thank-you/"
+  robots="noindex, follow"
+>
+  <section class="thank-you-page">
+    <div class="shell thank-you-page__inner">
+      <span aria-hidden="true">AU</span>
+      <p class="eyebrow">Thank you</p>
+      <h1>Your support keeps the architecture honest.</h1>
+      <p>
+        Whether you contributed code, shared a library, reported a problem, or started your first
+        architecture test, you helped the project become more useful.
+      </p>
+      <div class="hero-actions">
+        <a class="button button--lime" href="/#libraries">
+          Explore the libraries
+        </a>
+        <a class="button button--ghost" href="/team/">
+          Meet the team
+        </a>
+      </div>
+    </div>
+  </section>
+</BaseLayout>

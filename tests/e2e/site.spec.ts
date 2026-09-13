@@ -32,6 +32,7 @@ test('homepage presents the full library family', async ({ page }) => {
 });
 
 test('every implementation has an indexable detail page', async ({ page }) => {
+  test.setTimeout(60_000);
   const slugs = ['typescript', 'python', 'dotnet', 'ruby', 'rust', 'zig', 'go', 'java', 'php'];
 
   for (const slug of slugs) {
@@ -43,7 +44,23 @@ test('every implementation has an indexable detail page', async ({ page }) => {
       `https://www.archunit.net/${slug}/`,
     );
     await expect(page.locator('script[type="application/ld+json"]')).toHaveCount(1);
+    await expect(page.locator('.documentation-topic')).toHaveCount(3);
+    const mark = await page.locator('.detail-title-row .project-mark').boundingBox();
+    expect(mark).not.toBeNull();
+    expect(Math.abs((mark?.width ?? 0) - (mark?.height ?? 0))).toBeLessThanOrEqual(1);
   }
+});
+
+test('library cards keep the active theme when hovered', async ({ page }) => {
+  await page.goto('/');
+  await page.evaluate(() => globalThis.localStorage.setItem('archunit-theme', 'light'));
+  await page.reload();
+  const card = page.locator('.project-card').first();
+  const before = await card.evaluate((element) => getComputedStyle(element).backgroundColor);
+  await card.hover();
+  const after = await card.evaluate((element) => getComputedStyle(element).backgroundColor);
+  expect(before).not.toBe('rgb(17, 21, 27)');
+  expect(after).not.toBe('rgb(17, 21, 27)');
 });
 
 test('navigation and contributor content remain usable on mobile', async ({ page }, testInfo) => {
@@ -80,21 +97,87 @@ test('blog index and adapted articles are statically accessible', async ({ page 
   await expect(
     page.getByRole('heading', { name: 'Why ArchUnitTS exists', level: 1 }),
   ).toBeVisible();
+  if ((page.viewportSize()?.width ?? 1000) > 1050) {
+    const aside = await page.locator('.article-aside').boundingBox();
+    const body = await page.locator('.article-body').boundingBox();
+    expect(aside?.width ?? Infinity).toBeLessThanOrEqual(230);
+    expect(body?.width ?? 0).toBeGreaterThan(aside?.width ?? Infinity);
+  }
+});
+
+test('the how-it-works walkthrough explains and advances the pipeline', async ({ page }) => {
+  await page.goto('/how-archunit-works/');
+  await expect(page.getByRole('heading', { name: /how archunit sees your system/i })).toBeVisible();
+  await expect(page.locator('[data-how-stage]')).toHaveCount(8);
+  await expect(page.getByText('Python, concretely')).toHaveCount(8);
+  await page.locator('[data-how-stage="7"]').scrollIntoViewIfNeeded();
+  if ((page.viewportSize()?.width ?? 1000) > 820) {
+    await expect(page.locator('[data-how-visual]')).toHaveAttribute('data-active-stage', '7');
+  }
+});
+
+test('stats, privacy, and thank-you pages expose intentional metadata', async ({ page }) => {
+  await page.goto('/stats/');
+  await expect(page.getByText('733', { exact: true })).toBeVisible();
+  await expect(page.getByText('962,975', { exact: true })).toBeVisible();
+  await expect(page.locator('.stars-row')).toHaveCount(9);
+  await expect(page.locator('.downloads-table tbody tr')).toHaveCount(9);
+
+  await page.goto('/privacy/');
+  await expect(page).toHaveTitle(/Privacy policy/);
+  await expect(page.locator('meta[name="description"]')).toHaveAttribute('content', /local theme/i);
+
+  await page.goto('/thank-you/');
+  await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', 'noindex, follow');
+});
+
+test('every rendered image has an alt attribute', async ({ page }) => {
+  for (const route of ['/', '/team/', '/typescript/']) {
+    await page.goto(route);
+    const missingAlt = await page.locator('img:not([alt])').count();
+    expect(missingAlt).toBe(0);
+  }
 });
 
 test('key pages do not overflow the viewport', async ({ page }) => {
-  for (const route of ['/', '/team/', '/typescript/', '/blog/']) {
+  const failures: string[] = [];
+  for (const route of [
+    '/',
+    '/team/',
+    '/typescript/',
+    '/blog/',
+    '/how-archunit-works/',
+    '/stats/',
+    '/privacy/',
+    '/blog/why-archunitts-exists/',
+    '/why-architecture-tests/',
+  ]) {
     await page.goto(route);
     const dimensions = await page.evaluate(() => ({
       clientWidth: document.documentElement.clientWidth,
       scrollWidth: document.documentElement.scrollWidth,
+      offenders: Array.from(document.querySelectorAll<HTMLElement>('body *'))
+        .map((element) => {
+          const rect = element.getBoundingClientRect();
+          return {
+            selector: `${element.tagName.toLowerCase()}.${element.className}`,
+            left: Math.round(rect.left * 10) / 10,
+            right: Math.round(rect.right * 10) / 10,
+          };
+        })
+        .filter((item) => item.left < -1 || item.right > document.documentElement.clientWidth + 1)
+        .slice(0, 5),
     }));
-    expect(dimensions.scrollWidth).toBeLessThanOrEqual(dimensions.clientWidth + 1);
+    if (dimensions.scrollWidth > dimensions.clientWidth + 1) {
+      failures.push(`${route}: ${JSON.stringify(dimensions)}`);
+    }
   }
+  expect(failures).toEqual([]);
 });
 
 test('unknown routes use the custom 404 page', async ({ page }) => {
   const response = await page.goto('/this-route-does-not-exist/');
   expect(response?.status()).toBe(404);
   await expect(page.getByRole('heading', { name: /not in the graph/i })).toBeVisible();
+  await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', 'noindex, follow');
 });

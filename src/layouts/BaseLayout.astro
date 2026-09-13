@@ -9,6 +9,8 @@ interface Props {
   image?: string;
   canonicalPath?: string;
   schema?: Record<string, unknown> | Record<string, unknown>[];
+  robots?: string;
+  alternateHeader?: boolean;
 }
 
 const {
@@ -17,6 +19,8 @@ const {
   image = '/images/og-card.png',
   canonicalPath = Astro.url.pathname,
   schema,
+  robots = 'index, follow',
+  alternateHeader = false,
 } = Astro.props;
 const siteTitle = title === 'ArchUnit' ? title : title + ' | ArchUnit';
 const canonical = new URL(canonicalPath, Astro.site);
@@ -41,8 +45,11 @@ const defaultSchema = {
     <meta name="generator" content={Astro.generator} />
     <title>{siteTitle}</title>
     <meta name="description" content={description} />
+    <meta name="robots" content={robots} />
     <link rel="canonical" href={canonical} />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="icon" type="image/png" href="/logos/archunitts.png" />
+    <link rel="apple-touch-icon" href="/logos/archunitts.png" />
     <link rel="manifest" href="/site.webmanifest" />
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="ArchUnit" />
@@ -77,7 +84,7 @@ const defaultSchema = {
       set:html={JSON.stringify(schema ?? defaultSchema)}
     ></script>
   </head>
-  <body>
+  <body class:list={{ 'header-on-alternate': alternateHeader }}>
     <a class="skip-link" href="#main-content">
       Skip to content
     </a>

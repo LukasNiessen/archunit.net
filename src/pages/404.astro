@@ -6,6 +6,7 @@ import BaseLayout from '@layouts/BaseLayout.astro';
   title="Page not found"
   description="The requested ArchUnit page could not be found."
   canonicalPath="/404/"
+  robots="noindex, follow"
 >
   <section class="not-found">
     <div>
@@ -15,9 +16,14 @@ import BaseLayout from '@layouts/BaseLayout.astro';
         The page may have moved, the path may be mistyped, or the architecture has evolved without
         it.
       </p>
-      <a class="button button--lime" href="/">
-        Return to the architecture
-      </a>
+      <div class="hero-actions">
+        <a class="button button--lime" href="/">
+          Return home
+        </a>
+        <a class="button button--ghost" href="/how-archunit-works/">
+          See how ArchUnit works
+        </a>
+      </div>
     </div>
   </section>
 </BaseLayout>

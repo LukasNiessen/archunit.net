@@ -4,6 +4,7 @@ import CopyIcon from '@components/CopyIcon.astro';
 import ProjectCard from '@components/ProjectCard.astro';
 import ProjectMark from '@components/ProjectMark.astro';
 import SectionHeading from '@components/SectionHeading.astro';
+import { documentationBySlug } from '@data/documentation';
 import { projects, type ArcUnitProject } from '@data/projects';
 import BaseLayout from '@layouts/BaseLayout.astro';
 
@@ -19,6 +20,7 @@ interface Props {
 }
 
 const { project } = Astro.props;
+const documentation = documentationBySlug[project.slug]!;
 const logo =
   project.slug === 'typescript' ? 'typescript' : project.slug === 'python' ? 'python' : undefined;
 const related = projects
@@ -179,6 +181,42 @@ const schema = [
           language={project.codeLanguage}
           copy
         />
+      </div>
+    </section>
+
+    <section class="project-content-section documentation-section">
+      <div class="shell">
+        <SectionHeading
+          eyebrow="Documentation highlights"
+          title={'Work with ' + project.name + ' beyond the quickstart.'}
+          copy={documentation.introduction}
+        />
+        <div class="documentation-grid">
+          {documentation.topics.map((topic, index) => (
+            <article class="documentation-topic" data-reveal>
+              <span class="documentation-topic__number">{String(index + 1).padStart(2, '0')}</span>
+              <div>
+                <h3>{topic.title}</h3>
+                <p>{topic.summary}</p>
+                <ul>
+                  {topic.points.map((point) => (
+                    <li>{point}</li>
+                  ))}
+                </ul>
+              </div>
+            </article>
+          ))}
+        </div>
+        {project.docsUrl && (
+          <a
+            class="button button--ghost documentation-link"
+            href={project.docsUrl}
+            target="_blank"
+            rel="noreferrer"
+          >
+            Read the complete documentation ↗
+          </a>
+        )}
       </div>
     </section>
 

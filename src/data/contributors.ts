@@ -23,22 +23,6 @@ export const team: TeamMember[] = [
     githubUrl: 'https://github.com/LukasNiessen',
   },
   {
-    name: 'Jan Heimann',
-    role: 'AI and platform engineering',
-    bio: 'Jan brings applied AI, MLOps, and platform experience to the question of how architecture guardrails support fast-moving engineering teams.',
-    photoUrl: '/team/jan-heimann.jpg',
-    linkedinUrl: 'https://www.linkedin.com/in/jan-heimann/',
-    githubUrl: 'https://github.com/janMagnusHeimann',
-  },
-  {
-    name: 'Robey Beswick',
-    role: 'Cloud and developer experience',
-    bio: 'Robey connects cloud engineering with pragmatic developer workflows, helping the project keep delivery and usability in the same conversation.',
-    photoUrl: '/team/robey-beswick.jpg',
-    linkedinUrl: 'https://www.linkedin.com/in/robey-beswick/',
-    githubUrl: 'https://github.com/RobeyBeswick',
-  },
-  {
     name: 'Tristan Kruse',
     role: 'Product and ecosystem contributor',
     bio: 'Tristan has contributed across the TypeScript, Python, and Ruby projects, with a focus on making the family useful across different engineering contexts.',
@@ -47,12 +31,28 @@ export const team: TeamMember[] = [
     githubUrl: 'https://github.com/TristanKruse',
   },
   {
+    name: 'Jan Heimann',
+    role: 'AI and platform engineering',
+    bio: 'Jan brings applied AI, MLOps, and platform experience to the question of how architecture guardrails support fast-moving engineering teams.',
+    photoUrl: '/team/jan-heimann.jpg',
+    linkedinUrl: 'https://www.linkedin.com/in/jan-heimann/',
+    githubUrl: 'https://github.com/janMagnusHeimann',
+  },
+  {
     name: 'Deban Kumar Sahu',
     role: 'Python engineering',
     bio: 'Deban develops ArchUnitPython and brings hands-on experience with Python APIs, data tooling, and maintainable backend design.',
     photoUrl: '/team/deban-kumar-sahu.jpg',
     linkedinUrl: 'https://www.linkedin.com/in/debankumarsahu/',
     githubUrl: 'https://github.com/DebanKsahu',
+  },
+  {
+    name: 'Robey Beswick',
+    role: 'Cloud and developer experience',
+    bio: 'Robey connects cloud engineering with pragmatic developer workflows, helping the project keep delivery and usability in the same conversation.',
+    photoUrl: '/team/robey-beswick.jpg',
+    linkedinUrl: 'https://www.linkedin.com/in/robey-beswick/',
+    githubUrl: 'https://github.com/RobeyBeswick',
   },
 ];
 

@@ -1,0 +1,716 @@
+---
+import CodeWindow from '@components/CodeWindow.astro';
+import BaseLayout from '@layouts/BaseLayout.astro';
+
+const pythonRule = [
+  'from archunitpython import project_files, assert_passes',
+  '',
+  'rule = (',
+  '    project_files("src/")',
+  '    .in_folder("**/api/**")',
+  '    .should_not()',
+  '    .depend_on_files()',
+  '    .in_folder("**/infrastructure/**")',
+  '    .because("the API must depend on ports, not adapters")',
+  ')',
+  '',
+  'assert_passes(rule)',
+].join('\n');
+
+const typescriptRule = [
+  "import { projectFiles } from 'archunit';",
+  '',
+  'const rule = projectFiles()',
+  "  .inFolder('src/api/**')",
+  '  .shouldNot()',
+  '  .dependOnFiles()',
+  "  .inFolder('src/infrastructure/**');",
+  '',
+  'await expect(rule).toPassAsync();',
+].join('\n');
+
+const stages = [
+  {
+    number: '01',
+    eyebrow: 'Source',
+    title: 'Find the project that actually ships.',
+    body: 'A rule begins with a real project root and its language toolchain. ArchUnit does not start from a diagram or a manually maintained inventory.',
+    python:
+      'Python walks .py files beneath the selected root. Built-in exclusions skip environments, caches, builds, and generated package metadata; .archignore adds project-specific omissions.',
+    typescript:
+      'TypeScript starts from tsconfig.json, including its include and exclude rules, compiler options, path aliases, and referenced projects.',
+  },
+  {
+    number: '02',
+    eyebrow: 'Extract',
+    title: 'Read dependency evidence without running the application.',
+    body: 'Only source-backed relationships enter the model. The language adapter owns syntax and resolution; downstream architecture logic never needs to understand an import statement.',
+    python:
+      'Python uses ast.parse(), recognizes import, from import, relative imports, literal dynamic imports, TYPE_CHECKING blocks, and conditional ImportError fallbacks.',
+    typescript:
+      'TypeScript builds a Compiler API Program and resolves each import with the compiler host, using the same module-resolution settings as the project.',
+  },
+  {
+    number: '03',
+    eyebrow: 'Graph',
+    title: 'Turn files into nodes and imports into directed edges.',
+    body: 'Paths are normalized, internal and external dependencies stay distinct, duplicate evidence is merged, and isolated source files remain visible through self-edges.',
+    python:
+      'An import from app.api.orders to app.infrastructure.sql becomes an edge from api/orders.py to infrastructure/sql.py. requests stays an external module edge.',
+    typescript:
+      'The same model is produced for .ts and .tsx files. Project references and alias resolution can contribute valid edges without depending on reference order.',
+  },
+  {
+    number: '04',
+    eyebrow: 'Grammar',
+    title: 'Build a sentence before doing expensive work.',
+    body: 'The fluent API records a subject, a mood, a predicate, an object, and optionally a rationale. Builders describe intent; the terminal check performs extraction and evaluation.',
+    python:
+      'project_files("src/").in_folder("**/api/**").should_not().depend_on_files().in_folder("**/infrastructure/**")',
+    typescript:
+      'projectFiles().inFolder("src/api/**").shouldNot().dependOnFiles().inFolder("src/infrastructure/**")',
+  },
+  {
+    number: '05',
+    eyebrow: 'Project and assert',
+    title: 'Ask a focused question of the graph.',
+    body: 'A file rule projects edges, a layer rule groups their endpoints by named regions, a slice rule derives component names, and a metric rule projects measurable source facts.',
+    python:
+      'The dependency evaluator filters source edges by the API selector, tests their targets against the infrastructure selector, and emits one typed violation for every forbidden match.',
+    typescript:
+      'ArchUnitTS follows the same projection and violation boundary asynchronously, which lets test-runner adapters await compiler-backed extraction.',
+  },
+  {
+    number: '06',
+    eyebrow: 'Semantics',
+    title: 'Make negation and empty tests explicit.',
+    body: 'should_not changes the condition being evaluated; it does not invert whether the test runner passes. Zero selected subjects are a violation by default, because an architecture test that checks nothing is false confidence.',
+    python:
+      'CheckOptions(allow_empty_tests=True) is the deliberate opt-out. Otherwise a stale **/api/** pattern produces EmptyTestViolation instead of a green build.',
+    typescript:
+      'ArchUnitTS uses allowEmptyTests for the same opt-out and records the unmatched filter in EmptyTestViolation.',
+  },
+  {
+    number: '07',
+    eyebrow: 'Algorithms',
+    title: 'Use graph algorithms where local matching is not enough.',
+    body: 'Dependency direction is an edge question. Cycles are a graph question. Layer policies, slices, coupling, instability, and reachability each use the projection suited to their architectural meaning.',
+    python:
+      'Cycle detection first uses Tarjan to isolate strongly connected components, then Johnson to enumerate the simple cycles inside each relevant component.',
+    typescript:
+      'The TypeScript implementation follows the same two-stage approach over internal projected edges, then converts complete paths into cycle violations.',
+  },
+  {
+    number: '08',
+    eyebrow: 'Feedback',
+    title: 'Keep findings structured until the delivery boundary.',
+    body: 'Rules return violation data. Assertion adapters turn that data into pytest, Jest, Vitest, xUnit, or native test failures; reporters turn it into text, JSON, diagrams, SARIF, or HTML where supported.',
+    python:
+      'assert_passes() calls check(), formats every violation with concrete evidence, includes the because() rationale, and raises AssertionError only at the final boundary.',
+    typescript:
+      'toPassAsync() integrates with the runner, while check() remains available for custom workflows and report generation.',
+  },
+];
+
+const schema = {
+  '@context': 'https://schema.org',
+  '@type': 'TechArticle',
+  headline: 'How ArchUnit libraries work',
+  description:
+    'A source-backed walkthrough of project discovery, dependency extraction, graph construction, fluent rules, evaluation, cycle algorithms, and test feedback in ArchUnit libraries.',
+  author: { '@type': 'Organization', name: 'ArchUnit' },
+  publisher: { '@type': 'Organization', name: 'ArchUnit' },
+  mainEntityOfPage: 'https://www.archunit.net/how-archunit-works/',
+};
+---
+
+<BaseLayout
+  title="How ArchUnit libraries work"
+  description="See how ArchUnit turns Python, TypeScript, and other projects into dependency graphs, evaluates fluent architecture rules, detects cycles, and returns useful test feedback."
+  canonicalPath="/how-archunit-works/"
+  schema={schema}
+  alternateHeader
+>
+  <section class="how-hero">
+    <div class="shell how-hero__inner">
+      <p class="hero-kicker">From source code to architectural feedback</p>
+      <h1>
+        How ArchUnit <em>sees your system.</em>
+      </h1>
+      <div class="how-hero__copy">
+        <p>
+          Every library adapts to its language, but the underlying journey is recognizable: find
+          source, extract dependency evidence, build a graph, evaluate a sentence, and return proof.
+        </p>
+        <p>
+          Follow one Python boundary all the way through. TypeScript appears beside it at every
+          language-specific turn, with the other libraries choosing their own native extraction
+          strategy.
+        </p>
+      </div>
+      <a class="how-scroll-cue" href="#walkthrough">
+        Begin the walkthrough ↓
+      </a>
+    </div>
+  </section>
+
+  <section class="how-thesis">
+    <div class="shell how-thesis__grid">
+      <p class="how-thesis__statement">
+        Architecture becomes testable when <strong>source files</strong> become nodes,
+        <strong>dependencies</strong> become edges, and a decision becomes a question the graph can
+        answer.
+      </p>
+      <div class="how-pipeline" aria-label="ArchUnit processing pipeline">
+        <span>Source</span>
+        <b>→</b>
+        <span>Extract</span>
+        <b>→</b>
+        <span>Project</span>
+        <b>→</b>
+        <span>Assert</span>
+        <b>→</b>
+        <span>Report</span>
+      </div>
+    </div>
+  </section>
+
+  <section id="walkthrough" class="how-walkthrough" data-how-walkthrough>
+    <div class="shell how-walkthrough__grid">
+      <div class="how-visual-column">
+        <div class="how-visual" data-how-visual data-active-stage="1">
+          <div class="how-visual__heading">
+            <span data-how-counter>01 / 08</span>
+            <strong data-how-title>Find the project that actually ships.</strong>
+          </div>
+          <svg viewBox="0 0 720 540" role="img" aria-labelledby="how-visual-title how-visual-desc">
+            <title id="how-visual-title">The ArchUnit analysis pipeline</title>
+            <desc id="how-visual-desc">
+              An eight-stage diagram that changes from source discovery through dependency graph
+              extraction, rule evaluation, cycle detection, and test feedback as the page scrolls.
+            </desc>
+            <g data-how-panel="1">
+              <text class="how-svg-label" x="70" y="75">
+                PYTHON PROJECT
+              </text>
+              <path class="how-svg-folder" d="M72 126h170l30 34h376v286H72z"></path>
+              <g class="how-svg-file">
+                <rect x="116" y="204" width="154" height="82" rx="8"></rect>
+                <text x="140" y="239">
+                  api/orders.py
+                </text>
+                <text x="140" y="264">
+                  import service
+                </text>
+              </g>
+              <g class="how-svg-file">
+                <rect x="283" y="304" width="165" height="82" rx="8"></rect>
+                <text x="307" y="339">
+                  domain/order.py
+                </text>
+                <text x="307" y="364">
+                  pure policy
+                </text>
+              </g>
+              <g class="how-svg-file">
+                <rect x="460" y="204" width="154" height="82" rx="8"></rect>
+                <text x="484" y="239">
+                  infra/sql.py
+                </text>
+                <text x="484" y="264">
+                  import driver
+                </text>
+              </g>
+              <text class="how-svg-note" x="96" y="490">
+                walk .py files · apply .archignore · keep source roots
+              </text>
+            </g>
+            <g data-how-panel="2">
+              <text class="how-svg-label" x="60" y="70">
+                PYTHON AST
+              </text>
+              <g class="how-svg-source">
+                <rect x="62" y="108" width="596" height="300" rx="12"></rect>
+                <text x="96" y="160">
+                  from app.domain import Order
+                </text>
+                <text x="96" y="207">
+                  import requests
+                </text>
+                <text x="96" y="254">
+                  if TYPE_CHECKING:
+                </text>
+                <text x="126" y="294">
+                  from app.ports import Store
+                </text>
+                <text x="96" y="341">
+                  importlib.import_module("app.audit")
+                </text>
+              </g>
+              <g class="how-svg-tags">
+                <text x="101" y="455">
+                  from import
+                </text>
+                <text x="258" y="455">
+                  external
+                </text>
+                <text x="378" y="455">
+                  type only
+                </text>
+                <text x="512" y="455">
+                  dynamic
+                </text>
+              </g>
+            </g>
+            <g data-how-panel="3">
+              <text class="how-svg-label" x="60" y="70">
+                DIRECTED DEPENDENCY GRAPH
+              </text>
+              <g class="how-svg-edge">
+                <path d="M176 198C250 110 342 110 406 191"></path>
+                <path d="M432 215C490 238 512 284 524 335"></path>
+                <path d="M192 229C270 332 374 358 501 360"></path>
+              </g>
+              <g class="how-svg-node">
+                <circle cx="155" cy="216" r="72"></circle>
+                <text x="155" y="210">
+                  api
+                </text>
+                <text x="155" y="235">
+                  orders.py
+                </text>
+              </g>
+              <g class="how-svg-node">
+                <circle cx="428" cy="207" r="72"></circle>
+                <text x="428" y="201">
+                  domain
+                </text>
+                <text x="428" y="226">
+                  order.py
+                </text>
+              </g>
+              <g class="how-svg-node">
+                <circle cx="542" cy="378" r="72"></circle>
+                <text x="542" y="372">
+                  infra
+                </text>
+                <text x="542" y="397">
+                  sql.py
+                </text>
+              </g>
+              <text class="how-svg-note" x="78" y="493">
+                normalized paths · typed edges · external targets · cached graph
+              </text>
+            </g>
+            <g data-how-panel="4">
+              <text class="how-svg-label" x="60" y="70">
+                AN ARCHITECTURE SENTENCE
+              </text>
+              <g class="how-svg-grammar">
+                <rect x="60" y="116" width="600" height="68" rx="10"></rect>
+                <text x="88" y="157">
+                  project files in **/api/**
+                </text>
+                <rect x="60" y="202" width="180" height="68" rx="10"></rect>
+                <text x="90" y="243">
+                  should not
+                </text>
+                <rect x="258" y="202" width="402" height="68" rx="10"></rect>
+                <text x="287" y="243">
+                  depend on files in **/infrastructure/**
+                </text>
+                <rect x="60" y="288" width="600" height="112" rx="10"></rect>
+                <text x="88" y="332">
+                  because
+                </text>
+                <text x="88" y="368">
+                  the API speaks to ports, not adapters
+                </text>
+              </g>
+              <text class="how-svg-note" x="76" y="475">
+                subject + mood + predicate + object + rationale
+              </text>
+            </g>
+            <g data-how-panel="5">
+              <text class="how-svg-label" x="60" y="70">
+                PROJECT, FILTER, EVALUATE
+              </text>
+              <g class="how-svg-mini-node">
+                <circle cx="132" cy="190" r="49"></circle>
+                <text x="132" y="196">
+                  api
+                </text>
+              </g>
+              <g class="how-svg-mini-node">
+                <circle cx="360" cy="190" r="49"></circle>
+                <text x="360" y="196">
+                  domain
+                </text>
+              </g>
+              <g class="how-svg-mini-node how-svg-mini-node--bad">
+                <circle cx="586" cy="190" r="49"></circle>
+                <text x="586" y="196">
+                  infra
+                </text>
+              </g>
+              <g class="how-svg-eval-edge">
+                <path d="M182 190h126"></path>
+                <path class="bad" d="M180 210C300 340 460 342 552 225"></path>
+              </g>
+              <g class="how-svg-result">
+                <rect x="70" y="350" width="580" height="105" rx="12"></rect>
+                <text x="101" y="390">
+                  1 architecture violation
+                </text>
+                <text x="101" y="424">
+                  api/orders.py → infrastructure/sql.py
+                </text>
+              </g>
+            </g>
+            <g data-how-panel="6">
+              <text class="how-svg-label" x="60" y="70">
+                SEMANTICS THAT RESIST FALSE CONFIDENCE
+              </text>
+              <g class="how-svg-semantics">
+                <rect x="60" y="112" width="286" height="304" rx="12"></rect>
+                <text class="title" x="90" y="160">
+                  NEGATION
+                </text>
+                <text x="90" y="210">
+                  forbidden edge exists
+                </text>
+                <text class="bad" x="90" y="246">
+                  violation
+                </text>
+                <text x="90" y="307">
+                  forbidden edge absent
+                </text>
+                <text class="good" x="90" y="343">
+                  pass
+                </text>
+                <rect x="374" y="112" width="286" height="304" rx="12"></rect>
+                <text class="title" x="404" y="160">
+                  EMPTY SELECTION
+                </text>
+                <text x="404" y="210">
+                  0 files matched
+                </text>
+                <text class="bad" x="404" y="246">
+                  violation by default
+                </text>
+                <text x="404" y="307">
+                  explicit opt-out
+                </text>
+                <text class="good" x="404" y="343">
+                  allow empty
+                </text>
+              </g>
+            </g>
+            <g data-how-panel="7">
+              <text class="how-svg-label" x="60" y="70">
+                CYCLE DETECTION
+              </text>
+              <g class="how-svg-cycle-edge">
+                <path d="M194 177C283 91 405 91 493 177"></path>
+                <path d="M529 225C564 302 524 386 441 416"></path>
+                <path d="M368 421C277 405 211 340 183 252"></path>
+              </g>
+              <g class="how-svg-cycle-node">
+                <circle cx="158" cy="213" r="61"></circle>
+                <text x="158" y="219">
+                  A
+                </text>
+                <circle cx="528" cy="213" r="61"></circle>
+                <text x="528" y="219">
+                  B
+                </text>
+                <circle cx="402" cy="425" r="61"></circle>
+                <text x="402" y="431">
+                  C
+                </text>
+              </g>
+              <text class="how-svg-algorithm" x="70" y="500">
+                Tarjan: find SCC → Johnson: enumerate simple cycles
+              </text>
+            </g>
+            <g data-how-panel="8">
+              <text class="how-svg-label" x="60" y="70">
+                STRUCTURED EVIDENCE, HUMAN FEEDBACK
+              </text>
+              <g class="how-svg-feedback">
+                <rect x="60" y="108" width="600" height="340" rx="12"></rect>
+                <circle cx="105" cy="155" r="17"></circle>
+                <path d="m97 155 6 6 11-14"></path>
+                <text class="title" x="140" y="163">
+                  architecture test
+                </text>
+                <text x="93" y="225">
+                  Rule
+                </text>
+                <text x="210" y="225">
+                  API must not depend on infrastructure
+                </text>
+                <text x="93" y="275">
+                  Because
+                </text>
+                <text x="210" y="275">
+                  the API speaks to ports, not adapters
+                </text>
+                <text x="93" y="325">
+                  Evidence
+                </text>
+                <text x="210" y="325">
+                  api/orders.py → infrastructure/sql.py
+                </text>
+                <text x="93" y="375">
+                  Result
+                </text>
+                <text class="bad" x="210" y="375">
+                  1 violation, test failed
+                </text>
+              </g>
+            </g>
+          </svg>
+          <p class="how-visual__caption" aria-live="polite" data-how-caption>
+            Python walks source beneath the selected project root and applies explicit exclusions.
+          </p>
+        </div>
+      </div>
+
+      <div class="how-stages">
+        {stages.map((stage, index) => (
+          <article
+            class="how-stage"
+            data-how-stage={index + 1}
+            data-how-title={stage.title}
+            data-how-caption={stage.python}
+          >
+            <div class="how-stage__index">
+              <span>{stage.number}</span>
+              <span>{stage.eyebrow}</span>
+            </div>
+            <h2>{stage.title}</h2>
+            <p class="how-stage__lead">{stage.body}</p>
+            <div class="how-language-note how-language-note--python">
+              <span>Python, concretely</span>
+              <p>{stage.python}</p>
+            </div>
+            <div class="how-language-note">
+              <span>TypeScript, briefly</span>
+              <p>{stage.typescript}</p>
+            </div>
+          </article>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <section class="how-code-section">
+    <div class="shell">
+      <div class="how-code-heading">
+        <p class="eyebrow">One decision, two native expressions</p>
+        <h2>The grammar stays familiar. The language stays itself.</h2>
+        <p>
+          Python is the detailed example throughout this guide. TypeScript preserves the same
+          architectural sentence with camelCase methods, asynchronous extraction, and native test
+          matcher integration. Other ports adapt ownership, errors, parsing, and runners to their
+          ecosystems rather than forcing a byte-for-byte translation.
+        </p>
+      </div>
+      <div class="how-code-grid">
+        <div>
+          <h3>Python</h3>
+          <p>Static AST analysis, synchronous checks, pytest or framework-neutral assertions.</p>
+          <CodeWindow code={pythonRule} filename="test_architecture.py" language="python" copy />
+        </div>
+        <div>
+          <h3>TypeScript</h3>
+          <p>
+            Compiler-backed module resolution and an asynchronous matcher for modern test runners.
+          </p>
+          <CodeWindow
+            code={typescriptRule}
+            filename="architecture.test.ts"
+            language="typescript"
+            copy
+          />
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="how-semantics-section">
+    <div class="shell">
+      <div class="how-section-intro">
+        <p class="eyebrow">The contract behind a green test</p>
+        <h2>Three details carry most of the trust.</h2>
+      </div>
+      <div class="how-contracts">
+        <article>
+          <span>01</span>
+          <h3>Selection is observable</h3>
+          <p>
+            Patterns match normalized project-relative identifiers. A rule that selects nothing
+            fails unless the caller opts out, so a directory rename cannot quietly erase coverage.
+          </p>
+        </article>
+        <article>
+          <span>02</span>
+          <h3>Negation belongs to the condition</h3>
+          <p>
+            “Should not depend” means a matching edge is evidence of a violation. The evaluator
+            still returns a list of findings; pass means that list is empty.
+          </p>
+        </article>
+        <article>
+          <span>03</span>
+          <h3>Violations stay data</h3>
+          <p>
+            A rule does not print and exit. It returns typed evidence that an assertion adapter,
+            report renderer, CI integration, or custom tool can phrase for its audience.
+          </p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="how-algorithm-section">
+    <div class="shell how-algorithm-grid">
+      <div>
+        <p class="eyebrow">Inside a cycle check</p>
+        <h2>Reduce first. Enumerate second.</h2>
+        <p>
+          Testing every possible path across a large codebase would repeat useless work. ArchUnit
+          narrows the problem before it names the cycles a developer needs to fix.
+        </p>
+      </div>
+      <ol class="algorithm-steps">
+        <li>
+          <span>1</span>
+          <div>
+            <strong>Project internal edges</strong>
+            <p>Drop external dependencies and apply the rule’s file scope.</p>
+          </div>
+        </li>
+        <li>
+          <span>2</span>
+          <div>
+            <strong>Find strongly connected components</strong>
+            <p>Tarjan identifies regions in which every node can reach another.</p>
+          </div>
+        </li>
+        <li>
+          <span>3</span>
+          <div>
+            <strong>Enumerate simple cycles</strong>
+            <p>Johnson walks only relevant components and returns complete, non-repeating paths.</p>
+          </div>
+        </li>
+        <li>
+          <span>4</span>
+          <div>
+            <strong>Attach source evidence</strong>
+            <p>Projected edges become cycle violations that name the path closing the loop.</p>
+          </div>
+        </li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="how-vocabulary-section">
+    <div class="shell">
+      <div class="how-section-intro">
+        <p class="eyebrow">One graph, several architectural views</p>
+        <h2>Choose the level that matches the decision.</h2>
+      </div>
+      <dl class="how-vocabulary">
+        <div>
+          <dt>Files</dt>
+          <dd>Concrete source nodes for naming, placement, direct dependencies, and cycles.</dd>
+        </div>
+        <div>
+          <dt>Layers</dt>
+          <dd>Named regions with an allowlist or blocklist for dependency direction.</dd>
+        </div>
+        <div>
+          <dt>Slices</dt>
+          <dd>
+            Repeated components derived from paths, then compared with each other or a diagram.
+          </dd>
+        </div>
+        <div>
+          <dt>Metrics</dt>
+          <dd>
+            Measurements over files, classes, packages, or graph relationships and their thresholds.
+          </dd>
+        </div>
+        <div>
+          <dt>Reports</dt>
+          <dd>
+            The same graph narrowed, collapsed, traversed, and rendered for review or automation.
+          </dd>
+        </div>
+      </dl>
+    </div>
+  </section>
+
+  <section class="how-final-section">
+    <div class="shell how-final-section__inner">
+      <p>The complete model</p>
+      <h2>
+        Language-native extraction.
+        <br />
+        Shared architectural <em>reasoning.</em>
+      </h2>
+      <p>
+        The parser changes. The project model changes. The runner changes. The central contract does
+        not: derive evidence from source, ask a precise question, and make disagreement useful.
+      </p>
+      <div class="hero-actions">
+        <a class="button button--lime" href="/#libraries">
+          Choose a library
+        </a>
+        <a class="button button--ghost" href="/why-architecture-tests/">
+          Why test architecture?
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <script>
+    const walkthrough = document.querySelector<HTMLElement>('[data-how-walkthrough]');
+    const visual = walkthrough?.querySelector<HTMLElement>('[data-how-visual]');
+    const counter = visual?.querySelector<HTMLElement>('[data-how-counter]');
+    const title = visual?.querySelector<HTMLElement>('[data-how-title]');
+    const caption = visual?.querySelector<HTMLElement>('[data-how-caption]');
+    const stageElements = Array.from(
+      walkthrough?.querySelectorAll<HTMLElement>('[data-how-stage]') ?? [],
+    );
+
+    const activateStage = (stage: HTMLElement) => {
+      const value = stage.dataset.howStage ?? '1';
+      visual?.setAttribute('data-active-stage', value);
+      stageElements.forEach((candidate) =>
+        candidate.toggleAttribute('data-active', candidate === stage),
+      );
+      if (counter) counter.textContent = `${value.padStart(2, '0')} / 08`;
+      if (title) title.textContent = stage.dataset.howTitle ?? '';
+      if (caption) caption.textContent = stage.dataset.howCaption ?? '';
+    };
+
+    if ('IntersectionObserver' in window && stageElements.length > 0) {
+      const observer = new IntersectionObserver(
+        (entries) => {
+          const visible = entries
+            .filter((entry) => entry.isIntersecting)
+            .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+          if (visible) activateStage(visible.target as HTMLElement);
+        },
+        { rootMargin: '-28% 0px -38% 0px', threshold: [0.15, 0.35, 0.6] },
+      );
+      stageElements.forEach((stage) => observer.observe(stage));
+      const firstStage = stageElements[0];
+      if (firstStage) activateStage(firstStage);
+    }
+  </script>
+</BaseLayout>

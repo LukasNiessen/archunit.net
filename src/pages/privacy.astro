@@ -1,0 +1,71 @@
+---
+import BaseLayout from '@layouts/BaseLayout.astro';
+
+const schema = {
+  '@context': 'https://schema.org',
+  '@type': 'WebPage',
+  name: 'ArchUnit privacy policy',
+  url: 'https://www.archunit.net/privacy/',
+  dateModified: '2026-09-13',
+};
+---
+
+<BaseLayout
+  title="Privacy policy"
+  description="How the ArchUnit website handles local theme preferences, infrastructure requests, and links to third-party services."
+  canonicalPath="/privacy/"
+  schema={schema}
+  alternateHeader
+>
+  <section class="legal-hero">
+    <div class="shell legal-shell">
+      <p class="hero-kicker">Effective September 13, 2026</p>
+      <h1>Privacy, kept simple.</h1>
+      <p>
+        ArchUnit is an open-source project website. It does not use advertising pixels, behavioral
+        analytics, account tracking, or marketing cookies.
+      </p>
+    </div>
+  </section>
+  <article class="legal-body shell legal-shell">
+    <section>
+      <h2>Information stored in your browser</h2>
+      <p>
+        The theme control stores one value, light or dark, in your browser’s local storage. That
+        value stays on your device and is used only to remember your display preference.
+      </p>
+    </section>
+    <section>
+      <h2>Infrastructure requests</h2>
+      <p>
+        The static site is delivered through Amazon Web Services. Like most web infrastructure, the
+        service may process request details such as an IP address, requested path, browser metadata,
+        timestamps, and security signals to deliver and protect the site. ArchUnit does not build
+        visitor profiles from those requests.
+      </p>
+    </section>
+    <section>
+      <h2>External services</h2>
+      <p>
+        Links to GitHub, LinkedIn, npm, PyPI, NuGet, RubyGems, pkg.go.dev, and other documentation
+        sites take you to services with their own privacy practices. Team and contributor images are
+        served as local site assets or from the public GitHub avatar service.
+      </p>
+    </section>
+    <section>
+      <h2>Questions and changes</h2>
+      <p>
+        This policy changes if the website’s data practices change. Questions can be raised in the
+        public website repository, where the implementation and revision history are reviewable.
+      </p>
+      <a
+        class="button button--ghost"
+        href="https://github.com/LukasNiessen/archunit.net/issues"
+        target="_blank"
+        rel="noreferrer"
+      >
+        Open a website issue ↗
+      </a>
+    </section>
+  </article>
+</BaseLayout>

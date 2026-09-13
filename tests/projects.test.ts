@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
 import { contributors, team } from '../src/data/contributors';
+import { documentationBySlug } from '../src/data/documentation';
 import { posts } from '../src/data/posts';
 import { projectBySlug, projects, stableProjects } from '../src/data/projects';
+import { libraryStats, statsSnapshot } from '../src/data/stats';
 
 describe('project catalogue', () => {
   it('contains one unique page for every primary implementation', () => {
@@ -38,6 +40,11 @@ describe('project catalogue', () => {
       expect(project.useCases.length).toBeGreaterThanOrEqual(4);
       expect(project.repo).toMatch(/^https:\/\/github\.com\/LukasNiessen\//);
       expect(projectBySlug.get(project.slug)).toBe(project);
+      const documentation = documentationBySlug[project.slug];
+      expect(documentation).toBeDefined();
+      expect(documentation!.introduction.length).toBeGreaterThan(100);
+      expect(documentation!.topics).toHaveLength(3);
+      expect(documentation!.topics.every((topic) => topic.points.length === 3)).toBe(true);
     }
   });
 
@@ -61,15 +68,34 @@ describe('contributors', () => {
     expect(team).toHaveLength(5);
     expect(team.map((person) => person.name)).toEqual([
       'Lukas Niessen',
-      'Jan Heimann',
-      'Robey Beswick',
       'Tristan Kruse',
+      'Jan Heimann',
       'Deban Kumar Sahu',
+      'Robey Beswick',
     ]);
     expect(
       team.every((person) => person.linkedinUrl.startsWith('https://www.linkedin.com/in/')),
     ).toBe(true);
     expect(team.every((person) => person.photoUrl.startsWith('/team/'))).toBe(true);
+  });
+});
+
+describe('statistics snapshot', () => {
+  it('contains one sourced entry for every library and internally consistent totals', () => {
+    expect(libraryStats).toHaveLength(projects.length);
+    expect(new Set(libraryStats.map((library) => library.slug))).toEqual(
+      new Set(projects.map((project) => project.slug)),
+    );
+    expect(libraryStats.reduce((sum, library) => sum + library.stars, 0)).toBe(
+      statsSnapshot.totalStars,
+    );
+    expect(libraryStats.reduce((sum, library) => sum + (library.recentDownloads ?? 0), 0)).toBe(
+      statsSnapshot.knownRecentDownloads,
+    );
+    expect(libraryStats.reduce((sum, library) => sum + (library.lifetimeDownloads ?? 0), 0)).toBe(
+      statsSnapshot.knownLifetimeDownloads,
+    );
+    expect(libraryStats.every((library) => library.sourceUrl.startsWith('https://'))).toBe(true);
   });
 });
 

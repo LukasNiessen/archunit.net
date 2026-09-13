@@ -13,13 +13,33 @@ await desktop.evaluate(() => globalThis.localStorage.setItem('archunit-theme', '
 await desktop.reload({ waitUntil: 'networkidle' });
 await desktop.screenshot({ path: 'qa/home-dark-desktop.png', fullPage: true });
 await desktop.goto(new URL('/team/', target).href, { waitUntil: 'networkidle' });
+await desktop.screenshot({ path: 'qa/team-dark-viewport.png', fullPage: false });
 await desktop.screenshot({ path: 'qa/team-dark-desktop.png', fullPage: true });
 await desktop.goto(new URL('/typescript/', target).href, { waitUntil: 'networkidle' });
 await desktop.screenshot({ path: 'qa/typescript-dark-desktop.png', fullPage: true });
 await desktop.goto(new URL('/blog/', target).href, { waitUntil: 'networkidle' });
 await desktop.screenshot({ path: 'qa/blog-dark-desktop.png', fullPage: true });
+await desktop.goto(new URL('/blog/why-archunitts-exists/', target).href, {
+  waitUntil: 'networkidle',
+});
+await desktop.screenshot({ path: 'qa/blog-article-dark-viewport.png', fullPage: false });
+await desktop.goto(new URL('/why-architecture-tests/', target).href, { waitUntil: 'networkidle' });
+await desktop.locator('.article-layout').scrollIntoViewIfNeeded();
+await desktop.screenshot({ path: 'qa/why-architecture-dark-viewport.png', fullPage: false });
+await desktop.goto(new URL('/stats/', target).href, { waitUntil: 'networkidle' });
+await desktop.screenshot({ path: 'qa/stats-dark-desktop.png', fullPage: true });
+await desktop.goto(new URL('/how-archunit-works/', target).href, { waitUntil: 'networkidle' });
+await desktop.screenshot({ path: 'qa/how-dark-hero.png', fullPage: false });
+await desktop.locator('[data-how-stage="4"]').scrollIntoViewIfNeeded();
+await desktop.waitForTimeout(450);
+await desktop.screenshot({ path: 'qa/how-dark-grammar.png', fullPage: false });
+await desktop.locator('[data-how-stage="7"]').scrollIntoViewIfNeeded();
+await desktop.waitForTimeout(450);
+await desktop.screenshot({ path: 'qa/how-dark-algorithms.png', fullPage: false });
 await desktop.evaluate(() => globalThis.localStorage.setItem('archunit-theme', 'light'));
 await desktop.goto(target, { waitUntil: 'networkidle' });
+await desktop.locator('.project-card').first().hover();
+await desktop.screenshot({ path: 'qa/home-light-hover-viewport.png', fullPage: false });
 await desktop.screenshot({ path: 'qa/home-light-desktop.png', fullPage: true });
 
 const mobileContext = await browser.newContext({ ...devices['Pixel 7'], locale: 'en-US' });
@@ -32,6 +52,12 @@ await mobile.screenshot({ path: 'qa/home-mobile.png', fullPage: true });
 await mobile.goto(new URL('/team/', target).href, { waitUntil: 'networkidle' });
 await mobile.screenshot({ path: 'qa/team-mobile-viewport.png', fullPage: false });
 await mobile.screenshot({ path: 'qa/team-mobile.png', fullPage: true });
+await mobile.goto(new URL('/how-archunit-works/', target).href, { waitUntil: 'networkidle' });
+await mobile.screenshot({ path: 'qa/how-mobile-viewport.png', fullPage: false });
+await mobile.screenshot({ path: 'qa/how-mobile.png', fullPage: true });
+await mobile.goto(new URL('/stats/', target).href, { waitUntil: 'networkidle' });
+await mobile.screenshot({ path: 'qa/stats-mobile-viewport.png', fullPage: false });
+await mobile.screenshot({ path: 'qa/stats-mobile.png', fullPage: true });
 await mobile.goto(new URL('/typescript/', target).href, { waitUntil: 'networkidle' });
 await mobile.screenshot({ path: 'qa/typescript-mobile-viewport.png', fullPage: false });
 await mobile.screenshot({ path: 'qa/typescript-mobile.png', fullPage: true });
