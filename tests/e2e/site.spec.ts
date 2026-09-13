@@ -25,6 +25,12 @@ test('homepage presents the full library family', async ({ page }) => {
       (page.viewportSize()?.width ?? 0) * 0.55,
     );
     expect(themeControl?.x ?? 0).toBeGreaterThan((page.viewportSize()?.width ?? 0) * 0.7);
+
+    if ((page.viewportSize()?.width ?? 0) > 1050) {
+      const lede = await page.locator('.hero-lede').boundingBox();
+      const dividerX = (page.viewportSize()?.width ?? 0) / 2;
+      expect((lede?.x ?? 0) + (lede?.width ?? Infinity)).toBeLessThanOrEqual(dividerX - 12);
+    }
   }
 
   const phpTab = page.getByRole('tab', { name: 'PHP' });
@@ -139,13 +145,16 @@ test('theme choice persists across navigation and reloads', async ({ page }) => 
 
 test('blog index and adapted articles are statically accessible', async ({ page }) => {
   await page.goto('/blog/');
-  await expect(page.locator('.blog-card')).toHaveCount(4);
-  const response = await page.goto('/blog/why-archunitts-exists/');
+  await expect(page.locator('.blog-card')).toHaveCount(5);
+  const response = await page.goto('/blog/archunitts-vs-tsarch/');
   expect(response?.status()).toBe(200);
   await expect(
-    page.getByRole('heading', { name: 'Why ArchUnitTS exists', level: 1 }),
+    page.getByRole('heading', {
+      name: 'ArchUnitTS vs. tsarch in 2026: which architecture test should you choose?',
+      level: 1,
+    }),
   ).toBeVisible();
-  await expect(page.locator('.article-body section')).toHaveCount(7);
+  await expect(page.locator('.article-body section')).toHaveCount(9);
   if ((page.viewportSize()?.width ?? 1000) > 1050) {
     const aside = await page.locator('.article-aside').boundingBox();
     const body = await page.locator('.article-body').boundingBox();

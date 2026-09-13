@@ -2,6 +2,7 @@ export interface BlogSection {
   heading: string;
   paragraphs: string[];
   bullets?: string[];
+  links?: { label: string; url: string }[];
   code?: string;
   codeLanguage?: string;
   codeFilename?: string;
@@ -20,6 +21,147 @@ export interface BlogPost {
 }
 
 export const posts: BlogPost[] = [
+  {
+    slug: 'archunitts-vs-tsarch',
+    title: 'ArchUnitTS vs. tsarch in 2026: which architecture test should you choose?',
+    summary:
+      'A hands-on comparison of maintenance, correctness, project resolution, features, and performance for TypeScript architecture testing.',
+    category: 'TypeScript',
+    published: '2026-09-12',
+    publishedLabel: '12 September 2026',
+    readingTime: '14 min read',
+    sourceNote: 'Adapted from Lukas Niessen’s original hands-on ArchUnitTS and tsarch comparison.',
+    sections: [
+      {
+        heading: 'The short answer',
+        paragraphs: [
+          'Angular Architects recently showed how an architecture rule can become a deterministic guardrail for AI coding agents. The central idea is right: an agent may overlook prose, but it cannot negotiate with a failing test that names the dependency it introduced.',
+          'Their example uses tsarch. We maintain ArchUnitTS, so this is a maintainer’s comparison rather than a neutral consumer report. To make the conclusion useful, the original analysis reproduced the Angular Architects example, inspected both repositories, and ran both tools against the same source tree.',
+          'For a new TypeScript project in 2026, the evidence favors ArchUnitTS. tsarch can still run basic dependency rules, but ArchUnitTS is actively maintained, follows modern TypeScript projects, fails empty selections by default, covers more architecture concerns, and was faster in both reported measurements.',
+        ],
+        bullets: [
+          'ArchUnitTS 2.5.0 was released on 12 September 2026; tsarch 5.4.1 was released on 23 December 2024.',
+          'ArchUnitTS supports inherited TypeScript configuration and project references.',
+          'ArchUnitTS fails safely when a selector matches nothing unless that behavior is explicitly allowed.',
+          'The feature set includes dependency rules, cycles, metrics, reports, and dedicated Jest, Vitest, and Jasmine matchers.',
+        ],
+      },
+      {
+        heading: 'Maintenance belongs to correctness',
+        paragraphs: [
+          'An architecture test sits deep in the delivery loop. It parses the project, resolves imports, runs in continuous integration, and may block every pull request. When it is also used as an agent stop hook, compatibility and maintenance become part of the correctness story rather than background project hygiene.',
+          'At the time of the comparison, the latest tsarch release was nearly two years old. Its repository was not archived, and a TypeScript 6 migration pull request existed, but the recent merged history contained documentation updates rather than current source changes. Its package manifest still referenced TypeScript 3.9-era infrastructure and older test and CI tooling.',
+          'ArchUnitTS had recently shipped fixes for Vitest 4, TypeScript path aliases, referenced projects, folder exclusions, coupling calculations, and distance metrics. Those are practical examples of why an architecture tool needs a short path from a reported compatibility or correctness problem to a released fix.',
+        ],
+      },
+      {
+        heading: 'A guardrail must fail when it checked nothing',
+        paragraphs: [
+          'The most important behavioral difference is what happens when a selector becomes empty. Imagine that a rule targets src/payment and someone later renames the folder to src/payments. The boundary did not become valid. The test stopped observing it.',
+          'The comparison reproduced tsarch returning an empty violation array for a nonexistent selector, which lets the test pass. ArchUnitTS instead returns an EmptyTestViolation by default. Teams can opt out with allowEmptyTests when an empty selection is intentional, but the safe behavior remains the default.',
+          'This matters even more in agent-assisted development. Agents can rename directories and reshape modules quickly. A useful verifier must detect when the assumption behind its own selector disappears, otherwise a green check can claim protection without examining a single source file.',
+        ],
+        code: [
+          "projectFiles('tsconfig.json')",
+          "  .inFolder('src/payment')",
+          '  .shouldNot()',
+          '  .dependOnFiles()',
+          "  .inFolder('src/web')",
+          '  .check();',
+          '',
+          'Selector no longer matches:',
+          'tsarch       → 0 files → 0 violations → green',
+          'ArchUnitTS   → 0 files → EmptyTestViolation → red',
+        ].join('\n'),
+        codeLanguage: 'typescript',
+        codeFilename: 'architecture.test.ts',
+      },
+      {
+        heading: 'Modern projects need modern TypeScript resolution',
+        paragraphs: [
+          'The Angular Architects tutorial creates a dedicated architecture tsconfig and repeats target, module format, module resolution, decorators, aliases, includes, and excludes because tsarch does not resolve an extended configuration in that setup. The duplication is more than cosmetic. It creates a second description of the project that can drift from the build.',
+          'ArchUnitTS reads configuration through the TypeScript API and resolves imports in the context of referenced projects. Inherited options, path aliases, composite projects, and monorepo layouts are therefore evaluated through the configuration the application already uses.',
+          'The compiler dependency is relevant as well. The benchmark application used TypeScript 5.9.3, while tsarch 5.4.1 installed a nested TypeScript 3.9.10. Older code can remain useful, but module resolution, supported syntax, and project configuration evolve with the language ecosystem.',
+        ],
+      },
+      {
+        heading: 'What tsarch still gets right',
+        paragraphs: [
+          'tsarch still works for basic architecture rules. Its generic check method can run from different test runners, and the four dependency rules in the Angular Architects example passed under Vitest 4 during the reproduction.',
+          'It also has a longer history and more accumulated GitHub stars in the dated comparison. Historical attention is useful context, but it does not directly measure current maintenance, modern project compatibility, or whether a check fails safely.',
+          'A team with a stable tsarch setup may reasonably decide that migration cost is greater than the immediate benefit. The recommendation changes for a new or long-lived project, where adopting the actively maintained option avoids taking ownership of compatibility work from the first day.',
+        ],
+        bullets: [
+          'Only stores may access clients.',
+          'Only smart components may access stores, with defined locality exceptions.',
+          'Stores must not access other stores.',
+          'Dumb components must not access smart components.',
+        ],
+      },
+      {
+        heading: 'The shared rules are only the starting point',
+        paragraphs: [
+          'Both libraries can express common import boundaries. The distinction grows when an architecture program moves beyond a handful of allowed and forbidden edges. ArchUnitTS provides selectors, exclusions, custom predicates, empty-test controls, cycle checks, slice rules, Nx rules, and PlantUML conformance through one integrated model.',
+          'It also treats structural metrics as first-class signals. File and dependency counts, cohesion, afferent and efferent coupling, instability, abstractness, distance from the main sequence, zones, and custom metrics help teams observe design pressure before it becomes a broken boundary.',
+          'The dependency model can be exported as DOT, Mermaid, D2, CSV, JSON, or standalone HTML. That lets the same extracted graph drive a test assertion, a CI failure, machine-readable agent feedback, and a reviewable visualization instead of rebuilding a separate model for every consumer.',
+        ],
+        bullets: [
+          'Use dependency rules to answer whether an edge is allowed.',
+          'Use cycle checks to find complete paths that prevent independent change.',
+          'Use metrics as team-owned sensors rather than universal quality scores.',
+          'Use reports to make the evaluated graph visible to reviewers and automation.',
+        ],
+      },
+      {
+        heading: 'Performance on the same source tree',
+        paragraphs: [
+          'The original comparison used the Angular Architects flights42 demonstration at commit caaac81 with Angular 21.2, TypeScript 5.9.3, and Vitest 4.0.18. Both libraries found the same 198 internal dependency edges, so the timing compared equivalent graph results rather than different amounts of work.',
+          'In the initial order-balanced four-run measurement, ArchUnitTS had a median of 3.812 seconds and tsarch 7.434 seconds. A clean rerun with ArchUnitTS 2.5.0 measured 4.274 seconds against 5.171 seconds for tsarch.',
+          'That places the observed ArchUnitTS advantage between roughly 21 and 95 percent across the two measurements. A benchmark is a snapshot of one project and environment, not a universal guarantee, but it removes the concern that the broader feature set necessarily makes the newer tool slower for this workload.',
+        ],
+        bullets: [
+          'Initial median: ArchUnitTS 3.812 s; tsarch 7.434 s.',
+          'Clean rerun median: ArchUnitTS 4.274 s; tsarch 5.171 s.',
+          'Both tools identified 198 internal dependency edges.',
+        ],
+      },
+      {
+        heading: 'Security, dependencies, and lineage',
+        paragraphs: [
+          'A minimal consumer installation of tsarch reported no known npm audit vulnerability during the comparison. The maintenance concern appeared in the repository development tree and CI toolchain, which included substantially older dependencies and a failing current workflow at the snapshot date. That is maintenance risk, not evidence of a shipped exploit.',
+          'ArchUnitTS also has a clear lineage. Its beginnings used code from the MIT-licensed tsarch project, which brought ideas from Java’s ArchUnit into TypeScript. Since then, ArchUnitTS has developed its own maintenance cadence, rules, metrics, reporting, integrations, and project-resolution behavior.',
+          'Both facts should remain visible. tsarch made an important early contribution to TypeScript architecture testing, and ArchUnitTS is now the stronger default for a new project. Respecting the origin does not require treating the current packages as equivalent.',
+        ],
+      },
+      {
+        heading: 'Recommendation and reproduction',
+        paragraphs: [
+          'For an existing tsarch installation that protects a stable project, evaluate the migration cost against the specific gaps that affect the codebase. Confirm that selectors still match, pin the supported toolchain, and make ownership of future compatibility explicit.',
+          'For a new project, choose ArchUnitTS. It follows current TypeScript configuration, fails safely on empty selectors, provides broader rules and architecture signals, integrates directly with common test runners, and performed better in both documented measurements.',
+          'Whichever library a team uses, keep the rule in the ordinary delivery loop. A useful architecture test should run locally and in CI, report the source-backed reason for a failure, and stay protected from changes that merely weaken the verifier to make the build green.',
+        ],
+        code: 'npm install --save-dev archunit',
+        codeLanguage: 'bash',
+        codeFilename: 'terminal',
+        links: [
+          {
+            label: 'Angular Architects: tsarch for AI coding agents',
+            url: 'https://www.angulararchitects.io/en/blog/architecture-beyond-layers-tsarch-for-ai-agents/',
+          },
+          {
+            label: 'Benchmark source: flights42 at caaac81',
+            url: 'https://github.com/angular-architects/flights42/tree/caaac81f414188d2ca7410a6e1e236d4a200e5e4',
+          },
+          { label: 'ArchUnitTS repository', url: 'https://github.com/LukasNiessen/ArchUnitTS' },
+          { label: 'tsarch repository', url: 'https://github.com/ts-arch/ts-arch' },
+          {
+            label: 'tsarch empty-selector issue',
+            url: 'https://github.com/ts-arch/ts-arch/issues/73',
+          },
+        ],
+      },
+    ],
+  },
   {
     slug: 'why-archunitts-exists',
     title: 'Why ArchUnitTS exists',

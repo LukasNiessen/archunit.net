@@ -106,8 +106,9 @@ describe('statistics snapshot', () => {
 
 describe('blog', () => {
   it('contains adapted, indexable project articles', () => {
-    expect(posts).toHaveLength(4);
+    expect(posts).toHaveLength(5);
     expect(new Set(posts.map((post) => post.slug)).size).toBe(posts.length);
+    expect(posts.map((post) => post.slug)).toContain('archunitts-vs-tsarch');
     expect(posts.every((post) => post.sections.length >= 7)).toBe(true);
     expect(posts.every((post) => Number.parseInt(post.readingTime, 10) >= 10)).toBe(true);
     expect(

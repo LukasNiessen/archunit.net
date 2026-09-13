@@ -2621,7 +2621,7 @@
     animation: library-cursor 1.05s steps(1, end) infinite;
   }
   .hero-lede {
-    max-width: 670px;
+    max-width: min(590px, calc(100% - 28px));
     margin-top: 32px;
     color: var(--muted-bright);
     font-size: clamp(1.08rem, 1.55vw, 1.34rem);
@@ -3668,6 +3668,14 @@
     display: grid;
     padding-left: 22px;
     gap: 12px;
+  }
+  .article-body .article-links a {
+    color: var(--ink);
+    font-weight: 650;
+    text-underline-offset: 0.18em;
+  }
+  .article-body .article-links a:hover {
+    color: var(--lime);
   }
   .article-callout {
     padding: 28px;

@@ -25,6 +25,7 @@ const routes = [
   'privacy',
   'thank-you',
   'blog',
+  'blog/archunitts-vs-tsarch',
   'blog/why-archunitts-exists',
   'blog/architecture-tests-and-lint-rules',
   'blog/architecture-testing-for-python',
