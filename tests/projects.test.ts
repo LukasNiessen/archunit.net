@@ -77,6 +77,11 @@ describe('contributors', () => {
       team.every((person) => person.linkedinUrl.startsWith('https://www.linkedin.com/in/')),
     ).toBe(true);
     expect(team.every((person) => person.photoUrl.startsWith('/team/'))).toBe(true);
+    expect(new Set(team.map((person) => person.slug)).size).toBe(team.length);
+    expect(team.every((person) => person.profile.length >= 3)).toBe(true);
+    expect(team.every((person) => person.focusAreas.length === 3)).toBe(true);
+    expect(team.every((person) => person.projectWork.length >= 3)).toBe(true);
+    expect(team.every((person) => person.workingPrinciple.length > 50)).toBe(true);
   });
 });
 
@@ -103,6 +108,16 @@ describe('blog', () => {
   it('contains adapted, indexable project articles', () => {
     expect(posts).toHaveLength(4);
     expect(new Set(posts.map((post) => post.slug)).size).toBe(posts.length);
-    expect(posts.every((post) => post.sections.length >= 3)).toBe(true);
+    expect(posts.every((post) => post.sections.length >= 7)).toBe(true);
+    expect(posts.every((post) => Number.parseInt(post.readingTime, 10) >= 10)).toBe(true);
+    expect(
+      posts.every(
+        (post) =>
+          post.sections.reduce(
+            (length, section) => length + section.paragraphs.join(' ').length,
+            0,
+          ) > 4_000,
+      ),
+    ).toBe(true);
   });
 });

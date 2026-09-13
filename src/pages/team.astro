@@ -47,21 +47,30 @@ const schema = {
       <div class="core-team">
         {team.map((member) => (
           <article class="team-card">
-            <img src={member.photoUrl} alt={member.name} width="480" height="480" loading="lazy" />
-            <div class="team-card__body">
-              <p class="eyebrow">{member.role}</p>
-              <h2>{member.name}</h2>
-              <p>{member.bio}</p>
-              <div class="team-card__links">
-                <a href={member.linkedinUrl} target="_blank" rel="noreferrer">
-                  LinkedIn ↗
-                </a>
-                {member.githubUrl && (
-                  <a href={member.githubUrl} target="_blank" rel="noreferrer">
-                    GitHub ↗
-                  </a>
-                )}
+            <a class="team-card__profile" href={'/team/' + member.slug + '/'}>
+              <img
+                src={member.photoUrl}
+                alt={member.name}
+                width="480"
+                height="480"
+                loading="lazy"
+              />
+              <div class="team-card__body">
+                <p class="eyebrow">{member.role}</p>
+                <h2>{member.name}</h2>
+                <p>{member.bio}</p>
+                <span class="team-card__profile-cta">View profile →</span>
               </div>
+            </a>
+            <div class="team-card__links">
+              <a href={member.linkedinUrl} target="_blank" rel="noreferrer">
+                LinkedIn ↗
+              </a>
+              {member.githubUrl && (
+                <a href={member.githubUrl} target="_blank" rel="noreferrer">
+                  GitHub ↗
+                </a>
+              )}
             </div>
           </article>
         ))}

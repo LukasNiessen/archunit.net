@@ -1,0 +1,196 @@
+---
+import { team, type TeamMember } from '@data/contributors';
+import BaseLayout from '@layouts/BaseLayout.astro';
+
+export function getStaticPaths() {
+  return team.map((member) => ({ params: { slug: member.slug }, props: { member } }));
+}
+
+interface Props {
+  member: TeamMember;
+}
+
+const { member } = Astro.props;
+const currentIndex = team.findIndex((candidate) => candidate.slug === member.slug);
+const nextMember = team[(currentIndex + 1) % team.length] ?? team[0]!;
+const otherMembers = team.filter((candidate) => candidate.slug !== member.slug);
+const sameAs = [member.linkedinUrl, member.githubUrl].filter((url): url is string => Boolean(url));
+const schema = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'ProfilePage',
+    name: member.name + ' at ArchUnit',
+    url: 'https://www.archunit.net/team/' + member.slug + '/',
+    mainEntity: {
+      '@type': 'Person',
+      name: member.name,
+      jobTitle: member.role,
+      description: member.bio,
+      image: 'https://www.archunit.net' + member.photoUrl,
+      sameAs,
+      memberOf: {
+        '@type': 'Organization',
+        name: 'ArchUnit',
+        url: 'https://www.archunit.net/',
+      },
+    },
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://www.archunit.net/' },
+      {
+        '@type': 'ListItem',
+        position: 2,
+        name: 'Team',
+        item: 'https://www.archunit.net/team/',
+      },
+      {
+        '@type': 'ListItem',
+        position: 3,
+        name: member.name,
+        item: 'https://www.archunit.net/team/' + member.slug + '/',
+      },
+    ],
+  },
+];
+---
+
+<BaseLayout
+  title={member.name}
+  description={member.bio}
+  canonicalPath={'/team/' + member.slug + '/'}
+  image={member.photoUrl}
+  schema={schema}
+>
+  <header class="profile-hero">
+    <div class="shell profile-hero__grid">
+      <div class="profile-portrait-wrap">
+        <img
+          class="profile-portrait"
+          src={member.photoUrl}
+          alt={member.name}
+          width="800"
+          height="1000"
+        />
+        <span>{String(currentIndex + 1).padStart(2, '0')} / 05</span>
+      </div>
+      <div class="profile-hero__copy">
+        <nav class="breadcrumbs" aria-label="Breadcrumb">
+          <a href="/">ArchUnit</a>
+          <span>/</span>
+          <a href="/team/">Team</a>
+          <span>/</span>
+          <span>{member.name}</span>
+        </nav>
+        <p class="eyebrow">{member.role}</p>
+        <h1>{member.name}</h1>
+        <p class="profile-headline">{member.headline}</p>
+        <div class="profile-actions">
+          <a class="button button--lime" href={member.linkedinUrl} target="_blank" rel="noreferrer">
+            LinkedIn ↗
+          </a>
+          {member.githubUrl && (
+            <a
+              class="button button--ghost"
+              href={member.githubUrl}
+              target="_blank"
+              rel="noreferrer"
+            >
+              GitHub ↗
+            </a>
+          )}
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <div class="profile-main">
+    <section class="profile-story-section">
+      <div class="shell profile-story-grid">
+        <div>
+          <p class="eyebrow">At ArchUnit</p>
+          <h2>{member.headline}</h2>
+        </div>
+        <div class="profile-story-copy">
+          {member.profile.map((paragraph) => (
+            <p>{paragraph}</p>
+          ))}
+        </div>
+      </div>
+    </section>
+
+    <section class="profile-focus-section">
+      <div class="shell">
+        <div class="profile-section-heading">
+          <p class="eyebrow">Focus</p>
+          <h2>Where {member.name.split(' ')[0]} contributes.</h2>
+        </div>
+        <div class="profile-focus-grid">
+          {member.focusAreas.map((area, index) => (
+            <article>
+              <span>{String(index + 1).padStart(2, '0')}</span>
+              <h3>{area.title}</h3>
+              <p>{area.description}</p>
+            </article>
+          ))}
+        </div>
+      </div>
+    </section>
+
+    <section class="profile-work-section">
+      <div class="shell profile-work-grid">
+        <div>
+          <p class="eyebrow">Selected project work</p>
+          <h2>Work that makes the library family stronger.</h2>
+        </div>
+        <ol>
+          {member.projectWork.map((item, index) => (
+            <li>
+              <span>{String(index + 1).padStart(2, '0')}</span>
+              <p>{item}</p>
+            </li>
+          ))}
+        </ol>
+      </div>
+    </section>
+
+    <section class="profile-principle-section">
+      <div class="shell profile-principle">
+        <p class="eyebrow">Working principle</p>
+        <blockquote>“{member.workingPrinciple}”</blockquote>
+      </div>
+    </section>
+
+    <section class="profile-team-section">
+      <div class="shell">
+        <div class="profile-team-heading">
+          <div>
+            <p class="eyebrow">The team</p>
+            <h2>Five perspectives, one project.</h2>
+          </div>
+          <a class="text-link" href="/team/">
+            View the full team →
+          </a>
+        </div>
+        <div class="profile-team-grid">
+          {otherMembers.map((candidate) => (
+            <a href={'/team/' + candidate.slug + '/'}>
+              <img src={candidate.photoUrl} alt={candidate.name} width="240" height="240" />
+              <span>{candidate.role}</span>
+              <strong>{candidate.name}</strong>
+            </a>
+          ))}
+        </div>
+      </div>
+    </section>
+
+    <section class="profile-next-section">
+      <a href={'/team/' + nextMember.slug + '/'}>
+        <span>Next team member</span>
+        <strong>{nextMember.name} →</strong>
+      </a>
+    </section>
+  </div>
+</BaseLayout>

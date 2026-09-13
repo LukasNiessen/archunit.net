@@ -29,6 +29,62 @@ const typescriptRule = [
   'await expect(rule).toPassAsync();',
 ].join('\n');
 
+const pythonExtraction = [
+  'for path in discover_python_files(project_root):',
+  '    tree = ast.parse(path.read_text(), filename=str(path))',
+  '    evidence = collect_import_evidence(tree)',
+  '',
+  '    for import_ref in evidence:',
+  '        target = module_index.resolve(',
+  '            source=path,',
+  '            module=import_ref.module,',
+  '            relative_level=import_ref.level,',
+  '        )',
+  '        graph.add_edge(path, target, evidence=import_ref)',
+].join('\n');
+
+const typescriptExtraction = [
+  'const config = readProjectConfiguration("tsconfig.json");',
+  'const program = ts.createProgram(config.rootNames, config.options);',
+  '',
+  'for (const sourceFile of program.getSourceFiles()) {',
+  '  for (const specifier of collectModuleSpecifiers(sourceFile)) {',
+  '    const target = resolveWithCompilerHost(specifier, sourceFile);',
+  '    graph.addEdge(sourceFile.fileName, target);',
+  '  }',
+  '}',
+].join('\n');
+
+const graphModel = [
+  'SourceNode {',
+  '  id: project_relative_path',
+  '  kind: source | external',
+  '  metadata: language_specific_facts',
+  '}',
+  '',
+  'DependencyEdge {',
+  '  source: SourceNode.id',
+  '  target: SourceNode.id',
+  '  evidence: file + syntax location + import kind',
+  '  flags: type_only | conditional | optional',
+  '}',
+].join('\n');
+
+const evaluationModel = [
+  'subjects = graph.nodes.filter(subject_selector)',
+  '',
+  'if subjects.is_empty() and not options.allow_empty_tests:',
+  '    return [EmptyTestViolation(subject_selector)]',
+  '',
+  'candidate_edges = graph.outgoing_edges(subjects)',
+  'violations = [',
+  '    edge for edge in candidate_edges',
+  '    if target_selector(edge.target)',
+  ']',
+  '',
+  'return CheckResult(rule=rule, violations=violations)',
+].join('\n');
+
 const stages = [
   {
     number: '01',
@@ -536,6 +592,419 @@ const schema = {
           />
         </div>
       </div>
+    </div>
+  </section>
+
+  <section class="how-technical-intro" id="technical-model">
+    <div class="shell how-technical-intro__grid">
+      <div>
+        <p class="eyebrow">Below the fluent API</p>
+        <h2>The technical model, one contract at a time.</h2>
+      </div>
+      <div>
+        <p>
+          The first walkthrough follows the lifecycle of a rule. This second pass opens the engine:
+          which evidence is collected, how names become nodes, how uncertainty is preserved, when
+          work is cached, and exactly what a green result means.
+        </p>
+        <p>
+          Python remains the concrete implementation. TypeScript appears wherever its compiler model
+          changes the mechanics, while the graph and evaluation contracts stay recognizable across
+          the family.
+        </p>
+      </div>
+    </div>
+    <nav class="shell how-chapter-nav" aria-label="Technical chapters">
+      <a href="#technical-extraction">
+        <span>01</span> Extraction
+      </a>
+      <a href="#technical-resolution">
+        <span>02</span> Resolution
+      </a>
+      <a href="#technical-graph">
+        <span>03</span> Graph model
+      </a>
+      <a href="#technical-evaluation">
+        <span>04</span> Evaluation
+      </a>
+      <a href="#technical-performance">
+        <span>05</span> Performance
+      </a>
+      <a href="#technical-limits">
+        <span>06</span> Limits
+      </a>
+    </nav>
+  </section>
+
+  <section class="how-deep-section" id="technical-extraction">
+    <div class="shell how-deep-grid">
+      <div class="how-deep-copy">
+        <p class="eyebrow">01 / Extraction</p>
+        <h2>Preserve evidence before deciding what it means.</h2>
+        <p>
+          Extraction is deliberately separate from rule evaluation. The parser records what the
+          source says, including the importing file, the referenced module, relative depth, and
+          relevant context. Only after that evidence exists does a resolver decide whether the
+          target is an internal source node or an external dependency.
+        </p>
+        <p>
+          In Python, <code>ast.parse()</code> produces the syntax tree. Visitors collect ordinary
+          imports, from imports, relative references, literal dynamic imports, imports below
+          <code>TYPE_CHECKING</code>, and common optional-import fallbacks. Context flags stay on
+          the evidence so later rules can distinguish a runtime dependency from a type-only or
+          optional relationship where the API supports that distinction.
+        </p>
+        <p>
+          TypeScript begins with a Compiler API Program created from the real project configuration.
+          Module specifiers are resolved with compiler settings and project references in scope. The
+          syntax mechanism differs, but the output boundary is the same: normalized source-backed
+          dependency evidence.
+        </p>
+      </div>
+      <div class="how-deep-code-stack">
+        <div>
+          <span>Conceptual Python pipeline, simplified</span>
+          <CodeWindow code={pythonExtraction} filename="extractor.py" language="python" />
+        </div>
+        <div>
+          <span>Conceptual TypeScript pipeline, simplified</span>
+          <CodeWindow code={typescriptExtraction} filename="extractor.ts" language="typescript" />
+        </div>
+      </div>
+    </div>
+    <div class="shell evidence-pipeline" aria-label="Source evidence pipeline">
+      <div>
+        <span>1</span>
+        <strong>Discover</strong>
+        <p>Apply roots, defaults, and explicit exclusions.</p>
+      </div>
+      <b>→</b>
+      <div>
+        <span>2</span>
+        <strong>Parse</strong>
+        <p>Read syntax without importing or running the app.</p>
+      </div>
+      <b>→</b>
+      <div>
+        <span>3</span>
+        <strong>Collect</strong>
+        <p>Retain module text, context, and source evidence.</p>
+      </div>
+      <b>→</b>
+      <div>
+        <span>4</span>
+        <strong>Resolve</strong>
+        <p>Map evidence to internal or external identities.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="how-resolution-section" id="technical-resolution">
+    <div class="shell">
+      <div class="how-section-intro">
+        <p class="eyebrow">02 / Resolution</p>
+        <h2>An import string is evidence, not yet an edge.</h2>
+        <p>
+          Resolution gives an import its project identity. The same text can refer to a sibling
+          module, an index file, a package export, a path alias, a referenced project, or an
+          external package. Treating every string as a path would build a graph that looks precise
+          while disagreeing with the language toolchain.
+        </p>
+      </div>
+      <div class="resolution-table-wrap">
+        <table class="resolution-table">
+          <caption>How common source evidence enters the project graph</caption>
+          <thead>
+            <tr>
+              <th>Evidence</th>
+              <th>Python</th>
+              <th>TypeScript</th>
+              <th>Graph outcome</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <th>Relative module</th>
+              <td>
+                <code>from ..domain import Order</code>
+              </td>
+              <td>
+                <code>import Order from '../domain'</code>
+              </td>
+              <td>Resolve from the importing module or source file.</td>
+            </tr>
+            <tr>
+              <th>Project alias</th>
+              <td>Resolve against indexed package roots.</td>
+              <td>Apply tsconfig paths and project references.</td>
+              <td>Internal edge to the canonical project-relative node.</td>
+            </tr>
+            <tr>
+              <th>External package</th>
+              <td>
+                <code>import requests</code>
+              </td>
+              <td>
+                <code>import express from 'express'</code>
+              </td>
+              <td>External identity remains queryable without becoming a source node.</td>
+            </tr>
+            <tr>
+              <th>Literal dynamic import</th>
+              <td>
+                <code>import_module('app.audit')</code>
+              </td>
+              <td>A literal specifier can be inspected by the language adapter.</td>
+              <td>Edge when the target is statically resolvable.</td>
+            </tr>
+            <tr>
+              <th>Computed runtime target</th>
+              <td>
+                <code>import_module(prefix + name)</code>
+              </td>
+              <td>
+                <code>import(prefix + name)</code>
+              </td>
+              <td>No invented edge. The static boundary remains explicit.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="resolution-notes">
+        <article>
+          <span>Python</span>
+          <h3>Build an index before resolving.</h3>
+          <p>
+            Discovered files establish the internal module namespace. Relative levels and package
+            paths can then be resolved against that index, while unmatched top-level modules remain
+            external.
+          </p>
+        </article>
+        <article>
+          <span>TypeScript</span>
+          <h3>Let compiler configuration define identity.</h3>
+          <p>
+            Compiler options, aliases, extensions, package boundaries, and referenced projects all
+            affect the source file a specifier reaches. The architecture model follows that resolved
+            project.
+          </p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="how-graph-section" id="technical-graph">
+    <div class="shell how-graph-grid">
+      <div class="how-graph-visual" aria-label="Dependency graph data model">
+        <div class="graph-source-node">
+          <span>source</span>
+          <strong>api/orders.py</strong>
+          <small>project node</small>
+        </div>
+        <div class="graph-edge-record">
+          <span>dependency edge</span>
+          <strong>line 7 · import</strong>
+          <small>conditional: false</small>
+        </div>
+        <div class="graph-target-node">
+          <span>target</span>
+          <strong>infrastructure/sql.py</strong>
+          <small>project node</small>
+        </div>
+        <svg viewBox="0 0 780 300" aria-hidden="true">
+          <path d="M190 150C310 40 470 40 590 150"></path>
+          <path d="M190 160C310 270 470 270 590 160"></path>
+        </svg>
+      </div>
+      <div class="how-deep-copy">
+        <p class="eyebrow">03 / Graph model</p>
+        <h2>Canonical identities make every later question cheaper.</h2>
+        <p>
+          Nodes use normalized project-relative identities so selectors, reports, and test output
+          refer to the same file. Duplicate import evidence can be merged into one relationship
+          without losing the source records that explain it. Internal and external targets remain
+          distinct because the questions teams ask about them are different.
+        </p>
+        <p>
+          Isolated files remain observable. A project model that drops nodes without outgoing edges
+          would make naming, placement, size, and empty-selection checks depend on whether a file
+          imports something. The graph therefore represents the discovered source set, not only the
+          edges that happened to resolve.
+        </p>
+        <CodeWindow code={graphModel} filename="conceptual-graph-model.txt" language="text" />
+      </div>
+    </div>
+  </section>
+
+  <section class="how-evaluation-section" id="technical-evaluation">
+    <div class="shell">
+      <div class="how-section-intro">
+        <p class="eyebrow">04 / Evaluation</p>
+        <h2>A fluent sentence compiles into a small evaluation plan.</h2>
+        <p>
+          Builders record intent. The terminal check obtains the project graph, selects subjects,
+          projects the relevant relationships or metrics, evaluates the condition, and returns
+          structured findings. The assertion adapter is deliberately last.
+        </p>
+      </div>
+      <div class="how-evaluation-grid">
+        <CodeWindow
+          code={evaluationModel}
+          filename="forbidden-dependency.pseudo.py"
+          language="python"
+        />
+        <div class="evaluation-truth-table">
+          <p>For a negative dependency rule</p>
+          <div class="truth-row truth-row--head">
+            <span>Subjects</span>
+            <span>Forbidden edges</span>
+            <span>Result</span>
+          </div>
+          <div class="truth-row">
+            <span>0</span>
+            <span>unknown</span>
+            <strong>Empty-test violation</strong>
+          </div>
+          <div class="truth-row">
+            <span>1 or more</span>
+            <span>0</span>
+            <strong class="truth-pass">Pass</strong>
+          </div>
+          <div class="truth-row">
+            <span>1 or more</span>
+            <span>1 or more</span>
+            <strong>One finding per matched edge</strong>
+          </div>
+          <p class="truth-note">
+            <code>should_not</code> negates the condition. It never means that the test runner
+            should pass when violations exist.
+          </p>
+        </div>
+      </div>
+      <div class="evaluation-details">
+        <article>
+          <span>Subject</span>
+          <p>The files, classes, slices, layers, or metric population being evaluated.</p>
+        </article>
+        <article>
+          <span>Condition</span>
+          <p>The relationship or measurement the selected subjects must satisfy.</p>
+        </article>
+        <article>
+          <span>Evidence</span>
+          <p>The edge, path, source fact, or measured value that supports the finding.</p>
+        </article>
+        <article>
+          <span>Adapter</span>
+          <p>The pytest, Jest, Vitest, xUnit, native, or report boundary that presents it.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="how-performance-section" id="technical-performance">
+    <div class="shell how-performance-grid">
+      <div>
+        <p class="eyebrow">05 / Performance and reuse</p>
+        <h2>Extract broadly once. Project narrowly many times.</h2>
+        <p>
+          Parsing is usually the expensive boundary. A suite should not rediscover and reparse the
+          same project independently for every architectural sentence. The project model can be
+          cached for compatible roots and configuration, then reused by file, layer, slice, metric,
+          and report projections.
+        </p>
+        <p>
+          Scope still matters. Excluding build output and generated trees reduces both noise and
+          work. Focused checks can project a subset of an existing graph, while a configuration or
+          source change invalidates the relevant cached model.
+        </p>
+      </div>
+      <ol class="performance-plan">
+        <li>
+          <span>01</span>
+          <div>
+            <strong>Discover once</strong>
+            <p>Normalize source roots and exclusions.</p>
+          </div>
+        </li>
+        <li>
+          <span>02</span>
+          <div>
+            <strong>Parse once</strong>
+            <p>Collect reusable language evidence.</p>
+          </div>
+        </li>
+        <li>
+          <span>03</span>
+          <div>
+            <strong>Index once</strong>
+            <p>Resolve canonical internal identities.</p>
+          </div>
+        </li>
+        <li>
+          <span>04</span>
+          <div>
+            <strong>Project per rule</strong>
+            <p>Filter the graph for the current question.</p>
+          </div>
+        </li>
+        <li>
+          <span>05</span>
+          <div>
+            <strong>Render per consumer</strong>
+            <p>Reuse findings in tests, CI, and reports.</p>
+          </div>
+        </li>
+      </ol>
+    </div>
+    <div class="shell complexity-note">
+      <strong>Why cycle checks reduce the graph first</strong>
+      <p>
+        Tarjan finds strongly connected components in linear time over the projected nodes and
+        edges. Only components capable of containing a cycle continue to Johnson’s enumeration.
+        Enumeration must still spend time proportional to the cycles it returns, which is why
+        scoping and complete path evidence matter on highly connected graphs.
+      </p>
+    </div>
+  </section>
+
+  <section class="how-limits-section" id="technical-limits">
+    <div class="shell">
+      <div class="how-section-intro">
+        <p class="eyebrow">06 / Trust boundary</p>
+        <h2>Static analysis is strongest when it states its limits.</h2>
+      </div>
+      <div class="limits-grid">
+        <article class="limits-card limits-card--yes">
+          <span>Source-backed</span>
+          <h3>What the graph can prove well</h3>
+          <ul>
+            <li>Direct internal and external dependencies visible in supported syntax</li>
+            <li>Cycles, layer direction, slice relationships, and reachability over those edges</li>
+            <li>Naming, placement, source counts, and language-specific static metrics</li>
+            <li>Whether a selector observed the source population it claimed to protect</li>
+          </ul>
+        </article>
+        <article class="limits-card">
+          <span>Runtime-dependent</span>
+          <h3>What the graph should not guess</h3>
+          <ul>
+            <li>Computed import targets whose module name exists only at runtime</li>
+            <li>
+              Dependencies introduced through reflection, monkey patching, or container wiring
+            </li>
+            <li>
+              Business behavior, semantic duplication, or whether a boundary is a good decision
+            </li>
+            <li>Production calls that are not represented by a supported source relationship</li>
+          </ul>
+        </article>
+      </div>
+      <p class="limits-conclusion">
+        Runtime tests, traces, and human review complement the static graph. The useful contract is
+        not that ArchUnit knows everything. It is that every reported relationship has a clear path
+        back to source evidence, and every unsupported category remains visible as a limitation.
+      </p>
     </div>
   </section>
 

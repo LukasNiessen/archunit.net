@@ -69,7 +69,33 @@ test('navigation and contributor content remain usable on mobile', async ({ page
 
   await expect(page.getByRole('heading', { name: /five people/i })).toBeVisible();
   await expect(page.locator('.team-card')).toHaveCount(5);
+  await expect(page.locator('.team-card__profile')).toHaveCount(5);
   await expect(page.getByRole('link', { name: /find a repository/i })).toBeVisible();
+});
+
+test('every team member has a complete, indexable profile', async ({ page }) => {
+  const slugs = [
+    'lukas-niessen',
+    'tristan-kruse',
+    'jan-heimann',
+    'deban-kumar-sahu',
+    'robey-beswick',
+  ];
+
+  for (const slug of slugs) {
+    const response = await page.goto(`/team/${slug}/`);
+    expect(response?.status()).toBe(200);
+    await expect(page.locator('.profile-hero h1')).toBeVisible();
+    await expect(page.locator('link[rel="canonical"]')).toHaveAttribute(
+      'href',
+      `https://www.archunit.net/team/${slug}/`,
+    );
+    await expect(page.locator('.profile-focus-grid article')).toHaveCount(3);
+    await expect(page.locator('.profile-work-section li')).toHaveCount(3);
+    const structuredData = await page.locator('script[type="application/ld+json"]').textContent();
+    expect(structuredData).toContain('ProfilePage');
+    expect(structuredData).toContain('Person');
+  }
 });
 
 test('theme choice persists across navigation and reloads', async ({ page }) => {
@@ -97,6 +123,7 @@ test('blog index and adapted articles are statically accessible', async ({ page 
   await expect(
     page.getByRole('heading', { name: 'Why ArchUnitTS exists', level: 1 }),
   ).toBeVisible();
+  await expect(page.locator('.article-body section')).toHaveCount(7);
   if ((page.viewportSize()?.width ?? 1000) > 1050) {
     const aside = await page.locator('.article-aside').boundingBox();
     const body = await page.locator('.article-body').boundingBox();
@@ -110,6 +137,10 @@ test('the how-it-works walkthrough explains and advances the pipeline', async ({
   await expect(page.getByRole('heading', { name: /how archunit sees your system/i })).toBeVisible();
   await expect(page.locator('[data-how-stage]')).toHaveCount(8);
   await expect(page.getByText('Python, concretely')).toHaveCount(8);
+  await expect(page.locator('.how-chapter-nav a')).toHaveCount(6);
+  await expect(page.locator('.resolution-table tbody tr')).toHaveCount(5);
+  await expect(page.locator('.evaluation-truth-table')).toBeVisible();
+  await expect(page.getByRole('heading', { name: /static analysis is strongest/i })).toBeVisible();
   await page.locator('[data-how-stage="7"]').scrollIntoViewIfNeeded();
   if ((page.viewportSize()?.width ?? 1000) > 820) {
     await expect(page.locator('[data-how-visual]')).toHaveAttribute('data-active-stage', '7');
@@ -132,7 +163,7 @@ test('stats, privacy, and thank-you pages expose intentional metadata', async ({
 });
 
 test('every rendered image has an alt attribute', async ({ page }) => {
-  for (const route of ['/', '/team/', '/typescript/']) {
+  for (const route of ['/', '/team/', '/team/lukas-niessen/', '/typescript/']) {
     await page.goto(route);
     const missingAlt = await page.locator('img:not([alt])').count();
     expect(missingAlt).toBe(0);
@@ -144,6 +175,7 @@ test('key pages do not overflow the viewport', async ({ page }) => {
   for (const route of [
     '/',
     '/team/',
+    '/team/lukas-niessen/',
     '/typescript/',
     '/blog/',
     '/how-archunit-works/',
