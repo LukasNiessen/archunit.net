@@ -95,6 +95,13 @@ test('navigation and contributor content remain usable on mobile', async ({ page
   test.skip(!testInfo.project.name.includes('mobile'), 'Mobile-only navigation check');
   await page.goto('/team/');
 
+  await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight / 2));
+  const skipLinkState = await page.locator('.skip-link').evaluate((element) => {
+    const style = getComputedStyle(element);
+    return { opacity: style.opacity, pointerEvents: style.pointerEvents };
+  });
+  expect(skipLinkState).toEqual({ opacity: '0', pointerEvents: 'none' });
+
   await expect(page.getByRole('heading', { name: /five people/i })).toBeVisible();
   await expect(page.locator('.team-card')).toHaveCount(5);
   await expect(page.locator('.team-card__profile')).toHaveCount(5);
@@ -168,10 +175,24 @@ test('the how-it-works walkthrough explains and advances the pipeline', async ({
   await expect(page.getByRole('heading', { name: /how archunit sees your system/i })).toBeVisible();
   await expect(page.locator('[data-how-stage]')).toHaveCount(8);
   await expect(page.getByText('Python, concretely')).toHaveCount(8);
+  await expect(page.locator('.how-walkthrough .inline-code')).toHaveCount(16);
   await expect(page.locator('.how-chapter-nav a')).toHaveCount(6);
   await expect(page.locator('.resolution-table tbody tr')).toHaveCount(5);
+  await expect(page.locator('#technical-extraction .code-window')).toHaveCount(2);
+  await expect(page.locator('#technical-extraction .inline-code')).toHaveCount(18);
+  await expect(page.locator('#technical-graph .code-window')).toHaveCount(2);
   await expect(page.locator('.evaluation-truth-table')).toBeVisible();
   await expect(page.getByRole('heading', { name: /static analysis is strongest/i })).toBeVisible();
+  const unformattedCodeCount = await page
+    .locator('#main-content code')
+    .evaluateAll(
+      (elements) =>
+        elements.filter(
+          (element) =>
+            !element.classList.contains('inline-code') && element.closest('.code-window') === null,
+        ).length,
+    );
+  expect(unformattedCodeCount).toBe(0);
   await page.locator('[data-how-stage="7"]').scrollIntoViewIfNeeded();
   if ((page.viewportSize()?.width ?? 1000) > 820) {
     await expect(page.locator('[data-how-visual]')).toHaveAttribute('data-active-stage', '7');

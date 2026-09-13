@@ -396,15 +396,44 @@ const homeSchema = [
     const libraryWord = document.querySelector<HTMLElement>('[data-library-word]');
     const libraryNames = ['TS', 'Python', '.NET', 'Ruby', 'Rust', 'Zig', 'Go', 'Java', 'PHP'];
     let libraryIndex = 0;
+
+    const wait = (duration: number) =>
+      new Promise<void>((resolve) => window.setTimeout(resolve, duration));
+
+    const cycleLibraryWord = async () => {
+      if (!libraryWord) return;
+      await wait(2300);
+
+      while (libraryWord.isConnected) {
+        const exit = libraryWord.animate(
+          [
+            { opacity: 1, transform: 'translate3d(0, 0, 0)' },
+            { opacity: 0, transform: 'translate3d(0, -0.22em, 0)' },
+          ],
+          { duration: 135, easing: 'cubic-bezier(0.4, 0, 1, 1)', fill: 'forwards' },
+        );
+        await exit.finished.catch(() => undefined);
+        if (!libraryWord.isConnected) return;
+
+        libraryIndex = (libraryIndex + 1) % libraryNames.length;
+        libraryWord.textContent = libraryNames[libraryIndex] ?? libraryNames[0]!;
+        exit.cancel();
+
+        const enter = libraryWord.animate(
+          [
+            { opacity: 0, transform: 'translate3d(0, 0.24em, 0)' },
+            { opacity: 1, transform: 'translate3d(0, 0, 0)' },
+          ],
+          { duration: 210, easing: 'cubic-bezier(0.16, 1, 0.3, 1)', fill: 'forwards' },
+        );
+        await enter.finished.catch(() => undefined);
+        enter.cancel();
+        await wait(2200);
+      }
+    };
+
     if (libraryWord && !reducedMotion) {
-      window.setInterval(() => {
-        libraryWord.dataset.swapping = 'true';
-        window.setTimeout(() => {
-          libraryIndex = (libraryIndex + 1) % libraryNames.length;
-          libraryWord.textContent = libraryNames[libraryIndex] ?? libraryNames[0]!;
-          libraryWord.dataset.swapping = 'false';
-        }, 210);
-      }, 2600);
+      void cycleLibraryWord();
     }
   </script>
 </BaseLayout>

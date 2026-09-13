@@ -1,5 +1,6 @@
 ---
 import CodeWindow from '@components/CodeWindow.astro';
+import InlineCode from '@components/InlineCode.astro';
 import BaseLayout from '@layouts/BaseLayout.astro';
 
 const pythonRule = [
@@ -30,44 +31,105 @@ const typescriptRule = [
 ].join('\n');
 
 const pythonExtraction = [
-  'for path in discover_python_files(project_root):',
-  '    tree = ast.parse(path.read_text(), filename=str(path))',
-  '    evidence = collect_import_evidence(tree)',
+  'excludes = _resolve_exclude_patterns(project_path, patterns)',
+  'py_files = _find_python_files(project_path, excludes)',
+  'known_files = {_normalize(path) for path in py_files}',
   '',
-  '    for import_ref in evidence:',
-  '        target = module_index.resolve(',
-  '            source=path,',
-  '            module=import_ref.module,',
-  '            relative_level=import_ref.level,',
-  '        )',
-  '        graph.add_edge(path, target, evidence=import_ref)',
+  'for file_path in py_files:',
+  '    edges.append(Edge(file_path, file_path, external=False))',
+  '    with open(file_path, "r", encoding="utf-8", errors="replace") as f:',
+  '        source = f.read()',
+  '    tree = ast.parse(source, filename=file_path)',
+  '',
+  '    for node in ast.walk(tree):',
+  '        located = classify_import(node)',
+  '        if located is None:',
+  '            continue',
+  '        for target, external in _resolve_import_targets(',
+  '            located, file_path, project_path',
+  '        ):',
+  '            if external or target in known_files:',
+  '                edges.append(Edge(',
+  '                    source=_normalize(file_path),',
+  '                    target=target,',
+  '                    external=external,',
+  '                    import_kinds=_edge_import_kinds(located),',
+  '                ))',
+  '',
+  'return _merge_edges(edges)',
 ].join('\n');
 
 const typescriptExtraction = [
-  'const config = readProjectConfiguration("tsconfig.json");',
-  'const program = ts.createProgram(config.rootNames, config.options);',
+  'const contexts: ts.ParsedCommandLine[] = [];',
+  'const visited = new Set<string>();',
+  '',
+  'function visitConfig(configPath: string) {',
+  '  const identity = path.resolve(configPath);',
+  '  if (visited.has(identity)) return;',
+  '  visited.add(identity);',
+  '',
+  '  const source = ts.readConfigFile(identity, ts.sys.readFile);',
+  '  const parsed = ts.parseJsonConfigFileContent(',
+  '    source.config, ts.sys, path.dirname(identity), {}, identity',
+  '  );',
+  '  contexts.push(parsed);',
+  '',
+  '  for (const ref of parsed.projectReferences ?? []) {',
+  '    visitConfig(ts.resolveProjectReferencePath(ref));',
+  '  }',
+  '}',
+  '',
+  'visitConfig("tsconfig.json");',
+  'const options = contexts[0].options;',
+  'const host = ts.createCompilerHost(options);',
+  'const rootNames = [...new Set(contexts.flatMap(c => c.fileNames))];',
+  'const program = ts.createProgram({ rootNames, options, host });',
   '',
   'for (const sourceFile of program.getSourceFiles()) {',
-  '  for (const specifier of collectModuleSpecifiers(sourceFile)) {',
-  '    const target = resolveWithCompilerHost(specifier, sourceFile);',
-  '    graph.addEdge(sourceFile.fileName, target);',
-  '  }',
+  '  ts.forEachChild(sourceFile, node => {',
+  '    if (!ts.isImportDeclaration(node)) return;',
+  '    const moduleName = (node.moduleSpecifier as { text?: string }).text;',
+  '    if (!moduleName) return;',
+  '    const resolved = ts.resolveModuleName(',
+  '      moduleName, sourceFile.fileName, options, host',
+  '    ).resolvedModule;',
+  '    if (!resolved) return;',
+  '    imports.push({',
+  '      source: normalize(sourceFile.fileName),',
+  '      target: normalize(resolved.resolvedFileName),',
+  '      external: resolved.isExternalLibraryImport ?? false,',
+  '      importKinds: determineImportKinds(node),',
+  '    });',
+  '  });',
   '}',
 ].join('\n');
 
-const graphModel = [
-  'SourceNode {',
-  '  id: project_relative_path',
-  '  kind: source | external',
-  '  metadata: language_specific_facts',
-  '}',
+const pythonGraphModel = [
+  'class ImportKind(Enum):',
+  '    IMPORT = "import"',
+  '    FROM_IMPORT = "from_import"',
+  '    RELATIVE_IMPORT = "relative"',
+  '    DYNAMIC_IMPORT = "dynamic"',
+  '    TYPE_IMPORT = "type"',
+  '    CONDITIONAL_IMPORT = "conditional"',
   '',
-  'DependencyEdge {',
-  '  source: SourceNode.id',
-  '  target: SourceNode.id',
-  '  evidence: file + syntax location + import kind',
-  '  flags: type_only | conditional | optional',
-  '}',
+  '@dataclass(frozen=True)',
+  'class Edge:',
+  '    source: str',
+  '    target: str',
+  '    external: bool',
+  '    import_kinds: tuple[ImportKind, ...] = ()',
+].join('\n');
+
+const typescriptGraphModel = [
+  'export type Edge = {',
+  '  source: string;',
+  '  target: string;',
+  '  external: boolean;',
+  '  importKinds: ImportKind[];',
+  '};',
+  '',
+  'export type Graph = Edge[];',
 ].join('\n');
 
 const evaluationModel = [
@@ -93,8 +155,10 @@ const stages = [
     body: 'A rule begins with a real project root and its language toolchain. ArchUnit does not start from a diagram or a manually maintained inventory.',
     python:
       'Python walks .py files beneath the selected root. Built-in exclusions skip environments, caches, builds, and generated package metadata; .archignore adds project-specific omissions.',
+    pythonCode: 'for dirpath, dirnames, filenames in os.walk(project_root):',
     typescript:
       'TypeScript starts from tsconfig.json, including its include and exclude rules, compiler options, path aliases, and referenced projects.',
+    typescriptCode: 'const config = ts.readConfigFile(configPath, ts.sys.readFile);',
   },
   {
     number: '02',
@@ -103,8 +167,11 @@ const stages = [
     body: 'Only source-backed relationships enter the model. The language adapter owns syntax and resolution; downstream architecture logic never needs to understand an import statement.',
     python:
       'Python uses ast.parse(), recognizes import, from import, relative imports, literal dynamic imports, TYPE_CHECKING blocks, and conditional ImportError fallbacks.',
+    pythonCode: 'tree = ast.parse(source, filename=file_path)',
     typescript:
       'TypeScript builds a Compiler API Program and resolves each import with the compiler host, using the same module-resolution settings as the project.',
+    typescriptCode:
+      'ts.forEachChild(sourceFile, node => ts.isImportDeclaration(node) && resolve(node));',
   },
   {
     number: '03',
@@ -113,8 +180,10 @@ const stages = [
     body: 'Paths are normalized, internal and external dependencies stay distinct, duplicate evidence is merged, and isolated source files remain visible through self-edges.',
     python:
       'An import from app.api.orders to app.infrastructure.sql becomes an edge from api/orders.py to infrastructure/sql.py. requests stays an external module edge.',
+    pythonCode: 'Edge(source=file_path, target=resolved, external=is_external)',
     typescript:
       'The same model is produced for .ts and .tsx files. Project references and alias resolution can contribute valid edges without depending on reference order.',
+    typescriptCode: 'const edge: Edge = { source, target, external, importKinds };',
   },
   {
     number: '04',
@@ -123,8 +192,10 @@ const stages = [
     body: 'The fluent API records a subject, a mood, a predicate, an object, and optionally a rationale. Builders describe intent; the terminal check performs extraction and evaluation.',
     python:
       'project_files("src/").in_folder("**/api/**").should_not().depend_on_files().in_folder("**/infrastructure/**")',
+    pythonCode: 'project_files("src/").in_folder("**/api/**").should_not()',
     typescript:
       'projectFiles().inFolder("src/api/**").shouldNot().dependOnFiles().inFolder("src/infrastructure/**")',
+    typescriptCode: 'projectFiles().inFolder("src/api/**").shouldNot()',
   },
   {
     number: '05',
@@ -133,8 +204,10 @@ const stages = [
     body: 'A file rule projects edges, a layer rule groups their endpoints by named regions, a slice rule derives component names, and a metric rule projects measurable source facts.',
     python:
       'The dependency evaluator filters source edges by the API selector, tests their targets against the infrastructure selector, and emits one typed violation for every forbidden match.',
+    pythonCode: '_resolve_import_targets(import_, file_path, project_path)',
     typescript:
       'ArchUnitTS follows the same projection and violation boundary asynchronously, which lets test-runner adapters await compiler-backed extraction.',
+    typescriptCode: 'ts.resolveModuleName(moduleName, sourceFile.fileName, options, compilerHost)',
   },
   {
     number: '06',
@@ -143,8 +216,10 @@ const stages = [
     body: 'should_not changes the condition being evaluated; it does not invert whether the test runner passes. Zero selected subjects are a violation by default, because an architecture test that checks nothing is false confidence.',
     python:
       'CheckOptions(allow_empty_tests=True) is the deliberate opt-out. Otherwise a stale **/api/** pattern produces EmptyTestViolation instead of a green build.',
+    pythonCode: 'CheckOptions(allow_empty_tests=True)',
     typescript:
       'ArchUnitTS uses allowEmptyTests for the same opt-out and records the unmatched filter in EmptyTestViolation.',
+    typescriptCode: 'const options = { allowEmptyTests: true };',
   },
   {
     number: '07',
@@ -153,8 +228,10 @@ const stages = [
     body: 'Dependency direction is an edge question. Cycles are a graph question. Layer policies, slices, coupling, instability, and reachability each use the projection suited to their architectural meaning.',
     python:
       'Cycle detection first uses Tarjan to isolate strongly connected components, then Johnson to enumerate the simple cycles inside each relevant component.',
+    pythonCode: 'cycles = calculate_cycles(number_edges)',
     typescript:
       'The TypeScript implementation follows the same two-stage approach over internal projected edges, then converts complete paths into cycle violations.',
+    typescriptCode: 'const cycles = calculateCycles(numberEdges);',
   },
   {
     number: '08',
@@ -163,8 +240,10 @@ const stages = [
     body: 'Rules return violation data. Assertion adapters turn that data into pytest, Jest, Vitest, xUnit, or native test failures; reporters turn it into text, JSON, diagrams, SARIF, or HTML where supported.',
     python:
       'assert_passes() calls check(), formats every violation with concrete evidence, includes the because() rationale, and raises AssertionError only at the final boundary.',
+    pythonCode: 'assert_passes(rule)',
     typescript:
       'toPassAsync() integrates with the runner, while check() remains available for custom workflows and report generation.',
+    typescriptCode: 'await expect(rule).toPassAsync();',
   },
 ];
 
@@ -550,10 +629,12 @@ const schema = {
             <div class="how-language-note how-language-note--python">
               <span>Python, concretely</span>
               <p>{stage.python}</p>
+              <InlineCode code={stage.pythonCode} language="python" />
             </div>
             <div class="how-language-note">
               <span>TypeScript, briefly</span>
               <p>{stage.typescript}</p>
+              <InlineCode code={stage.typescriptCode} language="typescript" />
             </div>
           </article>
         ))}
@@ -648,27 +729,67 @@ const schema = {
           target is an internal source node or an external dependency.
         </p>
         <p>
-          In Python, <code>ast.parse()</code> produces the syntax tree. Visitors collect ordinary
-          imports, from imports, relative references, literal dynamic imports, imports below
-          <code>TYPE_CHECKING</code>, and common optional-import fallbacks. Context flags stay on
-          the evidence so later rules can distinguish a runtime dependency from a type-only or
-          optional relationship where the API supports that distinction.
+          Python begins with an absolute project root.{' '}
+          <InlineCode code="os.walk(project_root)" language="python" /> recursively discovers{' '}
+          <InlineCode code="*.py" language="python" /> files while pruning excluded directories in
+          place. The defaults remove virtual environments, dependency folders, Git metadata, caches,
+          distribution output, build output, and egg metadata. Patterns from{' '}
+          <strong>.archignore</strong> join that list before discovery, so ignored trees are never
+          parsed.
         </p>
         <p>
-          TypeScript begins with a Compiler API Program created from the real project configuration.
-          Module specifiers are resolved with compiler settings and project references in scope. The
-          syntax mechanism differs, but the output boundary is the same: normalized source-backed
-          dependency evidence.
+          Each Python file is decoded as UTF-8 and passed to{' '}
+          <InlineCode code="ast.parse(source, filename=file_path)" language="python" />. The
+          extractor walks the tree with <InlineCode code="ast.walk(tree)" language="python" />,
+          recognizes <InlineCode code="ast.Import" language="python" />,{' '}
+          <InlineCode code="ast.ImportFrom" language="python" />, and supported literal
+          dynamic-import calls. It also records line numbers and classifies imports inside{' '}
+          <InlineCode code="TYPE_CHECKING" language="python" /> or a handled{' '}
+          <InlineCode code="try / except ImportError" language="python" /> block. Computed runtime
+          module names are deliberately not guessed.
+        </p>
+        <p>
+          Relative Python imports are resolved by counting leading dots from the importing file’s
+          directory, then trying both <InlineCode code="module.py" language="python" /> and
+          <InlineCode code="package/__init__.py" language="python" />. Absolute names are tested
+          from the project root and its parent, longest module prefix first. A resolved internal
+          target must also belong to the discovered source set; otherwise the module remains an
+          external dependency instead of becoming an invented project node.
+        </p>
+        <p>
+          TypeScript lets the compiler define the project.{' '}
+          <InlineCode code="ts.readConfigFile()" language="typescript" /> reads the JSON source and{' '}
+          <InlineCode code="ts.parseJsonConfigFileContent()" language="typescript" /> applies
+          extends, include, exclude, and compiler options. ArchUnitTS recursively visits every{' '}
+          <InlineCode code="projectReferences" language="typescript" /> entry through
+          <InlineCode code="ts.resolveProjectReferencePath()" language="typescript" />, guarded by a
+          visited-config set so cycles or repeated references cannot duplicate work.
+        </p>
+        <p>
+          The collected file names and root compiler options create a{' '}
+          <InlineCode code="ts.Program" language="typescript" /> through{' '}
+          <InlineCode code="ts.createProgram()" language="typescript" />. ArchUnitTS visits
+          top-level import declarations with{' '}
+          <InlineCode code="ts.forEachChild()" language="typescript" /> and resolves their module
+          specifiers with <InlineCode code="ts.resolveModuleName()" language="typescript" />. When a
+          source file belongs to more than one referenced configuration, resolution runs under every
+          applicable option set and deduplicates results by resolved filename and external-library
+          status.
         </p>
       </div>
       <div class="how-deep-code-stack">
         <div>
-          <span>Conceptual Python pipeline, simplified</span>
-          <CodeWindow code={pythonExtraction} filename="extractor.py" language="python" />
+          <span>Python implementation APIs, simplified</span>
+          <CodeWindow code={pythonExtraction} filename="extract_graph.py" language="python" copy />
         </div>
         <div>
-          <span>Conceptual TypeScript pipeline, simplified</span>
-          <CodeWindow code={typescriptExtraction} filename="extractor.ts" language="typescript" />
+          <span>TypeScript Compiler APIs, simplified</span>
+          <CodeWindow
+            code={typescriptExtraction}
+            filename="extract-graph.ts"
+            language="typescript"
+            copy
+          />
         </div>
       </div>
     </div>
@@ -726,10 +847,10 @@ const schema = {
             <tr>
               <th>Relative module</th>
               <td>
-                <code>from ..domain import Order</code>
+                <InlineCode code="from ..domain import Order" language="python" />
               </td>
               <td>
-                <code>import Order from '../domain'</code>
+                <InlineCode code="import Order from '../domain'" language="typescript" />
               </td>
               <td>Resolve from the importing module or source file.</td>
             </tr>
@@ -742,17 +863,17 @@ const schema = {
             <tr>
               <th>External package</th>
               <td>
-                <code>import requests</code>
+                <InlineCode code="import requests" language="python" />
               </td>
               <td>
-                <code>import express from 'express'</code>
+                <InlineCode code="import express from 'express'" language="typescript" />
               </td>
               <td>External identity remains queryable without becoming a source node.</td>
             </tr>
             <tr>
               <th>Literal dynamic import</th>
               <td>
-                <code>import_module('app.audit')</code>
+                <InlineCode code="import_module('app.audit')" language="python" />
               </td>
               <td>A literal specifier can be inspected by the language adapter.</td>
               <td>Edge when the target is statically resolvable.</td>
@@ -760,10 +881,10 @@ const schema = {
             <tr>
               <th>Computed runtime target</th>
               <td>
-                <code>import_module(prefix + name)</code>
+                <InlineCode code="import_module(prefix + name)" language="python" />
               </td>
               <td>
-                <code>import(prefix + name)</code>
+                <InlineCode code="import(prefix + name)" language="typescript" />
               </td>
               <td>No invented edge. The static boundary remains explicit.</td>
             </tr>
@@ -775,18 +896,24 @@ const schema = {
           <span>Python</span>
           <h3>Build an index before resolving.</h3>
           <p>
-            Discovered files establish the internal module namespace. Relative levels and package
-            paths can then be resolved against that index, while unmatched top-level modules remain
-            external.
+            Discovered files establish the allowed internal targets. Relative imports count dot
+            depth from the source directory and test a module file before a package initializer.
+            Absolute imports search the project root and its parent, shortening the dotted name
+            until a file or package resolves. Namespace-package aliases receive a second pass so
+            <InlineCode code="from package import feature" language="python" /> can resolve the
+            feature submodule rather than stopping at the package.
           </p>
         </article>
         <article>
           <span>TypeScript</span>
           <h3>Let compiler configuration define identity.</h3>
           <p>
-            Compiler options, aliases, extensions, package boundaries, and referenced projects all
-            affect the source file a specifier reaches. The architecture model follows that resolved
-            project.
+            Each source file is matched back to the parsed configurations that include it. The
+            module specifier is passed to{' '}
+            <InlineCode code="ts.resolveModuleName()" language="typescript" /> with every applicable
+            compiler-option context and the shared compiler host. A map keyed by normalized filename
+            and external-library status removes duplicate resolutions without allowing reference
+            order to hide a valid edge.
           </p>
         </article>
       </div>
@@ -831,7 +958,28 @@ const schema = {
           imports something. The graph therefore represents the discovered source set, not only the
           edges that happened to resolve.
         </p>
-        <CodeWindow code={graphModel} filename="conceptual-graph-model.txt" language="text" />
+        <p>
+          Both implementations use an edge list as the graph boundary. Python creates a self-edge
+          for every discovered file before it processes imports, then merges equal source-target
+          pairs while unioning their import kinds. TypeScript likewise adds a self-edge for every
+          project source file. This keeps isolated files selectable without introducing a separate
+          node collection that could drift from the edges.
+        </p>
+        <div class="how-deep-code-stack">
+          <div>
+            <span>Python graph records</span>
+            <CodeWindow code={pythonGraphModel} filename="graph.py" language="python" copy />
+          </div>
+          <div>
+            <span>TypeScript graph records</span>
+            <CodeWindow
+              code={typescriptGraphModel}
+              filename="graph.ts"
+              language="typescript"
+              copy
+            />
+          </div>
+        </div>
       </div>
     </div>
   </section>
@@ -876,8 +1024,8 @@ const schema = {
             <strong>One finding per matched edge</strong>
           </div>
           <p class="truth-note">
-            <code>should_not</code> negates the condition. It never means that the test runner
-            should pass when violations exist.
+            <InlineCode code="should_not()" language="python" /> negates the condition. It never
+            means that the test runner should pass when violations exist.
           </p>
         </div>
       </div>

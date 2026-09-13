@@ -1,0 +1,24 @@
+---
+import { codeToHtml } from 'shiki';
+
+interface Props {
+  code: string;
+  language: string;
+}
+
+const { code, language } = Astro.props;
+let highlighted: string;
+const escaped = code.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
+
+try {
+  const html = await codeToHtml(code, {
+    lang: language,
+    theme: 'github-dark',
+  });
+  highlighted = html.match(/<code>([\s\S]*?)<\/code>/)?.[1] ?? escaped;
+} catch {
+  highlighted = escaped;
+}
+---
+
+<code class="inline-code" set:html={highlighted} />
