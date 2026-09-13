@@ -1,9 +1,10 @@
-# ArchUnitEverything
+# ArchUnit
 
 > Open-source architecture testing libraries that turn dependency boundaries, cycle constraints, diagrams, and design metrics into executable tests.
 
 - Home: https://www.archunit.net/
 - Why architecture tests: https://www.archunit.net/why-architecture-tests/
+- Blog: https://www.archunit.net/blog/
 - TypeScript: https://www.archunit.net/typescript/
 - Python: https://www.archunit.net/python/
 - .NET: https://www.archunit.net/dotnet/
@@ -13,4 +14,4 @@
 - Go: https://www.archunit.net/go/
 - Java: https://www.archunit.net/java/
 - PHP: https://www.archunit.net/php/
-- Contributors: https://www.archunit.net/team/
+- Team: https://www.archunit.net/team/

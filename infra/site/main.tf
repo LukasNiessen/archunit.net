@@ -145,7 +145,7 @@ resource "aws_cloudfront_function" "rewrite" {
 
 resource "aws_cloudfront_response_headers_policy" "security" {
   name    = "${local.name_prefix}-security"
-  comment = "Security headers for the static ArchUnitEverything website"
+  comment = "Security headers for the static ArchUnit website"
 
   security_headers_config {
     content_security_policy {
@@ -193,7 +193,7 @@ resource "aws_cloudfront_response_headers_policy" "security" {
 resource "aws_cloudfront_distribution" "site" {
   enabled             = true
   is_ipv6_enabled     = true
-  comment             = "ArchUnitEverything public website"
+  comment             = "ArchUnit public website"
   default_root_object = "index.html"
   price_class         = "PriceClass_100"
   wait_for_deployment = true

@@ -5,6 +5,7 @@ const path = Astro.url.pathname;
 const links = [
   { href: '/#libraries', label: 'Libraries' },
   { href: '/why-architecture-tests/', label: 'Why architecture tests' },
+  { href: '/blog/', label: 'Blog' },
   { href: '/team/', label: 'Team' },
 ];
 ---
@@ -12,14 +13,8 @@ const links = [
 <header class="site-header" data-header>
   <div class="header-inner">
     <a class="brand" href="/" aria-label="ArchUnit home">
-      <span class="brand-mark" aria-hidden="true">
-        <span></span>
-        <span></span>
-        <span></span>
-      </span>
-      <span class="brand-wordmark">
-        ArchUnit<span>Everything</span>
-      </span>
+      <img class="brand-logo" src="/logos/archunitts.png" alt="" width="34" height="34" />
+      <span class="brand-wordmark">ArchUnit</span>
     </a>
 
     <button class="menu-button" type="button" aria-expanded="false" aria-controls="primary-nav">
@@ -37,6 +32,18 @@ const links = [
           {link.label}
         </a>
       ))}
+      <button class="theme-toggle" type="button" data-theme-toggle aria-label="Use light mode">
+        <svg class="theme-icon theme-icon--sun" viewBox="0 0 24 24" aria-hidden="true">
+          <circle cx="12" cy="12" r="4"></circle>
+          <path d="M12 2v2M12 20v2M4.93 4.93l1.42 1.42M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.42-1.42M17.66 6.34l1.41-1.41"></path>
+        </svg>
+        <svg class="theme-icon theme-icon--moon" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8Z"></path>
+        </svg>
+        <span class="sr-only" data-theme-label>
+          Use light mode
+        </span>
+      </button>
       <a
         class="button button--small button--light"
         href="https://github.com/LukasNiessen"
@@ -64,5 +71,25 @@ const links = [
       button?.setAttribute('aria-expanded', 'false');
       nav.removeAttribute('data-open');
     });
+  });
+
+  const themeToggle = document.querySelector<HTMLButtonElement>('[data-theme-toggle]');
+  const themeLabel = themeToggle?.querySelector<HTMLElement>('[data-theme-label]');
+  const updateThemeControl = () => {
+    const isDark = document.documentElement.dataset.theme !== 'light';
+    const label = isDark ? 'Use light mode' : 'Use dark mode';
+    themeToggle?.setAttribute('aria-label', label);
+    if (themeLabel) themeLabel.textContent = label;
+  };
+  updateThemeControl();
+  themeToggle?.addEventListener('click', () => {
+    const next = document.documentElement.dataset.theme === 'light' ? 'dark' : 'light';
+    document.documentElement.dataset.theme = next;
+    document.documentElement.style.colorScheme = next;
+    localStorage.setItem('archunit-theme', next);
+    document
+      .querySelector<HTMLMetaElement>('meta[name="theme-color"]')
+      ?.setAttribute('content', next === 'light' ? '#f4f2eb' : '#080a0d');
+    updateThemeControl();
   });
 </script>

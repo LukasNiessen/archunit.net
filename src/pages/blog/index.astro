@@ -1,0 +1,76 @@
+---
+import SectionHeading from '@components/SectionHeading.astro';
+import { posts } from '@data/posts';
+import BaseLayout from '@layouts/BaseLayout.astro';
+
+const schema = {
+  '@context': 'https://schema.org',
+  '@type': 'Blog',
+  name: 'ArchUnit Blog',
+  url: 'https://www.archunit.net/blog/',
+  description:
+    'Practical writing about architecture tests, fitness functions, and the ArchUnit library family.',
+  blogPost: posts.map((post) => ({
+    '@type': 'BlogPosting',
+    headline: post.title,
+    datePublished: post.published,
+    url: 'https://www.archunit.net/blog/' + post.slug + '/',
+  })),
+};
+---
+
+<BaseLayout
+  title="Blog"
+  description="Practical writing from the ArchUnit project about architecture tests, fitness functions, TypeScript, Python, and maintainable software design."
+  canonicalPath="/blog/"
+  schema={schema}
+>
+  <section class="page-hero blog-hero">
+    <div class="shell">
+      <p class="hero-kicker">Ideas made executable</p>
+      <h1>
+        Notes on code that keeps its <em>shape.</em>
+      </h1>
+      <div class="page-hero__copy">
+        <p>
+          Practical guides, project stories, and comparisons for teams that want architecture to
+          survive everyday delivery.
+        </p>
+        <p>
+          Written from the work behind ArchUnitTS, ArchUnitPython, and the wider ArchUnit family.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section class="blog-index-section">
+    <div class="shell">
+      <SectionHeading
+        eyebrow="Latest writing"
+        title="Architecture is easier to protect when the reasoning is shared."
+        copy="Start with the project origin, choose a practical guardrail, or explore architecture testing in TypeScript and Python."
+      />
+      <div class="blog-grid">
+        {posts.map((post, index) => (
+          <a
+            class:list={['blog-card', { 'blog-card--featured': index === 0 }]}
+            href={'/blog/' + post.slug + '/'}
+          >
+            <div class="blog-card__meta">
+              <span>{post.category}</span>
+              <time datetime={post.published}>{post.publishedLabel}</time>
+            </div>
+            <div>
+              <h2>{post.title}</h2>
+              <p>{post.summary}</p>
+            </div>
+            <div class="blog-card__footer">
+              <span>{post.readingTime}</span>
+              <span>Read article ↗</span>
+            </div>
+          </a>
+        ))}
+      </div>
+    </div>
+  </section>
+</BaseLayout>

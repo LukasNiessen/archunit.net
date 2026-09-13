@@ -1,6 +1,6 @@
 # archunit.net
 
-The official home of **ArchUnitEverything**: architecture-testing libraries for TypeScript, Python, .NET, Ruby, Rust, Zig, Go, Java, and PHP.
+The official home of **ArchUnit**: architecture-testing libraries for TypeScript, Python, .NET, Ruby, Rust, Zig, Go, Java, and PHP.
 
 The site is built as static HTML with Astro and deployed to AWS through Terraform and GitHub Actions.
 

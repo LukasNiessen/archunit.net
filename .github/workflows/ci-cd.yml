@@ -151,4 +151,4 @@ jobs:
           ORIGIN_URL: ${{ steps.infrastructure.outputs.origin_url }}
         run: |
           curl --fail --silent --show-error --retry 8 --retry-all-errors --retry-delay 15 "$ORIGIN_URL" \
-            | grep --fixed-strings --quiet "ArchUnitEverything"
+            | grep --fixed-strings --quiet "Architecture is a behavior"

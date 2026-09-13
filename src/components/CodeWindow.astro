@@ -1,4 +1,7 @@
 ---
+import { codeToHtml } from 'shiki';
+import CopyIcon from './CopyIcon.astro';
+
 interface Props {
   code: string;
   filename: string;
@@ -7,6 +10,16 @@ interface Props {
 }
 
 const { code, filename, language = '', copy = false } = Astro.props;
+let highlighted: string;
+try {
+  highlighted = await codeToHtml(code, {
+    lang: language || 'text',
+    theme: 'github-dark',
+  });
+} catch {
+  const escaped = code.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
+  highlighted = '<pre><code>' + escaped + '</code></pre>';
+}
 ---
 
 <div class="code-window" data-code-window>
@@ -19,23 +32,27 @@ const { code, filename, language = '', copy = false } = Astro.props;
     <span class="code-window__filename">{filename}</span>
     {copy && (
       <button class="copy-button" type="button" data-copy={code} aria-label="Copy code">
-        Copy
+        <CopyIcon />
+        <span data-copy-label>Copy</span>
       </button>
     )}
   </div>
-  <pre class={'language-' + language}><code>{code}</code></pre>
+  <div class="code-window__body" set:html={highlighted} />
 </div>
 
 {copy && <script>
   document.querySelectorAll<HTMLButtonElement>('[data-copy]').forEach((copyButton) => {
+    if (copyButton.dataset.copyBound === 'true') return;
+    copyButton.dataset.copyBound = 'true';
     copyButton.addEventListener('click', async () => {
       const value = copyButton.dataset.copy;
       if (!value) return;
       await navigator.clipboard.writeText(value);
-      const previous = copyButton.textContent;
-      copyButton.textContent = 'Copied';
+      const label = copyButton.querySelector<HTMLElement>('[data-copy-label]');
+      if (!label) return;
+      label.textContent = 'Copied';
       window.setTimeout(() => {
-        copyButton.textContent = previous;
+        label.textContent = 'Copy';
       }, 1600);
     });
   });

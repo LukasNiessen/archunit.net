@@ -1,42 +1,37 @@
 ---
 import SectionHeading from '@components/SectionHeading.astro';
-import { contributors, coreContributors } from '@data/contributors';
+import { contributors, team } from '@data/contributors';
 import BaseLayout from '@layouts/BaseLayout.astro';
 
-const contributionTotal = contributors.reduce(
-  (total, contributor) => total + contributor.contributions,
-  0,
-);
 const schema = {
   '@context': 'https://schema.org',
   '@type': 'AboutPage',
-  name: 'ArchUnitEverything contributors',
+  name: 'The ArchUnit team',
   url: 'https://www.archunit.net/team/',
-  description: 'The open-source contributors building the ArchUnitEverything library family.',
+  description:
+    'Meet the five-person team and wider contributor community behind the ArchUnit library family.',
 };
 ---
 
 <BaseLayout
-  title="Contributors"
-  description="Meet the open-source contributors building architecture testing libraries across nine programming ecosystems."
+  title="Team"
+  description="Meet the five-person team and wider open-source contributor community behind the ArchUnit architecture-testing library family."
   canonicalPath="/team/"
   schema={schema}
 >
-  <section class="page-hero">
+  <section class="page-hero team-hero">
     <div class="shell">
-      <p class="hero-kicker">Open source, across ecosystems</p>
       <h1>
-        The people making architecture <em>executable.</em>
+        Five people, one shared <em>standard.</em>
       </h1>
       <div class="page-hero__copy">
         <p>
-          ArchUnitEverything is built in public by maintainers and contributors working across
-          language tooling, graph analysis, fluent APIs, testing integrations, and documentation.
+          We are a team of five people building architecture tests that feel native in every
+          ecosystem they serve.
         </p>
         <p>
-          This page is generated from the human contributor history of the nine primary
-          repositories. Together, these GitHub identities account for{' '}
-          {contributionTotal.toLocaleString('en-US')}+ contributions.
+          We work across language tooling, graph analysis, developer experience, cloud platforms,
+          and applied AI, with open-source collaboration at the center.
         </p>
       </div>
     </div>
@@ -45,41 +40,71 @@ const schema = {
   <section class="team-section">
     <div class="shell">
       <SectionHeading
-        eyebrow="Core contributors"
-        title="Building the family."
-        copy="These contributors have made ten or more commits across one or more primary implementations."
+        eyebrow="Team"
+        title="The people building ArchUnit."
+        copy="A small, multidisciplinary team focused on one practical outcome: keeping architectural intent close to the code."
       />
       <div class="core-team">
-        {coreContributors.map((contributor) => (
-          <a
-            class="contributor-card"
-            href={contributor.profileUrl}
-            target="_blank"
-            rel="noreferrer"
-          >
-            <div>
-              <img
-                src={contributor.avatarUrl}
-                alt={contributor.login + ' on GitHub'}
-                width="82"
-                height="82"
-                loading="lazy"
-              />
-              <h3>@{contributor.login}</h3>
-              <p>{contributor.repositories.join(' · ')}</p>
+        {team.map((member) => (
+          <article class="team-card">
+            <img src={member.photoUrl} alt={member.name} width="480" height="480" loading="lazy" />
+            <div class="team-card__body">
+              <p class="eyebrow">{member.role}</p>
+              <h2>{member.name}</h2>
+              <p>{member.bio}</p>
+              <div class="team-card__links">
+                <a href={member.linkedinUrl} target="_blank" rel="noreferrer">
+                  LinkedIn ↗
+                </a>
+                {member.githubUrl && (
+                  <a href={member.githubUrl} target="_blank" rel="noreferrer">
+                    GitHub ↗
+                  </a>
+                )}
+              </div>
             </div>
-            <div class="contributor-card__meta">
-              <span>{contributor.contributions} contributions</span>
-              <span>↗</span>
-            </div>
-          </a>
+          </article>
         ))}
       </div>
+    </div>
+  </section>
 
+  <section class="origin-section">
+    <div class="origin-grid shell">
+      <div>
+        <p class="eyebrow">Origin story</p>
+        <h2>A missing TypeScript guardrail became a family.</h2>
+      </div>
+      <div class="origin-copy">
+        <p>
+          ArchUnit started with a concrete problem. While working as a consultant, Lukas needed an
+          architecture-testing framework for TypeScript with the practical depth of ArchUnit in the
+          Java ecosystem. The available options did not fully fit the project, so he began building
+          ArchUnitTS in his spare time.
+        </p>
+        <p>
+          Contributors joined, enterprise projects brought new requirements, and the original
+          dependency rules grew into metrics, diagrams, reports, and test-runner integrations. The
+          same idea then moved into Python, .NET, Ruby, Rust, Zig, Go, Java, and PHP.
+        </p>
+        <p>
+          Each implementation respects its own language. What connects them is the belief that an
+          architecture decision becomes more useful when the test suite can prove it after every
+          change.
+        </p>
+        <a class="text-link" href="/blog/why-archunitts-exists/">
+          Read the full project story →
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <section class="contributors-section">
+    <div class="shell">
       <SectionHeading
         eyebrow="Every contribution counts"
         title="The wider contributor community."
-        copy="Documentation, fixes, examples, features, and maintenance all move an open-source project forward."
+        copy="Documentation, fixes, examples, features, and thoughtful feedback all move an open-source project forward."
       />
       <div class="all-contributors">
         {contributors.map((contributor) => (
@@ -103,7 +128,7 @@ const schema = {
         There is room for your <em>perspective.</em>
       </h2>
       <p>
-        Pick an ecosystem you know, explore the issues, and help make architecture tests clearer,
+        Pick an ecosystem you know, explore the issues, and help architecture tests feel clearer,
         faster, and more native to that community.
       </p>
       <a

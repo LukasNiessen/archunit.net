@@ -1,5 +1,6 @@
 ---
 import CodeWindow from '@components/CodeWindow.astro';
+import CopyIcon from '@components/CopyIcon.astro';
 import ProjectCard from '@components/ProjectCard.astro';
 import ProjectMark from '@components/ProjectMark.astro';
 import SectionHeading from '@components/SectionHeading.astro';
@@ -67,13 +68,12 @@ const schema = [
     <section class="detail-hero">
       <div class="shell">
         <nav class="breadcrumbs" aria-label="Breadcrumb">
-          <a href="/">ArchUnitEverything</a>
+          <a href="/">ArchUnit</a>
           <span>/</span>
           <span>{project.language}</span>
         </nav>
         <div class="detail-hero__grid">
           <div>
-            <p class="eyebrow detail-language">Architecture testing for {project.language}</p>
             <div class="detail-title-row">
               <ProjectMark
                 monogram={project.monogram}
@@ -85,7 +85,10 @@ const schema = [
               />
               <h1>{project.name}</h1>
             </div>
-            <p class="detail-lede">{project.longDescription}</p>
+            <p class="detail-lede">
+              <strong>Architecture testing for {project.language}.</strong>{' '}
+              {project.longDescription}
+            </p>
             <div class="detail-meta">
               <span>{project.statusLabel}</span>
               <span>{project.runtime}</span>
@@ -111,7 +114,8 @@ const schema = [
               <div class="install-command">
                 <code>{project.install}</code>
                 <button type="button" data-copy-install={project.install}>
-                  Copy
+                  <CopyIcon />
+                  <span data-copy-install-label>Copy</span>
                 </button>
               </div>
             </div>
@@ -122,6 +126,24 @@ const schema = [
             language={project.codeLanguage}
             copy
           />
+        </div>
+      </div>
+    </section>
+
+    <section class="project-content-section language-primer-section">
+      <div class="language-primer shell">
+        <div data-reveal>
+          <p class="eyebrow">The ecosystem</p>
+          <h2>{project.language}, in context.</h2>
+          <p class="language-primer__copy">{project.languageOverview}</p>
+        </div>
+        <div class="ecosystem-highlights">
+          {project.ecosystemHighlights.map((highlight, index) => (
+            <div class="ecosystem-highlight" data-reveal>
+              <span>{String(index + 1).padStart(2, '0')}</span>
+              <p>{highlight}</p>
+            </div>
+          ))}
         </div>
       </div>
     </section>
@@ -141,6 +163,22 @@ const schema = [
             </article>
           ))}
         </div>
+      </div>
+    </section>
+
+    <section class="project-content-section deep-dive-section">
+      <div class="deep-dive-grid shell">
+        <div data-reveal>
+          <p class="eyebrow">Go deeper</p>
+          <h2>{project.deepDiveTitle}</h2>
+          <p>{project.deepDiveCopy}</p>
+        </div>
+        <CodeWindow
+          code={project.deepDiveCode}
+          filename={project.deepDiveFilename}
+          language={project.codeLanguage}
+          copy
+        />
       </div>
     </section>
 
@@ -240,9 +278,11 @@ const schema = [
         const value = button.dataset.copyInstall;
         if (!value) return;
         await navigator.clipboard.writeText(value);
-        button.textContent = 'Copied';
+        const label = button.querySelector<HTMLElement>('[data-copy-install-label]');
+        if (!label) return;
+        label.textContent = 'Copied';
         window.setTimeout(() => {
-          button.textContent = 'Copy';
+          label.textContent = 'Copy';
         }, 1600);
       });
     });

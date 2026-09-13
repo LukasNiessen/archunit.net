@@ -3,17 +3,17 @@ import CodeWindow from '@components/CodeWindow.astro';
 import ProjectCard from '@components/ProjectCard.astro';
 import SectionHeading from '@components/SectionHeading.astro';
 import { contributors } from '@data/contributors';
+import { posts } from '@data/posts';
 import { projects, stableProjects } from '@data/projects';
 import BaseLayout from '@layouts/BaseLayout.astro';
 
 const previewProjects = projects.filter((project) => project.status !== 'stable');
-const codeProjectSlugs = new Set(['typescript', 'python', 'rust']);
-const codeProjects = projects.filter((project) => codeProjectSlugs.has(project.slug));
+const codeProjects = projects;
 const homeSchema = [
   {
     '@context': 'https://schema.org',
     '@type': 'Organization',
-    name: 'ArchUnitEverything',
+    name: 'ArchUnit',
     url: 'https://www.archunit.net/',
     sameAs: projects.map((project) => project.repo),
   },
@@ -33,20 +33,19 @@ const homeSchema = [
 ---
 
 <BaseLayout
-  title="ArchUnitEverything"
+  title="ArchUnit"
   description="Architecture testing libraries for TypeScript, Python, .NET, Ruby, Rust, Zig, Go, Java, and PHP. Turn architecture decisions into tests that run with every commit."
   schema={homeSchema}
 >
   <section class="hero">
     <div class="hero-grid shell">
       <div class="hero-copy" data-reveal>
-        <p class="hero-kicker">Nine ecosystems. One architecture grammar.</p>
         <h1>
           Architecture is a behavior. <em>Test it.</em>
         </h1>
         <p class="hero-lede">
           Guard boundaries, detect cycles, measure design health, and keep architecture honest as
-          code changes — inside the test suite your team already runs.
+          code changes, inside the test suite your team already runs.
         </p>
         <div class="hero-actions">
           <a class="button button--lime" href="#libraries">
@@ -100,12 +99,32 @@ const homeSchema = [
   <section class="proof-strip" aria-label="Supported ecosystems">
     <div class="proof-inner shell">
       <p class="proof-label">Built for</p>
-      <div class="language-ticker">
-        {projects.map((project) => (
-          <a href={'/' + project.slug + '/'} style={'--ticker-accent:' + project.accent}>
-            {project.language}
-          </a>
-        ))}
+      <div class="ticker-shell" data-language-carousel>
+        <button
+          class="ticker-arrow"
+          type="button"
+          data-ticker-previous
+          aria-label="Previous languages"
+        >
+          <span aria-hidden="true">←</span>
+        </button>
+        <div class="language-ticker" data-ticker-track>
+          <div class="language-ticker__rail">
+            {[...projects, ...projects].map((project, index) => (
+              <a
+                href={'/' + project.slug + '/'}
+                style={'--ticker-accent:' + project.accent}
+                aria-hidden={index >= projects.length ? 'true' : undefined}
+                tabindex={index >= projects.length ? '-1' : undefined}
+              >
+                {project.language}
+              </a>
+            ))}
+          </div>
+        </div>
+        <button class="ticker-arrow" type="button" data-ticker-next aria-label="Next languages">
+          <span aria-hidden="true">→</span>
+        </button>
       </div>
     </div>
   </section>
@@ -242,7 +261,7 @@ const homeSchema = [
         </p>
         <div class="hero-actions">
           <a class="button button--lime" href="/team/">
-            Meet the contributors
+            Meet the team
           </a>
           <a class="button" href="https://github.com/LukasNiessen" target="_blank" rel="noreferrer">
             Contribute on GitHub ↗
@@ -260,6 +279,32 @@ const homeSchema = [
           />
         ))}
       </div>
+    </div>
+  </section>
+
+  <section class="home-section home-blog-section">
+    <div class="shell">
+      <SectionHeading
+        eyebrow="From the blog"
+        title="The reasoning behind the rules."
+        copy="Project stories and practical guides for turning architecture decisions into useful feedback."
+      />
+      <div class="home-blog-grid">
+        {posts.slice(0, 3).map((post) => (
+          <a class="home-blog-card" href={'/blog/' + post.slug + '/'}>
+            <div class="blog-card__meta">
+              <span>{post.category}</span>
+              <time datetime={post.published}>{post.publishedLabel}</time>
+            </div>
+            <h3>{post.title}</h3>
+            <p>{post.summary}</p>
+            <span class="home-blog-card__link">{post.readingTime} · Read ↗</span>
+          </a>
+        ))}
+      </div>
+      <a class="text-link" href="/blog/">
+        View every article →
+      </a>
     </div>
   </section>
 
@@ -292,5 +337,49 @@ const homeSchema = [
         });
       });
     });
+
+    const carousel = document.querySelector<HTMLElement>('[data-language-carousel]');
+    const track = carousel?.querySelector<HTMLElement>('[data-ticker-track]');
+    const rail = carousel?.querySelector<HTMLElement>('.language-ticker__rail');
+    const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    let pausedUntil = 0;
+    let lastFrame = performance.now();
+
+    const moveTicker = (direction: number) => {
+      if (!track) return;
+      pausedUntil = performance.now() + 4500;
+      track.scrollBy({
+        left: direction * Math.min(track.clientWidth * 0.72, 520),
+        behavior: 'smooth',
+      });
+    };
+
+    carousel
+      ?.querySelector('[data-ticker-previous]')
+      ?.addEventListener('click', () => moveTicker(-1));
+    carousel?.querySelector('[data-ticker-next]')?.addEventListener('click', () => moveTicker(1));
+    carousel?.addEventListener('pointerenter', () => {
+      pausedUntil = Number.POSITIVE_INFINITY;
+    });
+    carousel?.addEventListener('pointerleave', () => {
+      pausedUntil = performance.now() + 900;
+    });
+    carousel?.addEventListener('focusin', () => {
+      pausedUntil = Number.POSITIVE_INFINITY;
+    });
+    carousel?.addEventListener('focusout', () => {
+      pausedUntil = performance.now() + 900;
+    });
+
+    const animateTicker = (now: number) => {
+      if (track && rail && !reducedMotion && now > pausedUntil) {
+        track.scrollLeft += ((now - lastFrame) / 1000) * 13;
+        const midpoint = rail.scrollWidth / 2;
+        if (track.scrollLeft >= midpoint) track.scrollLeft -= midpoint;
+      }
+      lastFrame = now;
+      requestAnimationFrame(animateTicker);
+    };
+    requestAnimationFrame(animateTicker);
   </script>
 </BaseLayout>

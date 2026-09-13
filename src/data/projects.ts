@@ -8,6 +8,8 @@ export interface ArcUnitProject {
   repo: string;
   description: string;
   longDescription: string;
+  languageOverview: string;
+  ecosystemHighlights: string[];
   status: ProjectStatus;
   statusLabel: string;
   accent: string;
@@ -17,6 +19,10 @@ export interface ArcUnitProject {
   code: string;
   codeLanguage: string;
   codeFilename: string;
+  deepDiveTitle: string;
+  deepDiveCopy: string;
+  deepDiveCode: string;
+  deepDiveFilename: string;
   docsUrl?: string;
   packageUrl?: string;
   packageLabel?: string;
@@ -41,6 +47,13 @@ export const projects: ArcUnitProject[] = [
       'Architecture tests for TypeScript and JavaScript, from dependency rules to metrics and diagrams.',
     longDescription:
       'Make architecture executable in the same test suite as your application. ArchUnitTS understands modern TypeScript configuration, detects cycles, enforces dependency direction, measures design health, and exports reports for humans and automation.',
+    languageOverview:
+      'TypeScript adds static types to JavaScript while keeping the same browser and Node.js runtime model. It powers frontend applications built with React, Angular, Vue, and similar frameworks, and it is equally at home in backends built with Express, Fastify, NestJS, and serverless platforms. That range makes explicit dependency boundaries especially valuable.',
+    ecosystemHighlights: [
+      'Typed JavaScript for browsers and Node.js',
+      'React, Angular, Vue, NestJS, Express, and Fastify',
+      'Well suited to monorepos and shared packages',
+    ],
     status: 'stable',
     statusLabel: 'Production ready',
     accent: '#86e3ff',
@@ -62,6 +75,22 @@ export const projects: ArcUnitProject[] = [
     ].join('\n'),
     codeLanguage: 'typescript',
     codeFilename: 'architecture.test.ts',
+    deepDiveTitle: 'Catch cycles before they become refactors.',
+    deepDiveCopy:
+      'A cycle rule scans the selected source graph and reports the complete dependency path. Keep it beside unit tests so a newly introduced loop fails the same pull request that created it.',
+    deepDiveCode: [
+      "import { projectFiles } from 'archunit';",
+      '',
+      "it('keeps production code cycle free', async () => {",
+      '  const rule = projectFiles()',
+      "    .inFolder('src/**')",
+      '    .should()',
+      '    .haveNoCycles();',
+      '',
+      '  await expect(rule).toPassAsync();',
+      '});',
+    ].join('\n'),
+    deepDiveFilename: 'cycles.test.ts',
     docsUrl: 'https://lukasniessen.github.io/ArchUnitTS/',
     packageUrl: 'https://www.npmjs.com/package/archunit',
     packageLabel: 'View on npm',
@@ -90,6 +119,13 @@ export const projects: ArcUnitProject[] = [
       'Zero-runtime-dependency architecture tests for Python projects and any test framework.',
     longDescription:
       'Turn imports and source structure into rules that run beside pytest or unittest. ArchUnitPython checks boundaries, cycles, layers, external dependencies, code metrics, and architecture diagrams without becoming a production dependency.',
+    languageOverview:
+      'Python is a readable, dynamically typed language used across web services, automation, data engineering, machine learning, and scientific computing. Frameworks such as Django, FastAPI, and Flask make it quick to grow an application, while architecture tests help that speed stay compatible with clear module ownership.',
+    ecosystemHighlights: [
+      'Web applications, data platforms, automation, and AI',
+      'Django, FastAPI, Flask, pytest, and unittest',
+      'Dynamic imports analyzed without a runtime dependency',
+    ],
     status: 'stable',
     statusLabel: 'Production ready',
     accent: '#ffd66b',
@@ -111,6 +147,24 @@ export const projects: ArcUnitProject[] = [
     ].join('\n'),
     codeLanguage: 'python',
     codeFilename: 'test_architecture.py',
+    deepDiveTitle: 'Protect the direction between named layers.',
+    deepDiveCopy:
+      'Named layers describe the intended flow once, then validate all matching imports together. This is useful for services that grew from a small script into routes, domain logic, and persistence adapters.',
+    deepDiveCode: [
+      'from archunitpython import layers, assert_passes',
+      '',
+      'def test_layer_direction():',
+      '    rule = (',
+      '        layers()',
+      "        .layer('API').defined_by('app/api/**')",
+      "        .layer('Domain').defined_by('app/domain/**')",
+      "        .layer('Data').defined_by('app/data/**')",
+      "        .where_layer('Domain')",
+      '        .may_not_depend_on_layers("API")',
+      '    )',
+      '    assert_passes(rule)',
+    ].join('\n'),
+    deepDiveFilename: 'test_layers.py',
     docsUrl: 'https://lukasniessen.github.io/ArchUnitPython/',
     packageUrl: 'https://pypi.org/project/archunitpython/',
     packageLabel: 'View on PyPI',
@@ -139,6 +193,13 @@ export const projects: ArcUnitProject[] = [
       'Architecture rules and reports for C# solutions, with adapters for major .NET test frameworks.',
     longDescription:
       'Analyze C# projects and express boundaries as fluent, testable rules. The alpha includes cycles, dependency policies, naming, presets, baselines, and SARIF or HTML reporting for xUnit, NUnit, MSTest, and framework-neutral use.',
+    languageOverview:
+      ".NET is Microsoft's cross-platform application runtime and developer platform. C# is its most widely used language, although .NET also supports F# and Visual Basic. Teams use C# and .NET for ASP.NET web APIs, cloud services, desktop applications, games, and large enterprise systems.",
+    ecosystemHighlights: [
+      'C# is the primary language; .NET is the runtime and platform',
+      'ASP.NET, cloud services, desktop software, and games',
+      'xUnit, NUnit, and MSTest integration paths',
+    ],
     status: 'preview',
     statusLabel: 'Alpha preview',
     accent: '#c9a7ff',
@@ -163,6 +224,20 @@ export const projects: ArcUnitProject[] = [
     ].join('\n'),
     codeLanguage: 'csharp',
     codeFilename: 'ArchitectureTests.cs',
+    deepDiveTitle: 'Adopt boundaries without stopping delivery.',
+    deepDiveCopy:
+      'Baselines let an established solution record existing violations and fail only when new ones appear. Teams can then remove old debt deliberately while protecting every improvement.',
+    deepDiveCode: [
+      'var rule = ArchUnit.ProjectFiles("./Commerce.sln")',
+      '    .InPath("src/**")',
+      '    .Should()',
+      '    .HaveNoCycles();',
+      '',
+      'var result = await rule.CheckAsync();',
+      '',
+      'Assert.True(result.Passed, result.Format());',
+    ].join('\n'),
+    deepDiveFilename: 'CycleRules.cs',
     docsUrl: github + '/ArchUnitNET/tree/main/docs',
     packageUrl: 'https://www.nuget.org/packages/ArchUnit/',
     packageLabel: 'View on NuGet',
@@ -196,6 +271,13 @@ export const projects: ArcUnitProject[] = [
       'Executable architecture rules for Ruby and Rails, with RSpec and Minitest-friendly assertions.',
     longDescription:
       'Build a dependency graph from a Ruby codebase and guard cycles, layers, naming, metrics, slices, and diagrams as ordinary tests. The working prototype ships as the archunit gem and includes source-generated API documentation.',
+    languageOverview:
+      'Ruby is a dynamic, object-oriented language designed around expressive code and developer happiness. It is best known for Ruby on Rails, but it also powers command-line tools, background workers, APIs, and long-lived business systems. Architecture tests make implicit Rails conventions visible and enforceable.',
+    ecosystemHighlights: [
+      'Dynamic, object-oriented, and optimized for readable code',
+      'Ruby on Rails, Sidekiq, RSpec, and Minitest',
+      'Useful for modular monoliths and growing Rails codebases',
+    ],
     status: 'preview',
     statusLabel: 'Working preview',
     accent: '#ff8b8b',
@@ -218,6 +300,19 @@ export const projects: ArcUnitProject[] = [
     ].join('\n'),
     codeLanguage: 'ruby',
     codeFilename: 'architecture_spec.rb',
+    deepDiveTitle: 'Keep Rails domains independent.',
+    deepDiveCopy:
+      'Slice a Rails application by business capability and test the dependency direction between those slices. The result is a modular monolith whose boundaries survive everyday feature work.',
+    deepDiveCode: [
+      "require 'archunit'",
+      '',
+      "rule = ArchUnit.project_files.in_folder('app/**')",
+      '  .should.have_no_cycles',
+      '',
+      'result = rule.check',
+      'raise result.message unless result.passed?',
+    ].join('\n'),
+    deepDiveFilename: 'cycle_spec.rb',
     docsUrl: 'https://lukasniessen.github.io/ArchUnitRuby/',
     packageUrl: 'https://rubygems.org/gems/archunit',
     packageLabel: 'View on RubyGems',
@@ -246,6 +341,13 @@ export const projects: ArcUnitProject[] = [
       'Cargo-native architecture tests with immutable builders and structured, source-backed violations.',
     longDescription:
       'Write architecture policies as regular Rust tests. ArchUnitRust discovers the containing Cargo project, analyzes production targets, and provides file, layer, slice, metric, diagram, and graph APIs with explicit failure boundaries.',
+    languageOverview:
+      'Rust is a compiled systems language focused on memory safety, predictable performance, and fearless concurrency without a garbage collector. Cargo provides a strong package and workspace model, while architecture rules help larger Rust systems keep crate and module boundaries intentional.',
+    ecosystemHighlights: [
+      'Memory safety and native performance',
+      'Cargo packages, workspaces, libraries, and services',
+      'Strong fit for systems, infrastructure, and CLI software',
+    ],
     status: 'preview',
     statusLabel: 'Git preview',
     accent: '#ffc29a',
@@ -268,6 +370,23 @@ export const projects: ArcUnitProject[] = [
     ].join('\n'),
     codeLanguage: 'rust',
     codeFilename: 'tests/architecture.rs',
+    deepDiveTitle: 'Guard every production target in a workspace.',
+    deepDiveCopy:
+      'Cargo-native discovery keeps the rule close to the real workspace layout. A single cycle check can cover library and binary targets without teaching a separate tool how the project is built.',
+    deepDiveCode: [
+      'use archunit::{assert_passes, project_files};',
+      '',
+      '#[test]',
+      'fn production_targets_are_cycle_free() {',
+      '    let rule = project_files()',
+      '        .in_path("src/**/*.rs")',
+      '        .should()',
+      '        .have_no_cycles();',
+      '',
+      '    assert_passes!(rule);',
+      '}',
+    ].join('\n'),
+    deepDiveFilename: 'tests/cycles.rs',
     docsUrl: 'https://lukasniessen.github.io/ArchUnitRust/',
     packageUrl: github + '/ArchUnitRust',
     packageLabel: 'Install from Git',
@@ -296,6 +415,13 @@ export const projects: ArcUnitProject[] = [
       'Allocator-aware architecture checks for Zig projects, compiled as ordinary zig tests.',
     longDescription:
       'ArchUnitZig turns source dependencies into lazy, owned rule values. Its preview includes file boundaries, layers, slices, PlantUML, metrics, graph reports, native test helpers, and explicit memory ownership.',
+    languageOverview:
+      'Zig is a compiled systems language with explicit memory management, straightforward cross-compilation, and close interoperability with C. Its build system and allocator model keep resource ownership visible, so ArchUnitZig follows the same principle in both analysis and rule lifecycles.',
+    ecosystemHighlights: [
+      'Explicit allocators and predictable native binaries',
+      'Cross-compilation, systems tooling, and C interoperability',
+      'Architecture checks compiled as native Zig tests',
+    ],
     status: 'preview',
     statusLabel: 'Versioned preview',
     accent: '#ffcf73',
@@ -321,6 +447,20 @@ export const projects: ArcUnitProject[] = [
     ].join('\n'),
     codeLanguage: 'zig',
     codeFilename: 'test/architecture.zig',
+    deepDiveTitle: 'Make ownership explicit, including in tests.',
+    deepDiveCopy:
+      'Rule values own their analysis data and expose clear cleanup points. The architecture test remains honest about allocation while still expressing a recognizable dependency policy.',
+    deepDiveCode: [
+      'test "api does not import storage" {',
+      '    var files = try archunit.files(std.testing.allocator, .{});',
+      '    defer files.deinit();',
+      '',
+      '    var api = try files.inPath(&.{.{ .glob = "src/api/**" }});',
+      '    defer api.deinit();',
+      '    try archunit.expectNoDependency(&api, "src/storage/**");',
+      '}',
+    ].join('\n'),
+    deepDiveFilename: 'test/boundaries.zig',
     docsUrl: github + '/ArchUnitZig/blob/main/README.md',
     packageUrl: github + '/ArchUnitZig/releases/tag/v0.0.1',
     packageLabel: 'View release',
@@ -349,6 +489,13 @@ export const projects: ArcUnitProject[] = [
       'Architecture policies as plain Go test values, backed by the Go toolchain and x/tools.',
     longDescription:
       'Write the sentence your team already says aloud and let go test show where the code disagrees. ArchUnitGo covers files, layers, slices, metrics, and dependency graphs with structured violations and no special runner.',
+    languageOverview:
+      'Go is a compiled language built for simple tooling, fast builds, concurrency, and maintainable network services. Packages and internal directories provide useful boundaries, while architecture tests make the intended dependency direction explicit across larger modules and workspaces.',
+    ecosystemHighlights: [
+      'Cloud services, platform tools, CLIs, and networking',
+      'Built-in testing with go test',
+      'Simple package model with fast compilation',
+    ],
     status: 'preview',
     statusLabel: 'Main-branch preview',
     accent: '#72d8e8',
@@ -374,6 +521,19 @@ export const projects: ArcUnitProject[] = [
     ].join('\n'),
     codeLanguage: 'go',
     codeFilename: 'architecture_test.go',
+    deepDiveTitle: 'Use the test runner Go already provides.',
+    deepDiveCopy:
+      'Architecture rules are ordinary test values, so local runs and CI need no special runner. A failed policy reports structured violations through testing.T alongside the rest of the suite.',
+    deepDiveCode: [
+      'func TestInternalPackagesAreCycleFree(t *testing.T) {',
+      '    rule := archunit.ProjectFiles(nil).',
+      '        InFolder("internal/**").',
+      '        Should().HaveNoCycles()',
+      '',
+      '    archunit.AssertPasses(t, rule, nil)',
+      '}',
+    ].join('\n'),
+    deepDiveFilename: 'cycles_test.go',
     docsUrl: 'https://lukasniessen.github.io/ArchUnitGo/',
     packageUrl: 'https://pkg.go.dev/github.com/LukasNiessen/ArchUnitGo',
     packageLabel: 'View on pkg.go.dev',
@@ -402,6 +562,13 @@ export const projects: ArcUnitProject[] = [
       'A Java-native member of the family, planned around files, packages, types, modules, and JUnit 5.',
     longDescription:
       'The foundation repository tracks a Java implementation that will analyze source and symbols without executing the target application. It aims for honest Maven and Gradle discovery, immutable rules, structured violations, and unambiguous coordinates.',
+    languageOverview:
+      'Java is a statically typed language that runs on the Java Virtual Machine and anchors a large ecosystem of enterprise, Android, data, and backend software. Maven and Gradle organize builds, while Spring and Jakarta EE are common application platforms. This implementation is still a public design foundation.',
+    ecosystemHighlights: [
+      'JVM portability and a mature enterprise ecosystem',
+      'Spring, Jakarta EE, Maven, Gradle, and JUnit 5',
+      'Planned source and symbol analysis without app startup',
+    ],
     status: 'planned',
     statusLabel: 'Foundation stage',
     accent: '#ff9d75',
@@ -419,6 +586,19 @@ export const projects: ArcUnitProject[] = [
     ].join('\n'),
     codeLanguage: 'java',
     codeFilename: 'ArchitectureTest.java',
+    deepDiveTitle: 'Shape the Java API in public.',
+    deepDiveCopy:
+      'The example below describes the intended package-level grammar. It remains a design target until the foundation backlog reaches an executable release, so teams should not treat it as a published API yet.',
+    deepDiveCode: [
+      'var rule = ArchUnit.packages()',
+      '    .matching("com.example.domain..")',
+      '    .shouldNot()',
+      '    .dependOnPackages()',
+      '    .matching("com.example.web..");',
+      '',
+      'ArchAssert.passes(rule);',
+    ].join('\n'),
+    deepDiveFilename: 'PackageRules.java',
     docsUrl: github + '/ArchUnitJava/issues',
     packageUrl: github + '/ArchUnitJava',
     packageLabel: 'Join on GitHub',
@@ -446,6 +626,13 @@ export const projects: ArcUnitProject[] = [
     description: 'A planned architecture-testing library for Composer projects, PHPUnit, and Pest.',
     longDescription:
       'The PHP foundation focuses on static source analysis, honest Composer autoload resolution, lazy immutable rules, and structured violations. It is designed to integrate with PHPUnit and Pest without coupling the core to either.',
+    languageOverview:
+      'PHP is a dynamic language built for the web and deployed across everything from small sites to major commerce platforms. Modern PHP adds strong typing features, Composer manages packages and autoloading, and frameworks such as Laravel and Symfony give large applications a clear structure to protect.',
+    ecosystemHighlights: [
+      'Web applications, APIs, commerce, and content platforms',
+      'Composer, Laravel, Symfony, PHPUnit, and Pest',
+      'Planned static analysis without loading the application',
+    ],
     status: 'planned',
     statusLabel: 'Foundation stage',
     accent: '#9aa8ff',
@@ -463,6 +650,19 @@ export const projects: ArcUnitProject[] = [
     ].join('\n'),
     codeLanguage: 'php',
     codeFilename: 'ArchitectureTest.php',
+    deepDiveTitle: 'Start with Composer-aware boundaries.',
+    deepDiveCopy:
+      'The target API resolves namespaces through Composer before it evaluates dependency rules. This example is illustrative while the public foundation work is still underway.',
+    deepDiveCode: [
+      '$rule = ArchUnit::projectFiles()',
+      "    ->inFolder('src/Domain/**')",
+      '    ->shouldNot()',
+      '    ->dependOnFiles()',
+      "    ->inFolder('src/Http/**');",
+      '',
+      'ArchAssert::passes($rule);',
+    ].join('\n'),
+    deepDiveFilename: 'DomainBoundaryTest.php',
     docsUrl: github + '/ArchUnitPHP/issues',
     packageUrl: github + '/ArchUnitPHP',
     packageLabel: 'Join on GitHub',

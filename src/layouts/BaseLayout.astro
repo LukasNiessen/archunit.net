@@ -18,13 +18,13 @@ const {
   canonicalPath = Astro.url.pathname,
   schema,
 } = Astro.props;
-const siteTitle = title === 'ArchUnitEverything' ? title : title + ' — ArchUnitEverything';
+const siteTitle = title === 'ArchUnit' ? title : title + ' | ArchUnit';
 const canonical = new URL(canonicalPath, Astro.site);
 const socialImage = new URL(image, Astro.site);
 const defaultSchema = {
   '@context': 'https://schema.org',
   '@type': 'WebSite',
-  name: 'ArchUnitEverything',
+  name: 'ArchUnit',
   url: 'https://www.archunit.net/',
   description:
     'Architecture testing libraries for TypeScript, Python, .NET, Ruby, Rust, Zig, Go, Java, and PHP.',
@@ -32,20 +32,20 @@ const defaultSchema = {
 ---
 
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="dark">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width" />
     <meta name="theme-color" content="#080a0d" />
-    <meta name="color-scheme" content="dark" />
+    <meta name="color-scheme" content="dark light" />
     <meta name="generator" content={Astro.generator} />
     <title>{siteTitle}</title>
     <meta name="description" content={description} />
     <link rel="canonical" href={canonical} />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/png" href="/logos/archunitts.png" />
     <link rel="manifest" href="/site.webmanifest" />
     <meta property="og:type" content="website" />
-    <meta property="og:site_name" content="ArchUnitEverything" />
+    <meta property="og:site_name" content="ArchUnit" />
     <meta property="og:title" content={siteTitle} />
     <meta property="og:description" content={description} />
     <meta property="og:url" content={canonical} />
@@ -54,6 +54,23 @@ const defaultSchema = {
     <meta name="twitter:title" content={siteTitle} />
     <meta name="twitter:description" content={description} />
     <meta name="twitter:image" content={socialImage} />
+    <script is:inline>
+      (() => {
+        try {
+          const stored = localStorage.getItem('archunit-theme');
+          const theme =
+            stored === 'light' || stored === 'dark'
+              ? stored
+              : matchMedia('(prefers-color-scheme: light)').matches
+                ? 'light'
+                : 'dark';
+          document.documentElement.dataset.theme = theme;
+          document.documentElement.style.colorScheme = theme;
+        } catch {
+          document.documentElement.dataset.theme = 'dark';
+        }
+      })();
+    </script>
     <script
       type="application/ld+json"
       is:inline

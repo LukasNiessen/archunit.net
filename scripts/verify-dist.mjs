@@ -15,6 +15,11 @@ const routes = [
   'php',
   'team',
   'why-architecture-tests',
+  'blog',
+  'blog/why-archunitts-exists',
+  'blog/architecture-tests-and-lint-rules',
+  'blog/architecture-testing-for-python',
+  'blog/fitness-functions-for-ai-generated-code',
 ];
 
 for (const route of routes) {

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import { contributors, coreContributors } from '../src/data/contributors';
+import { contributors, team } from '../src/data/contributors';
+import { posts } from '../src/data/posts';
 import { projectBySlug, projects, stableProjects } from '../src/data/projects';
 
 describe('project catalogue', () => {
@@ -28,8 +29,11 @@ describe('project catalogue', () => {
       expect(project.name.length).toBeGreaterThan(4);
       expect(project.description.length).toBeGreaterThan(40);
       expect(project.longDescription.length).toBeGreaterThan(100);
+      expect(project.languageOverview.length).toBeGreaterThan(180);
+      expect(project.ecosystemHighlights).toHaveLength(3);
       expect(project.install.length).toBeGreaterThan(10);
       expect(project.code.split('\n').length).toBeGreaterThan(5);
+      expect(project.deepDiveCode.split('\n').length).toBeGreaterThan(5);
       expect(project.features.length).toBeGreaterThanOrEqual(6);
       expect(project.useCases.length).toBeGreaterThanOrEqual(4);
       expect(project.repo).toMatch(/^https:\/\/github\.com\/LukasNiessen\//);
@@ -45,16 +49,34 @@ describe('project catalogue', () => {
 });
 
 describe('contributors', () => {
-  it('contains only human GitHub identities and is ranked by contribution count', () => {
+  it('contains only human GitHub identities without duplicate Lukas accounts', () => {
     expect(contributors.length).toBeGreaterThanOrEqual(15);
     expect(contributors.every((person) => !person.login.toLowerCase().includes('bot'))).toBe(true);
-    expect(contributors.map((person) => person.contributions)).toEqual(
-      [...contributors].map((person) => person.contributions).sort((a, b) => b - a),
-    );
+    expect(contributors.map((person) => person.login)).not.toContain('draugang');
+    expect(contributors.map((person) => person.login)).not.toContain('lukasniessen-bain');
+    expect(contributors.map((person) => person.login)).toContain('SinaRezaeiiiii');
   });
 
-  it('derives the core contributor group from the public contribution snapshot', () => {
-    expect(coreContributors).toHaveLength(7);
-    expect(coreContributors.every((person) => person.contributions >= 10)).toBe(true);
+  it('presents the requested five-person team with LinkedIn links and local photos', () => {
+    expect(team).toHaveLength(5);
+    expect(team.map((person) => person.name)).toEqual([
+      'Lukas Niessen',
+      'Jan Heimann',
+      'Robey Beswick',
+      'Tristan Kruse',
+      'Deban Kumar Sahu',
+    ]);
+    expect(
+      team.every((person) => person.linkedinUrl.startsWith('https://www.linkedin.com/in/')),
+    ).toBe(true);
+    expect(team.every((person) => person.photoUrl.startsWith('/team/'))).toBe(true);
+  });
+});
+
+describe('blog', () => {
+  it('contains adapted, indexable project articles', () => {
+    expect(posts).toHaveLength(4);
+    expect(new Set(posts.map((post) => post.slug)).size).toBe(posts.length);
+    expect(posts.every((post) => post.sections.length >= 3)).toBe(true);
   });
 });

@@ -1,0 +1,121 @@
+---
+import CodeWindow from '@components/CodeWindow.astro';
+import { posts, type BlogPost } from '@data/posts';
+import BaseLayout from '@layouts/BaseLayout.astro';
+
+export function getStaticPaths() {
+  return posts.map((post) => ({ params: { slug: post.slug }, props: { post } }));
+}
+
+interface Props {
+  post: BlogPost;
+}
+
+const { post } = Astro.props;
+const schema = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'BlogPosting',
+    headline: post.title,
+    description: post.summary,
+    datePublished: post.published,
+    author: { '@type': 'Organization', name: 'ArchUnit' },
+    publisher: { '@type': 'Organization', name: 'ArchUnit' },
+    mainEntityOfPage: 'https://www.archunit.net/blog/' + post.slug + '/',
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://www.archunit.net/' },
+      { '@type': 'ListItem', position: 2, name: 'Blog', item: 'https://www.archunit.net/blog/' },
+      {
+        '@type': 'ListItem',
+        position: 3,
+        name: post.title,
+        item: 'https://www.archunit.net/blog/' + post.slug + '/',
+      },
+    ],
+  },
+];
+---
+
+<BaseLayout
+  title={post.title}
+  description={post.summary}
+  canonicalPath={'/blog/' + post.slug + '/'}
+  schema={schema}
+>
+  <article>
+    <header class="article-hero">
+      <div class="shell article-hero__inner">
+        <nav class="breadcrumbs" aria-label="Breadcrumb">
+          <a href="/">ArchUnit</a>
+          <span>/</span>
+          <a href="/blog/">Blog</a>
+          <span>/</span>
+          <span>{post.category}</span>
+        </nav>
+        <div class="article-hero__meta">
+          <span>{post.category}</span>
+          <time datetime={post.published}>{post.publishedLabel}</time>
+          <span>{post.readingTime}</span>
+        </div>
+        <h1>{post.title}</h1>
+        <p>{post.summary}</p>
+      </div>
+    </header>
+
+    <div class="article-layout shell">
+      <aside class="article-aside">
+        <p class="eyebrow">In this article</p>
+        <ol class="article-toc">
+          {post.sections.map((section, index) => (
+            <li>
+              <a href={'#section-' + (index + 1)}>{section.heading}</a>
+            </li>
+          ))}
+        </ol>
+        <p class="article-source-note">{post.sourceNote}</p>
+      </aside>
+      <div class="article-body">
+        {post.sections.map((section, index) => (
+          <section id={'section-' + (index + 1)}>
+            <span class="article-section-number">{String(index + 1).padStart(2, '0')}</span>
+            <h2>{section.heading}</h2>
+            {section.paragraphs.map((paragraph) => (
+              <p>{paragraph}</p>
+            ))}
+            {section.bullets && (
+              <ul>
+                {section.bullets.map((bullet) => (
+                  <li>{bullet}</li>
+                ))}
+              </ul>
+            )}
+            {section.code && (
+              <CodeWindow
+                code={section.code}
+                filename={section.codeFilename ?? 'example.txt'}
+                language={section.codeLanguage ?? 'text'}
+                copy
+              />
+            )}
+          </section>
+        ))}
+      </div>
+    </div>
+  </article>
+
+  <section class="cta-section">
+    <div class="shell">
+      <h2>
+        Turn one decision into <em>a test.</em>
+      </h2>
+      <p>Choose the implementation for your stack and start with the boundary that matters most.</p>
+      <a class="button button--lime" href="/#libraries">
+        Explore the libraries
+      </a>
+    </div>
+  </section>
+</BaseLayout>

@@ -12,12 +12,9 @@
   <rect width="1200" height="630" fill="url(#glow)"/>
   <rect width="1200" height="630" fill="url(#grid)"/>
   <g transform="translate(74 68)">
-    <rect width="52" height="52" rx="11" fill="#0e1116" stroke="#fff" stroke-opacity=".22"/>
-    <rect x="10" y="10" width="8" height="32" rx="2" fill="#f5f7fa"/>
-    <rect x="22" y="17" width="8" height="25" rx="2" fill="#c8ff65"/>
-    <rect x="34" y="24" width="8" height="18" rx="2" fill="#f5f7fa"/>
-    <text x="70" y="23" fill="#f5f7fa" font-family="Arial, Helvetica, sans-serif" font-size="24" font-weight="700">ArchUnit</text>
-    <text x="70" y="47" fill="#949ba7" font-family="Arial, Helvetica, sans-serif" font-size="20">Everything</text>
+    <rect width="52" height="52" rx="11" fill="#f5f4ef"/>
+    <text x="6" y="36" fill="#080a0d" font-family="Arial, Helvetica, sans-serif" font-size="27" font-weight="800" letter-spacing="-3">AU</text>
+    <text x="70" y="36" fill="#f5f7fa" font-family="Arial, Helvetica, sans-serif" font-size="28" font-weight="700">ArchUnit</text>
   </g>
   <text x="74" y="260" fill="#f5f7fa" font-family="Arial, Helvetica, sans-serif" font-size="82" font-weight="600" letter-spacing="-4">Architecture is a behavior.</text>
   <text x="74" y="354" fill="#c8ff65" font-family="Georgia, serif" font-size="92" font-style="italic" letter-spacing="-5">Test it.</text>
