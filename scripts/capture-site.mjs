@@ -11,6 +11,9 @@ const desktop = await browser.newPage({ viewport: { width: 1440, height: 1000 } 
 await desktop.goto(target, { waitUntil: 'networkidle' });
 await desktop.evaluate(() => globalThis.localStorage.setItem('archunit-theme', 'dark'));
 await desktop.reload({ waitUntil: 'networkidle' });
+await desktop.screenshot({ path: 'qa/home-dark-viewport.png', fullPage: false });
+await desktop.waitForTimeout(2800);
+await desktop.screenshot({ path: 'qa/home-dark-word-cycle.png', fullPage: false });
 await desktop.screenshot({ path: 'qa/home-dark-desktop.png', fullPage: true });
 await desktop.goto(new URL('/team/', target).href, { waitUntil: 'networkidle' });
 await desktop.screenshot({ path: 'qa/team-dark-viewport.png', fullPage: false });

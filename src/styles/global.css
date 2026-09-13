@@ -2018,9 +2018,21 @@
     width: var(--shell);
     min-height: 92px;
     align-items: center;
-    justify-content: space-between;
     margin-inline: auto;
     border-bottom: 1px solid transparent;
+  }
+  .header-left,
+  .header-actions {
+    display: flex;
+    align-items: center;
+  }
+  .header-left {
+    min-width: 0;
+    gap: clamp(32px, 4vw, 58px);
+  }
+  .header-actions {
+    margin-left: auto;
+    gap: 12px;
   }
   .brand {
     display: inline-flex;
@@ -2072,7 +2084,7 @@
   .primary-nav {
     display: flex;
     align-items: center;
-    gap: 24px;
+    gap: clamp(18px, 2vw, 28px);
   }
   .primary-nav > a:not(.button) {
     position: relative;
@@ -2190,7 +2202,7 @@
     background: var(--paper);
     color: var(--ink);
   }
-  .primary-nav > .button--light:hover {
+  .header-github:hover {
     background: var(--lime);
     color: var(--button-contrast);
   }
@@ -2519,8 +2531,8 @@
   .hero {
     position: relative;
     overflow: hidden;
-    min-height: 900px;
-    padding: 178px 0 100px;
+    min-height: 790px;
+    padding: 154px 0 88px;
     border-bottom: 1px solid var(--line);
   }
   .hero::before {
@@ -2561,8 +2573,9 @@
     content: '';
   }
   .hero h1 {
-    max-width: 850px;
-    font-size: clamp(3.4rem, 6.8vw, 6.9rem);
+    max-width: 760px;
+    font-size: clamp(3.2rem, 4.8vw, 4.8rem);
+    line-height: 1.01;
   }
   .hero h1 em,
   .page-hero h1 em,
@@ -2574,6 +2587,38 @@
   }
   .hero h1 em {
     display: block;
+  }
+  .hero-dynamic-line {
+    display: block;
+    margin-top: 0.34em;
+    color: var(--muted-bright);
+    font-size: 0.72em;
+    letter-spacing: -0.035em;
+    line-height: 1.08;
+  }
+  .hero-library-cycle {
+    display: inline-flex;
+    min-width: 6.1ch;
+    color: var(--lime);
+    white-space: nowrap;
+  }
+  .hero-library-cycle [data-library-word] {
+    display: inline-block;
+    transition:
+      opacity 180ms ease,
+      filter 180ms ease,
+      transform 180ms ease;
+  }
+  .hero-library-cycle [data-library-word][data-swapping='true'] {
+    opacity: 0;
+    filter: blur(4px);
+    transform: translateY(-0.14em);
+  }
+  .hero-library-cycle i {
+    display: inline-block;
+    margin-left: 0.02em;
+    font-style: normal;
+    animation: library-cursor 1.05s steps(1, end) infinite;
   }
   .hero-lede {
     max-width: 670px;
@@ -2597,7 +2642,7 @@
 
   .architecture-visual {
     position: relative;
-    min-height: 610px;
+    min-height: 550px;
     perspective: 1000px;
   }
   .visual-glow {
@@ -3692,6 +3737,17 @@
       translate: 0 -9px;
     }
   }
+
+  @keyframes library-cursor {
+    0%,
+    46% {
+      opacity: 1;
+    }
+    47%,
+    100% {
+      opacity: 0.18;
+    }
+  }
 }
 
 @layer responsive {
@@ -3952,6 +4008,106 @@
     [data-reveal] {
       opacity: 1;
       transform: none;
+    }
+  }
+}
+
+@layer refinements {
+  h1 {
+    font-size: clamp(3rem, 5.5vw, 5.5rem);
+  }
+  h2 {
+    font-size: clamp(2.25rem, 4.2vw, 4.25rem);
+  }
+  h3 {
+    font-size: clamp(1.35rem, 2vw, 1.95rem);
+  }
+  .hero h1 {
+    font-size: clamp(3.2rem, 4.8vw, 4.8rem);
+  }
+  .profile-hero h1,
+  .stats-hero__inner > h1,
+  .how-hero__inner h1,
+  .legal-hero h1,
+  .thank-you-page h1 {
+    font-size: clamp(3rem, 5.5vw, 5.5rem);
+  }
+  .profile-team-heading h2,
+  .stats-editorial-grid h2,
+  .stats-downloads-heading h2,
+  .how-deep-copy h2,
+  .how-performance-grid h2,
+  .how-section-intro h2,
+  .how-algorithm-grid h2,
+  .how-final-section h2 {
+    font-size: clamp(2.45rem, 4.6vw, 4.6rem);
+  }
+  .how-thesis__statement,
+  .how-stage h2 {
+    font-size: clamp(2.3rem, 4vw, 4.05rem);
+  }
+  .profile-principle blockquote {
+    font-size: clamp(2.8rem, 5.1vw, 5.2rem);
+  }
+  .profile-next-section strong {
+    font-size: clamp(2.2rem, 4.2vw, 4.1rem);
+  }
+  .stats-totals dd {
+    font-size: clamp(2.8rem, 4.4vw, 4.8rem);
+  }
+  .resolution-notes h3,
+  .limits-card h3,
+  .how-contracts h3,
+  .how-vocabulary dt,
+  .documentation-topic h3 {
+    font-size: clamp(1.75rem, 2.7vw, 2.75rem);
+  }
+  .article-aside h2,
+  .legal-body h2 {
+    font-size: clamp(1.7rem, 2.5vw, 2.5rem);
+  }
+
+  @media (max-width: 760px) {
+    h1,
+    .profile-hero h1,
+    .stats-hero__inner > h1,
+    .how-hero__inner h1,
+    .legal-hero h1,
+    .thank-you-page h1 {
+      font-size: clamp(2.7rem, 10.5vw, 4rem);
+    }
+    h2,
+    .profile-team-heading h2,
+    .stats-editorial-grid h2,
+    .stats-downloads-heading h2,
+    .how-deep-copy h2,
+    .how-performance-grid h2,
+    .how-section-intro h2,
+    .how-algorithm-grid h2,
+    .how-final-section h2,
+    .how-thesis__statement,
+    .how-stage h2 {
+      font-size: clamp(2.15rem, 9.8vw, 3.65rem);
+    }
+    .hero h1 {
+      font-size: clamp(2.5rem, 9.7vw, 3.55rem);
+    }
+    .header-left {
+      gap: 0;
+    }
+    .header-actions {
+      gap: 8px;
+    }
+    .header-github {
+      width: 40px;
+      min-height: 40px;
+      padding: 0;
+    }
+    .header-github span {
+      display: none;
+    }
+    .hero {
+      padding-top: 125px;
     }
   }
 }

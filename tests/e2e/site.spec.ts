@@ -12,6 +12,20 @@ test('homepage presents the full library family', async ({ page }) => {
   ).toBeVisible();
   await expect(page.locator('.project-card')).toHaveCount(9);
   await expect(page.getByRole('tab')).toHaveCount(9);
+  const libraryWord = page.locator('[data-library-word]');
+  await expect(libraryWord).toHaveText('TS');
+  await expect(libraryWord).not.toHaveText('TS', { timeout: 4_500 });
+
+  if ((page.viewportSize()?.width ?? 0) > 760) {
+    const brand = await page.locator('.site-header .brand').boundingBox();
+    const firstNavigationLink = await page.locator('.primary-nav > a').first().boundingBox();
+    const themeControl = await page.locator('[data-theme-toggle]').boundingBox();
+    expect(firstNavigationLink?.x ?? 0).toBeGreaterThan((brand?.x ?? 0) + (brand?.width ?? 0));
+    expect(firstNavigationLink?.x ?? Infinity).toBeLessThan(
+      (page.viewportSize()?.width ?? 0) * 0.55,
+    );
+    expect(themeControl?.x ?? 0).toBeGreaterThan((page.viewportSize()?.width ?? 0) * 0.7);
+  }
 
   const phpTab = page.getByRole('tab', { name: 'PHP' });
   await phpTab.click();
@@ -29,6 +43,14 @@ test('homepage presents the full library family', async ({ page }) => {
     return { background: style.backgroundColor, foreground: style.color };
   });
   expect(hoverColors.background).not.toBe(hoverColors.foreground);
+});
+
+test('the homepage word cycle respects reduced-motion preferences', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.goto('/');
+  await expect(page.locator('[data-library-word]')).toHaveText('TS');
+  await page.waitForTimeout(2_900);
+  await expect(page.locator('[data-library-word]')).toHaveText('TS');
 });
 
 test('every implementation has an indexable detail page', async ({ page }) => {

@@ -13,26 +13,25 @@ const links = [
 
 <header class="site-header" data-header>
   <div class="header-inner">
-    <a class="brand" href="/" aria-label="ArchUnit home">
-      <img class="brand-logo" src="/logos/archunitts.png" alt="" width="34" height="34" />
-      <span class="brand-wordmark">ArchUnit</span>
-    </a>
+    <div class="header-left">
+      <a class="brand" href="/" aria-label="ArchUnit home">
+        <img class="brand-logo" src="/logos/archunitts.png" alt="" width="34" height="34" />
+        <span class="brand-wordmark">ArchUnit</span>
+      </a>
 
-    <button class="menu-button" type="button" aria-expanded="false" aria-controls="primary-nav">
-      <span class="sr-only">Toggle navigation</span>
-      <span></span>
-      <span></span>
-    </button>
+      <nav id="primary-nav" class="primary-nav" aria-label="Primary navigation">
+        {links.map((link) => (
+          <a
+            href={link.href}
+            class:list={{ active: link.href !== '/#libraries' && path.startsWith(link.href) }}
+          >
+            {link.label}
+          </a>
+        ))}
+      </nav>
+    </div>
 
-    <nav id="primary-nav" class="primary-nav" aria-label="Primary navigation">
-      {links.map((link) => (
-        <a
-          href={link.href}
-          class:list={{ active: link.href !== '/#libraries' && path.startsWith(link.href) }}
-        >
-          {link.label}
-        </a>
-      ))}
+    <div class="header-actions">
       <button class="theme-toggle" type="button" data-theme-toggle aria-label="Use light mode">
         <svg class="theme-icon theme-icon--sun" viewBox="0 0 24 24" aria-hidden="true">
           <circle cx="12" cy="12" r="4"></circle>
@@ -46,15 +45,20 @@ const links = [
         </span>
       </button>
       <a
-        class="button button--small button--light"
+        class="button button--small button--light header-github"
         href="https://github.com/LukasNiessen"
         target="_blank"
         rel="noreferrer"
       >
         <GithubIcon />
-        GitHub
+        <span>GitHub</span>
       </a>
-    </nav>
+      <button class="menu-button" type="button" aria-expanded="false" aria-controls="primary-nav">
+        <span class="sr-only">Toggle navigation</span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
   </div>
 </header>
 

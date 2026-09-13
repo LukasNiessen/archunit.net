@@ -41,7 +41,18 @@ const homeSchema = [
     <div class="hero-grid shell">
       <div class="hero-copy" data-reveal>
         <h1>
-          Architecture is a behavior. <em>Test it.</em>
+          Architecture is a behavior.
+          <span class="hero-dynamic-line" aria-hidden="true">
+            Test it with ArchUnit
+            <span class="hero-library-cycle">
+              <span data-library-word>TS</span>
+              <i>_</i>
+            </span>
+          </span>
+          <span class="sr-only">
+            Test it with ArchUnit libraries for TypeScript, Python, .NET, Ruby, Rust, Zig, Go, Java,
+            and PHP.
+          </span>
         </h1>
         <p class="hero-lede">
           Guard boundaries, detect cycles, measure design health, and keep architecture honest as
@@ -381,5 +392,19 @@ const homeSchema = [
       requestAnimationFrame(animateTicker);
     };
     requestAnimationFrame(animateTicker);
+
+    const libraryWord = document.querySelector<HTMLElement>('[data-library-word]');
+    const libraryNames = ['TS', 'Python', '.NET', 'Ruby', 'Rust', 'Zig', 'Go', 'Java', 'PHP'];
+    let libraryIndex = 0;
+    if (libraryWord && !reducedMotion) {
+      window.setInterval(() => {
+        libraryWord.dataset.swapping = 'true';
+        window.setTimeout(() => {
+          libraryIndex = (libraryIndex + 1) % libraryNames.length;
+          libraryWord.textContent = libraryNames[libraryIndex] ?? libraryNames[0]!;
+          libraryWord.dataset.swapping = 'false';
+        }, 210);
+      }, 2600);
+    }
   </script>
 </BaseLayout>
