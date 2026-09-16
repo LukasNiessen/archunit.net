@@ -62,8 +62,8 @@ export const team: TeamMember[] = [
   {
     slug: 'tristan-kruse',
     name: 'Tristan Kruse',
-    role: 'Product and ecosystem contributor',
-    bio: 'Tristan has contributed across the TypeScript, Python, and Ruby projects, with a focus on making the family useful across different engineering contexts.',
+    role: 'Language & Ecosystem Lead',
+    bio: 'Tristan contributes across ArchUnitPython and leads the development of ArchUnitRuby and ArchUnitJava. His work focuses on translating a shared architecture-testing model into language-native APIs, analyzers, test integrations, and developer workflows across different ecosystems.',
     headline: 'Making architecture tests useful outside the happy path.',
     profile: [
       'Tristan works on the details that determine whether an architecture test remains useful in a real repository. That includes configuration, exclusions, conditional source behavior, rule rationale, and documentation that explains the result rather than merely listing an API.',
