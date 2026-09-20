@@ -97,7 +97,7 @@ jobs:
           npm run build
 
       - name: Configure short-lived AWS credentials
-        uses: aws-actions/configure-aws-credentials@v6.2.4
+        uses: aws-actions/configure-aws-credentials@v6.3.0
         with:
           role-to-assume: arn:aws:iam::333053099282:role/archunit-net-github-deploy
           role-session-name: archunit-net-${{ github.run_id }}
