@@ -5,6 +5,7 @@ import { documentationBySlug } from '../src/data/documentation';
 import { jobs } from '../src/data/jobs';
 import { posts } from '../src/data/posts';
 import { projectBySlug, projects, stableProjects } from '../src/data/projects';
+import { enterpriseResources } from '../src/data/resources';
 import { libraryStats, statsSnapshot } from '../src/data/stats';
 
 describe('project catalogue', () => {
@@ -131,5 +132,22 @@ describe('jobs', () => {
     expect(jobs.filter((job) => job.discipline === 'Go to market')).toHaveLength(2);
     expect(jobs.every((job) => /Remote Europe|Munich/.test(job.location))).toBe(true);
     expect(JSON.stringify(jobs)).not.toMatch(/salary|compensation/i);
+  });
+});
+
+describe('enterprise resources', () => {
+  it('publishes a balanced library of papers, field guides, and case studies', () => {
+    expect(enterpriseResources).toHaveLength(6);
+    expect(new Set(enterpriseResources.map((resource) => resource.slug)).size).toBe(6);
+    expect(enterpriseResources.filter((resource) => resource.type === 'White paper')).toHaveLength(
+      2,
+    );
+    expect(enterpriseResources.filter((resource) => resource.type === 'Field guide')).toHaveLength(
+      2,
+    );
+    expect(enterpriseResources.filter((resource) => resource.type === 'Case study')).toHaveLength(
+      2,
+    );
+    expect(enterpriseResources.every((resource) => resource.summary.length > 100)).toBe(true);
   });
 });

@@ -1,0 +1,80 @@
+---
+import ConversionBand from '@components/ConversionBand.astro';
+import BaseLayout from '@layouts/BaseLayout.astro';
+
+const useCases = [
+  {
+    title: 'Protect domain boundaries',
+    copy: 'Prevent application, domain, and infrastructure layers from drifting into dependency relationships the design never intended.',
+    outcome: 'Faster reviews with fewer structural regressions',
+  },
+  {
+    title: 'Detect dependency cycles',
+    copy: 'Find package and module cycles early, before they make change sequencing, testing, and ownership progressively harder.',
+    outcome: 'A clearer path through modernization work',
+  },
+  {
+    title: 'Govern modular monoliths',
+    copy: 'Keep module APIs explicit while teams retain the deployment simplicity and transactional strengths of one application.',
+    outcome: 'Autonomy without premature service sprawl',
+  },
+  {
+    title: 'Guide service extraction',
+    copy: 'Measure coupling, identify seams, and protect each migration step while functionality moves out of a monolith.',
+    outcome: 'Modernization with fewer hidden dependencies',
+  },
+  {
+    title: 'Control AI-generated code',
+    copy: 'Give coding agents deterministic feedback about allowed dependencies, naming, layering, and architectural ownership.',
+    outcome: 'Higher throughput without structural drift',
+  },
+  {
+    title: 'Standardize polyglot estates',
+    copy: 'Express a shared control model through APIs and test integrations that still feel native in every language.',
+    outcome: 'Comparable evidence across diverse stacks',
+  },
+];
+---
+
+<BaseLayout
+  title="Use Cases"
+  description="Practical ArchUnit use cases for boundaries, cycles, modularity, modernization, AI-generated code, and polyglot engineering."
+  canonicalPath="/use-cases/"
+>
+  <section class="sales-hero sales-hero--compact">
+    <div class="shell sales-hero__grid">
+      <div>
+        <p class="hero-kicker">Use cases</p>
+        <h1>Keep architecture useful while the system changes.</h1>
+      </div>
+      <div class="sales-hero__copy">
+        <p>
+          Start with the decision that creates the most friction or risk today. Encode it as a test,
+          make the failure actionable, and expand only when the signal earns trust.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section class="use-case-section">
+    <div class="shell use-case-grid">
+      {useCases.map((useCase, index) => (
+        <article>
+          <span>{String(index + 1).padStart(2, '0')}</span>
+          <h2>{useCase.title}</h2>
+          <p>{useCase.copy}</p>
+          <strong>{useCase.outcome}</strong>
+        </article>
+      ))}
+    </div>
+  </section>
+
+  <ConversionBand
+    eyebrow="Choose the first control"
+    title="Turn one critical architecture decision into evidence."
+    copy="See how the libraries resolve source, build dependency graphs, and evaluate fluent rules inside ordinary test suites."
+    primaryLabel="How ArchUnit works"
+    primaryHref="/how-archunit-works/"
+    secondaryLabel="Contact sales"
+  />
+</BaseLayout>

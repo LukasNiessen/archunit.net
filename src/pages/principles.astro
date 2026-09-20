@@ -1,0 +1,70 @@
+---
+import ConversionBand from '@components/ConversionBand.astro';
+import BaseLayout from '@layouts/BaseLayout.astro';
+
+const principles = [
+  {
+    title: 'Evidence before ceremony',
+    copy: 'A decision becomes useful when a team can see what was evaluated, why it failed, and how to respond.',
+  },
+  {
+    title: 'Native before uniform',
+    copy: 'Shared concepts should create coherence, not force every ecosystem into an API designed somewhere else.',
+  },
+  {
+    title: 'Small rules before broad programs',
+    copy: 'Start with one important boundary. Expand only after the feedback proves precise enough to trust.',
+  },
+  {
+    title: 'Explanation is part of correctness',
+    copy: 'A technically correct failure that nobody can understand is not yet a good developer tool.',
+  },
+  {
+    title: 'Open work compounds',
+    copy: 'Source, examples, documentation, and design discussion let one ecosystem strengthen every other one.',
+  },
+  {
+    title: 'Change is a first-class outcome',
+    copy: 'Architecture rules exist to support deliberate evolution, not to make yesterday’s structure permanent.',
+  },
+];
+---
+
+<BaseLayout
+  title="Principles"
+  description="The principles guiding how ArchUnit builds architecture-testing libraries, developer APIs, and project governance."
+  canonicalPath="/principles/"
+>
+  <section class="statement-hero statement-hero--principles">
+    <div class="shell statement-hero__inner">
+      <p class="hero-kicker">Our principles</p>
+      <h1>Build the signal teams will keep listening to.</h1>
+      <p>
+        These ideas guide our APIs, analysis engines, documentation, community work, and the way we
+        help organizations adopt architecture tests.
+      </p>
+    </div>
+  </section>
+
+  <section class="principles-page-section">
+    <div class="shell principles-page-list">
+      {principles.map((principle, index) => (
+        <article>
+          <span>{String(index + 1).padStart(2, '0')}</span>
+          <h2>{principle.title}</h2>
+          <p>{principle.copy}</p>
+        </article>
+      ))}
+    </div>
+  </section>
+
+  <ConversionBand
+    eyebrow="Principles in practice"
+    title="See how the model becomes working software."
+    copy="Walk through source extraction, dependency resolution, graph construction, fluent rules, and evaluation across Python and TypeScript."
+    primaryLabel="How ArchUnit works"
+    primaryHref="/how-archunit-works/"
+    secondaryLabel="Read our mission"
+    secondaryHref="/mission/"
+  />
+</BaseLayout>

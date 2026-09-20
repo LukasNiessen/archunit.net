@@ -6,6 +6,7 @@ import SectionHeading from '@components/SectionHeading.astro';
 import { contributors } from '@data/contributors';
 import { posts } from '@data/posts';
 import { projects, stableProjects } from '@data/projects';
+import { enterpriseResources } from '@data/resources';
 import BaseLayout from '@layouts/BaseLayout.astro';
 
 const previewProjects = projects.filter((project) => project.status !== 'stable');
@@ -47,7 +48,7 @@ const homeSchema = [
             Test it with ArchUnit
             <span class="hero-library-cycle">
               <span data-library-word>TS</span>
-              <i>_</i>
+              <span class="hero-word-underline" aria-hidden="true"></span>
             </span>
           </span>
           <span class="sr-only">
@@ -85,7 +86,7 @@ const homeSchema = [
             </div>
             <code>24 files</code>
           </div>
-          <div class="visual-layer" style="--layer-color:#c8ff65">
+          <div class="visual-layer" style="--layer-color:#5b8cff">
             <div>
               <strong>Domain</strong>
               <p>Business rules</p>
@@ -103,6 +104,35 @@ const homeSchema = [
         <div class="rule-chip">
           <span>✓ Rule passes</span>
           domain.shouldNot().dependOn(infrastructure)
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="home-enterprise-section">
+    <div class="shell home-enterprise-grid">
+      <div>
+        <p class="eyebrow">Architecture assurance</p>
+        <h2>Give structural decisions an operating model.</h2>
+      </div>
+      <div class="home-enterprise-copy">
+        <p>
+          Standardize the intent that matters across teams while each ecosystem keeps a native API,
+          analyzer, and test integration.
+        </p>
+        <div class="home-enterprise-links">
+          <a href="/enterprise/">
+            <span>Enterprise rollout</span>
+            <strong>Govern architecture across teams →</strong>
+          </a>
+          <a href="/use-cases/">
+            <span>Use cases</span>
+            <strong>Start from a concrete engineering risk →</strong>
+          </a>
+          <a href="/integrations/">
+            <span>Integrations</span>
+            <strong>Fit the tools already in your delivery path →</strong>
+          </a>
         </div>
       </div>
     </div>
@@ -296,27 +326,37 @@ const homeSchema = [
 
   <section class="home-section home-blog-section">
     <div class="shell">
-      <SectionHeading
-        eyebrow="From the blog"
-        title="The reasoning behind the rules."
-        copy="Project stories and practical guides for turning architecture decisions into useful feedback."
-      />
-      <div class="home-blog-grid">
+      <div class="home-news-heading">
+        <div>
+          <p class="eyebrow">Latest thinking</p>
+          <h2>Research, field guidance, and project news.</h2>
+        </div>
+        <a class="text-link" href="/resources/">
+          View the resource library →
+        </a>
+      </div>
+      <div class="home-news-list">
         {posts.slice(0, 3).map((post) => (
-          <a class="home-blog-card" href={'/blog/' + post.slug + '/'}>
-            <div class="blog-card__meta">
+          <a href={'/blog/' + post.slug + '/'}>
+            <div>
               <span>{post.category}</span>
               <time datetime={post.published}>{post.publishedLabel}</time>
             </div>
             <h3>{post.title}</h3>
-            <p>{post.summary}</p>
-            <span class="home-blog-card__link">{post.readingTime} · Read ↗</span>
+            <span aria-hidden="true">↗</span>
+          </a>
+        ))}
+        {enterpriseResources.slice(0, 2).map((resource) => (
+          <a href={'/resources/#' + resource.slug}>
+            <div>
+              <span>{resource.type}</span>
+              <time>{resource.readingTime}</time>
+            </div>
+            <h3>{resource.title}</h3>
+            <span aria-hidden="true">↗</span>
           </a>
         ))}
       </div>
-      <a class="text-link" href="/blog/">
-        View every article →
-      </a>
     </div>
   </section>
 
@@ -394,35 +434,83 @@ const homeSchema = [
     const wait = (duration: number) =>
       new Promise<void>((resolve) => window.setTimeout(resolve, duration));
 
+    const renderLetters = (value: string) => {
+      if (!libraryWord) return [];
+      const fragment = document.createDocumentFragment();
+      const letters = [...value].map((character) => {
+        const letter = document.createElement('span');
+        letter.className = 'hero-word-letter';
+        letter.textContent = character;
+        fragment.append(letter);
+        return letter;
+      });
+      libraryWord.replaceChildren(fragment);
+      return letters;
+    };
+
     const cycleLibraryWord = async () => {
       if (!libraryWord) return;
-      await wait(2300);
+      const underline = document.querySelector<HTMLElement>('.hero-word-underline');
+      let letters = renderLetters(libraryNames[0] ?? 'TS');
+      await wait(1900);
 
       while (libraryWord.isConnected) {
-        const exit = libraryWord.animate(
+        if (document.hidden) {
+          await wait(500);
+          continue;
+        }
+
+        const underlinePulse = underline?.animate(
           [
-            { opacity: 1, transform: 'translate3d(0, 0, 0)' },
-            { opacity: 0, transform: 'translate3d(0, -0.22em, 0)' },
+            { opacity: 1, transform: 'scaleX(1)' },
+            { opacity: 0.48, transform: 'scaleX(0.2)' },
+            { opacity: 1, transform: 'scaleX(1)' },
           ],
-          { duration: 135, easing: 'cubic-bezier(0.4, 0, 1, 1)', fill: 'forwards' },
+          { duration: 720, easing: 'cubic-bezier(0.65, 0, 0.35, 1)' },
         );
-        await exit.finished.catch(() => undefined);
+
+        await Promise.all(
+          letters.map((letter, index) =>
+            letter
+              .animate(
+                [
+                  { opacity: 1, filter: 'blur(0)', transform: 'translate3d(0, 0, 0)' },
+                  { opacity: 0, filter: 'blur(9px)', transform: 'translate3d(0, -0.16em, 0)' },
+                ],
+                {
+                  duration: 210,
+                  delay: index * 28,
+                  easing: 'cubic-bezier(0.4, 0, 1, 1)',
+                  fill: 'forwards',
+                },
+              )
+              .finished.catch(() => undefined),
+          ),
+        );
         if (!libraryWord.isConnected) return;
 
         libraryIndex = (libraryIndex + 1) % libraryNames.length;
-        libraryWord.textContent = libraryNames[libraryIndex] ?? libraryNames[0]!;
-        exit.cancel();
-
-        const enter = libraryWord.animate(
-          [
-            { opacity: 0, transform: 'translate3d(0, 0.24em, 0)' },
-            { opacity: 1, transform: 'translate3d(0, 0, 0)' },
-          ],
-          { duration: 210, easing: 'cubic-bezier(0.16, 1, 0.3, 1)', fill: 'forwards' },
+        letters = renderLetters(libraryNames[libraryIndex] ?? libraryNames[0]!);
+        await Promise.all(
+          letters.map((letter, index) =>
+            letter
+              .animate(
+                [
+                  { opacity: 0, filter: 'blur(11px)', transform: 'translate3d(0, 0.22em, 0)' },
+                  { opacity: 1, filter: 'blur(0)', transform: 'translate3d(0, 0, 0)' },
+                ],
+                {
+                  duration: 390,
+                  delay: index * 42,
+                  easing: 'cubic-bezier(0.16, 1, 0.3, 1)',
+                  fill: 'both',
+                },
+              )
+              .finished.catch(() => undefined),
+          ),
         );
-        await enter.finished.catch(() => undefined);
-        enter.cancel();
-        await wait(2200);
+        await underlinePulse?.finished.catch(() => undefined);
+        await wait(2450);
       }
     };
 

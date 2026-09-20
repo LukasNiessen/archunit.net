@@ -1,0 +1,80 @@
+---
+import ConversionBand from '@components/ConversionBand.astro';
+import BaseLayout from '@layouts/BaseLayout.astro';
+---
+
+<BaseLayout
+  title="Mission"
+  description="ArchUnit’s mission is to make software architecture executable, understandable, and native to the way engineering teams work."
+  canonicalPath="/mission/"
+>
+  <section class="statement-hero">
+    <div class="shell statement-hero__inner">
+      <p class="hero-kicker">Our mission</p>
+      <h1>Make architecture a capability every team can exercise.</h1>
+      <p>
+        Software structure should not depend on someone remembering a diagram. It should remain
+        visible, testable, and open to deliberate change.
+      </p>
+    </div>
+  </section>
+
+  <section class="statement-body-section">
+    <div class="shell statement-body-grid">
+      <div>
+        <p class="eyebrow">Why this matters</p>
+        <h2>Architecture is the accumulated effect of everyday decisions.</h2>
+      </div>
+      <div>
+        <p>
+          Most structural decline is not caused by one dramatic choice. It comes from thousands of
+          reasonable local changes that no longer add up to the system teams intended to build.
+        </p>
+        <p>
+          We build ArchUnit so engineers can state the boundaries that matter, evaluate them with
+          real source code, and receive feedback while the context for a change is still present.
+        </p>
+        <p>
+          Our aim is not to freeze design. It is to make change explicit. A useful architecture rule
+          creates a shared point of discussion, a testable expectation, and a record of when a team
+          chooses a different direction.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section class="mission-pillars-section">
+    <div class="shell mission-pillars-grid">
+      <article>
+        <span>01</span>
+        <h2>Visible</h2>
+        <p>Teams can inspect the graph, rule, and evidence.</p>
+      </article>
+      <article>
+        <span>02</span>
+        <h2>Native</h2>
+        <p>The API belongs in the language and test culture around it.</p>
+      </article>
+      <article>
+        <span>03</span>
+        <h2>Actionable</h2>
+        <p>A failure explains the decision and the path back to a healthy state.</p>
+      </article>
+      <article>
+        <span>04</span>
+        <h2>Adaptable</h2>
+        <p>Rules support deliberate evolution rather than preserving yesterday forever.</p>
+      </article>
+    </div>
+  </section>
+
+  <ConversionBand
+    eyebrow="The work ahead"
+    title="A shared architecture language, expressed natively."
+    copy="Explore the principles that guide our decisions and the people translating them across ecosystems."
+    primaryLabel="Our principles"
+    primaryHref="/principles/"
+    secondaryLabel="Meet the team"
+    secondaryHref="/team/"
+  />
+</BaseLayout>

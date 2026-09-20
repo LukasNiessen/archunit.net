@@ -17,11 +17,11 @@
     <text x="70" y="36" fill="#f5f7fa" font-family="Arial, Helvetica, sans-serif" font-size="28" font-weight="700">ArchUnit</text>
   </g>
   <text x="74" y="260" fill="#f5f7fa" font-family="Arial, Helvetica, sans-serif" font-size="82" font-weight="600" letter-spacing="-4">Architecture is a behavior.</text>
-  <text x="74" y="354" fill="#c8ff65" font-family="Georgia, serif" font-size="92" font-style="italic" letter-spacing="-5">Test it.</text>
+  <text x="74" y="354" fill="#69a7ff" font-family="Georgia, serif" font-size="92" font-style="italic" letter-spacing="-5">Test it.</text>
   <text x="76" y="450" fill="#c5cad3" font-family="Arial, Helvetica, sans-serif" font-size="26">Architecture testing for TypeScript, Python, .NET, Ruby,</text>
   <text x="76" y="488" fill="#c5cad3" font-family="Arial, Helvetica, sans-serif" font-size="26">Rust, Zig, Go, Java, and PHP.</text>
   <g transform="translate(76 548)">
-    <circle cx="6" cy="6" r="6" fill="#c8ff65"/>
+    <circle cx="6" cy="6" r="6" fill="#69a7ff"/>
     <text x="25" y="13" fill="#949ba7" font-family="Courier New, monospace" font-size="18">archunit.net</text>
   </g>
 </svg>

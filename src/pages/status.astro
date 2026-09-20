@@ -1,0 +1,61 @@
+---
+import BaseLayout from '@layouts/BaseLayout.astro';
+
+const surfaces = [
+  {
+    name: 'Website and documentation',
+    state: 'Operational',
+    detail: 'Public pages are available.',
+  },
+  {
+    name: 'Source repositories',
+    state: 'Operational',
+    detail: 'Projects are available through GitHub.',
+  },
+  {
+    name: 'Release metadata',
+    state: 'Operational',
+    detail: 'Release and package links are available.',
+  },
+  {
+    name: 'Package distribution',
+    state: 'External',
+    detail: 'Availability is provided by ecosystem registries.',
+  },
+];
+---
+
+<BaseLayout
+  title="Status"
+  description="Current availability of ArchUnit’s public website, documentation, repositories, and release surfaces."
+  canonicalPath="/status/"
+>
+  <section class="status-page">
+    <div class="shell status-page__inner">
+      <div class="status-page__heading">
+        <p class="hero-kicker">System status</p>
+        <h1>Public project surfaces are available.</h1>
+        <p>This page covers the public services maintained directly by the ArchUnit project.</p>
+      </div>
+      <div class="status-overview">
+        <span></span>
+        <strong>All managed systems operational</strong>
+      </div>
+      <div class="status-service-list">
+        {surfaces.map((surface) => (
+          <article>
+            <div>
+              <span></span>
+              <h2>{surface.name}</h2>
+            </div>
+            <p>{surface.detail}</p>
+            <strong>{surface.state}</strong>
+          </article>
+        ))}
+      </div>
+      <p class="status-page__note">
+        Package registries and GitHub operate as external service providers.
+      </p>
+    </div>
+  </section>
+</BaseLayout>

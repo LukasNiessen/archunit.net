@@ -2,19 +2,97 @@
 import { contactEmail } from '@data/contributors';
 
 const path = Astro.url.pathname;
-const links = [
-  { href: '/#libraries', label: 'Libraries' },
-  { href: '/how-archunit-works/', label: 'How it works' },
-  { href: '/stats/', label: 'Stats' },
-  { href: '/blog/', label: 'Blog' },
+interface NavigationLink {
+  href: string;
+  label: string;
+  copy: string;
+  external?: boolean;
+}
+
+interface NavigationGroup {
+  id: string;
+  label: string;
+  links: NavigationLink[];
+}
+
+const navigationGroups: NavigationGroup[] = [
+  {
+    id: 'products',
+    label: 'Products',
+    links: [
+      { href: '/#libraries', label: 'Libraries', copy: 'Architecture tests for nine ecosystems.' },
+      {
+        href: '/enterprise/',
+        label: 'Enterprise',
+        copy: 'Roll out architecture policy across teams.',
+      },
+      {
+        href: '/use-cases/',
+        label: 'Use cases',
+        copy: 'Boundaries, cycles, migrations, and design health.',
+      },
+      {
+        href: '/integrations/',
+        label: 'Integrations',
+        copy: 'Fit guardrails into the tools you already run.',
+      },
+    ],
+  },
+  {
+    id: 'developers',
+    label: 'Developers',
+    links: [
+      {
+        href: '/how-archunit-works/',
+        label: 'How it works',
+        copy: 'From source extraction to evaluated rules.',
+      },
+      { href: '/stats/', label: 'Project stats', copy: 'Adoption and ecosystem activity.' },
+      {
+        href: 'https://github.com/LukasNiessen',
+        label: 'GitHub',
+        copy: 'Source, issues, releases, and contribution.',
+        external: true,
+      },
+      { href: '/status/', label: 'Status', copy: 'Availability of the public project surfaces.' },
+    ],
+  },
+  {
+    id: 'resources',
+    label: 'Resources',
+    links: [
+      {
+        href: '/resources/',
+        label: 'Resource library',
+        copy: 'White papers, case studies, and field guides.',
+      },
+      { href: '/blog/', label: 'Blog', copy: 'Technical analysis and project thinking.' },
+      {
+        href: '/why-architecture-tests/',
+        label: 'Why architecture tests',
+        copy: 'The case for executable architecture decisions.',
+      },
+      { href: '/support/', label: 'Support', copy: 'Adoption, implementation, and project help.' },
+    ],
+  },
+  {
+    id: 'company',
+    label: 'Company',
+    links: [
+      { href: '/about/', label: 'About', copy: 'Why we build architecture guardrails.' },
+      { href: '/mission/', label: 'Mission', copy: 'The future we want software teams to build.' },
+      {
+        href: '/principles/',
+        label: 'Principles',
+        copy: 'The operating ideas behind our work.',
+      },
+      { href: '/team/', label: 'People', copy: 'Meet the team behind the libraries.' },
+      { href: '/jobs/', label: 'Jobs', copy: 'Build language-native developer tools with us.' },
+    ],
+  },
 ];
-const companyLinks = [
-  { href: '/about/', label: 'About', copy: 'Why we build architecture guardrails.' },
-  { href: '/team/', label: 'People', copy: 'Meet the team behind the libraries.' },
-  { href: '/jobs/', label: 'Jobs', copy: 'Build language-native developer tools with us.' },
-];
-const companyActive = companyLinks.some((link) => path.startsWith(link.href));
-const contactHref = `mailto:${contactEmail}?subject=${encodeURIComponent('ArchUnit inquiry')}`;
+
+const contactHref = `mailto:${contactEmail}?subject=${encodeURIComponent('ArchUnit sales inquiry')}`;
 ---
 
 <header class="site-header" data-header>
@@ -22,46 +100,54 @@ const contactHref = `mailto:${contactEmail}?subject=${encodeURIComponent('ArchUn
     <div class="header-left">
       <a class="brand" href="/" aria-label="ArchUnit home">
         <img class="brand-logo" src="/logos/archunitts.png" alt="" width="34" height="34" />
-        <span class="brand-wordmark">ArchUnit</span>
+        <span class="brand-wordmark">
+          Arch<span>Unit</span>
+        </span>
       </a>
 
       <nav id="primary-nav" class="primary-nav" aria-label="Primary navigation">
-        {links.map((link) => (
-          <a
-            href={link.href}
-            class:list={{ active: link.href !== '/#libraries' && path.startsWith(link.href) }}
-          >
-            {link.label}
-          </a>
-        ))}
-
-        <div class:list={['nav-dropdown', { active: companyActive }]} data-company-dropdown>
-          <button
-            class="nav-dropdown__trigger"
-            type="button"
-            aria-expanded="false"
-            aria-controls="company-menu"
-            data-company-toggle
-          >
-            Company
-            <svg viewBox="0 0 16 16" aria-hidden="true">
-              <path d="m4 6 4 4 4-4"></path>
-            </svg>
-          </button>
-          <div id="company-menu" class="nav-dropdown__panel">
-            <p>Company</p>
-            {companyLinks.map((link) => (
-              <a href={link.href} class:list={{ active: path.startsWith(link.href) }}>
-                <strong>{link.label}</strong>
-                <span>{link.copy}</span>
-              </a>
-            ))}
-          </div>
-        </div>
+        {navigationGroups.map((group) => {
+          const active = group.links.some(
+            (link) => !link.external && link.href !== '/#libraries' && path.startsWith(link.href),
+          );
+          return (
+            <div class:list={['nav-dropdown', { active }]} data-nav-dropdown>
+              <button
+                class="nav-dropdown__trigger"
+                type="button"
+                aria-expanded="false"
+                aria-controls={`${group.id}-menu`}
+                data-nav-toggle
+              >
+                {group.label}
+                <svg viewBox="0 0 16 16" aria-hidden="true">
+                  <path d="m4 6 4 4 4-4"></path>
+                </svg>
+              </button>
+              <div id={`${group.id}-menu`} class="nav-dropdown__panel">
+                <p>{group.label}</p>
+                {group.links.map((link) => (
+                  <a
+                    href={link.href}
+                    class:list={{
+                      active:
+                        !link.external && link.href !== '/#libraries' && path.startsWith(link.href),
+                    }}
+                    target={link.external ? '_blank' : undefined}
+                    rel={link.external ? 'noreferrer' : undefined}
+                  >
+                    <strong>{link.label}</strong>
+                    <span>{link.copy}</span>
+                  </a>
+                ))}
+              </div>
+            </div>
+          );
+        })}
 
         <div class="mobile-nav-actions">
           <a class="button button--ghost" href={contactHref}>
-            Contact us
+            Contact sales
           </a>
           <a class="button button--lime" href="/#libraries">
             Get started
@@ -84,7 +170,7 @@ const contactHref = `mailto:${contactEmail}?subject=${encodeURIComponent('ArchUn
         </span>
       </button>
       <a class="button button--small button--ghost header-contact" href={contactHref}>
-        Contact us
+        Contact sales
       </a>
       <a class="button button--small button--lime header-started" href="/#libraries">
         Get started
@@ -101,40 +187,53 @@ const contactHref = `mailto:${contactEmail}?subject=${encodeURIComponent('ArchUn
 <script>
   const menuButton = document.querySelector<HTMLButtonElement>('.menu-button');
   const navigation = document.querySelector<HTMLElement>('.primary-nav');
-  const companyDropdown = document.querySelector<HTMLElement>('[data-company-dropdown]');
-  const companyButton = document.querySelector<HTMLButtonElement>('[data-company-toggle]');
+  const dropdowns = [...document.querySelectorAll<HTMLElement>('[data-nav-dropdown]')];
 
-  const closeCompanyMenu = () => {
-    companyButton?.setAttribute('aria-expanded', 'false');
-    companyDropdown?.removeAttribute('data-open');
+  const closeDropdowns = (except?: HTMLElement) => {
+    dropdowns.forEach((dropdown) => {
+      if (dropdown === except) return;
+      dropdown.removeAttribute('data-open');
+      dropdown
+        .querySelector<HTMLButtonElement>('[data-nav-toggle]')
+        ?.setAttribute('aria-expanded', 'false');
+    });
   };
 
   menuButton?.addEventListener('click', () => {
     const isOpen = menuButton.getAttribute('aria-expanded') === 'true';
     menuButton.setAttribute('aria-expanded', String(!isOpen));
     navigation?.toggleAttribute('data-open', !isOpen);
-    if (isOpen) closeCompanyMenu();
+    if (isOpen) closeDropdowns();
   });
 
-  companyButton?.addEventListener('click', () => {
-    const isOpen = companyButton.getAttribute('aria-expanded') === 'true';
-    companyButton.setAttribute('aria-expanded', String(!isOpen));
-    companyDropdown?.toggleAttribute('data-open', !isOpen);
+  dropdowns.forEach((dropdown) => {
+    const button = dropdown.querySelector<HTMLButtonElement>('[data-nav-toggle]');
+    button?.addEventListener('click', () => {
+      const isOpen = button.getAttribute('aria-expanded') === 'true';
+      closeDropdowns(dropdown);
+      button.setAttribute('aria-expanded', String(!isOpen));
+      dropdown.toggleAttribute('data-open', !isOpen);
+    });
   });
 
   navigation?.querySelectorAll('a').forEach((link) => {
     link.addEventListener('click', () => {
       menuButton?.setAttribute('aria-expanded', 'false');
       navigation.removeAttribute('data-open');
-      closeCompanyMenu();
+      closeDropdowns();
     });
+  });
+
+  document.addEventListener('click', (event) => {
+    if (!(event.target instanceof Node) || navigation?.contains(event.target)) return;
+    closeDropdowns();
   });
 
   document.addEventListener('keydown', (event) => {
     if (event.key !== 'Escape') return;
     menuButton?.setAttribute('aria-expanded', 'false');
     navigation?.removeAttribute('data-open');
-    closeCompanyMenu();
+    closeDropdowns();
   });
 
   const themeToggle = document.querySelector<HTMLButtonElement>('[data-theme-toggle]');
@@ -153,7 +252,7 @@ const contactHref = `mailto:${contactEmail}?subject=${encodeURIComponent('ArchUn
     localStorage.setItem('archunit-theme', next);
     document
       .querySelector<HTMLMetaElement>('meta[name="theme-color"]')
-      ?.setAttribute('content', next === 'light' ? '#f4f2eb' : '#080a0d');
+      ?.setAttribute('content', next === 'light' ? '#f3f5f8' : '#06080d');
     updateThemeControl();
   });
 </script>

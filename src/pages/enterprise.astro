@@ -1,0 +1,141 @@
+---
+import ConversionBand from '@components/ConversionBand.astro';
+import { contactEmail } from '@data/contributors';
+import BaseLayout from '@layouts/BaseLayout.astro';
+
+const capabilities = [
+  {
+    title: 'Policy in the delivery path',
+    copy: 'Move architecture decisions from static documents into tests that run with pull requests and releases.',
+  },
+  {
+    title: 'A model across ecosystems',
+    copy: 'Give teams a shared vocabulary for dependencies, layers, cycles, and design health without flattening language differences.',
+  },
+  {
+    title: 'Evidence leaders can review',
+    copy: 'Connect a rule to its rationale, owner, exceptions, and delivery result so governance stays concrete.',
+  },
+  {
+    title: 'Adoption that starts small',
+    copy: 'Begin with a critical boundary, establish trust in the signal, and expand the program as teams are ready.',
+  },
+];
+
+const contactHref = `mailto:${contactEmail}?subject=${encodeURIComponent('ArchUnit enterprise inquiry')}`;
+const schema = {
+  '@context': 'https://schema.org',
+  '@type': 'Service',
+  name: 'ArchUnit Enterprise',
+  provider: { '@type': 'Organization', name: 'ArchUnit' },
+  description:
+    'Architecture policy, implementation guidance, and enablement for engineering organizations.',
+  url: 'https://www.archunit.net/enterprise/',
+};
+---
+
+<BaseLayout
+  title="Enterprise"
+  description="Architecture policy, implementation guidance, and enablement for engineering organizations using ArchUnit."
+  canonicalPath="/enterprise/"
+  schema={schema}
+>
+  <section class="sales-hero">
+    <div class="shell sales-hero__grid">
+      <div>
+        <p class="hero-kicker">ArchUnit for enterprise</p>
+        <h1>Architecture policy that can survive scale.</h1>
+      </div>
+      <div class="sales-hero__copy">
+        <p>
+          Give platform teams, architects, and delivery teams one practical way to define structural
+          expectations and prove that code still meets them.
+        </p>
+        <div class="sales-hero__actions">
+          <a class="button button--lime" href={contactHref}>
+            Contact sales
+          </a>
+          <a class="button button--ghost" href="/resources/">
+            Explore resources
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="enterprise-signal-section">
+    <div class="shell enterprise-signal-grid">
+      <div>
+        <p class="eyebrow">Operating model</p>
+        <h2>Guardrails owned by engineering, visible to the business.</h2>
+      </div>
+      <div class="enterprise-signal-copy">
+        <p>
+          Architecture governance often fails at one of two extremes: central review arrives too
+          late, or local autonomy removes the shared evidence leaders need. Executable architecture
+          rules create a third path.
+        </p>
+        <p>
+          Teams keep ownership of their code and tests. Platform and architecture groups define a
+          common control language, help maintain reusable rules, and review exceptions with the
+          context required to make a sound decision.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section class="enterprise-capabilities-section">
+    <div class="shell">
+      <div class="enterprise-section-heading">
+        <p class="eyebrow">Enterprise capabilities</p>
+        <h2>From one repository to an architecture assurance program.</h2>
+      </div>
+      <div class="enterprise-capabilities-grid">
+        {capabilities.map((capability, index) => (
+          <article>
+            <span>{String(index + 1).padStart(2, '0')}</span>
+            <h3>{capability.title}</h3>
+            <p>{capability.copy}</p>
+          </article>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <section class="enterprise-control-section">
+    <div class="shell enterprise-control-grid">
+      <div>
+        <p class="eyebrow">Controls that remain usable</p>
+        <h2>Clear policy. Named ownership. Reviewable exceptions.</h2>
+      </div>
+      <div class="enterprise-control-list">
+        <div>
+          <strong>01</strong>
+          <p>Define rules close to the source and test framework.</p>
+        </div>
+        <div>
+          <strong>02</strong>
+          <p>Attach rationale and remediation guidance to failures.</p>
+        </div>
+        <div>
+          <strong>03</strong>
+          <p>Sequence rollout by repository, risk, and team readiness.</p>
+        </div>
+        <div>
+          <strong>04</strong>
+          <p>Use pull-request evidence to support governance reviews.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <ConversionBand
+    eyebrow="Architecture assurance"
+    title="Make structural quality part of every delivery."
+    copy="Talk with us about a rollout plan, language coverage, operating model, and the first high-value rules for your organization."
+    primaryLabel="Contact sales"
+    primaryHref={contactHref}
+    secondaryLabel="View use cases"
+    secondaryHref="/use-cases/"
+  />
+</BaseLayout>

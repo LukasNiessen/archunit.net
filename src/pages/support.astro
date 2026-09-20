@@ -1,0 +1,81 @@
+---
+import ConversionBand from '@components/ConversionBand.astro';
+import { contactEmail } from '@data/contributors';
+import BaseLayout from '@layouts/BaseLayout.astro';
+
+const supportHref = `mailto:${contactEmail}?subject=${encodeURIComponent('ArchUnit support inquiry')}`;
+---
+
+<BaseLayout
+  title="Support"
+  description="Community, adoption, and enterprise support paths for ArchUnit architecture-testing libraries."
+  canonicalPath="/support/"
+>
+  <section class="sales-hero sales-hero--compact">
+    <div class="shell sales-hero__grid">
+      <div>
+        <p class="hero-kicker">Support</p>
+        <h1>Get the right help for the stage you are in.</h1>
+      </div>
+      <div class="sales-hero__copy">
+        <p>
+          Resolve an implementation question, design the first rules, or create a rollout model for
+          teams working across repositories and languages.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section class="support-paths-section">
+    <div class="shell support-paths-grid">
+      <article>
+        <p class="eyebrow">Open source</p>
+        <h2>Community support</h2>
+        <p>
+          Use repository issues and discussions for reproducible defects, API questions, and
+          contribution proposals.
+        </p>
+        <a
+          class="text-link"
+          href="https://github.com/LukasNiessen"
+          target="_blank"
+          rel="noreferrer"
+        >
+          Visit GitHub ↗
+        </a>
+      </article>
+      <article>
+        <p class="eyebrow">Adoption</p>
+        <h2>Guided implementation</h2>
+        <p>
+          Work through project configuration, dependency resolution, rule design, test-runner
+          integration, and rollout sequencing.
+        </p>
+        <a class="text-link" href={supportHref}>
+          Discuss adoption ↗
+        </a>
+      </article>
+      <article>
+        <p class="eyebrow">Organization</p>
+        <h2>Enterprise enablement</h2>
+        <p>
+          Design a shared control model, ownership approach, exception process, reporting path, and
+          multi-ecosystem roadmap.
+        </p>
+        <a class="text-link" href={supportHref}>
+          Contact sales ↗
+        </a>
+      </article>
+    </div>
+  </section>
+
+  <ConversionBand
+    eyebrow="Bring the real repository"
+    title="Start with the source, not a slide deck."
+    copy="A useful support conversation begins with the project model, the decision at risk, and the delivery workflow that must carry the feedback."
+    primaryLabel="Contact support"
+    primaryHref={supportHref}
+    secondaryLabel="View integrations"
+    secondaryHref="/integrations/"
+  />
+</BaseLayout>

@@ -25,6 +25,11 @@ await desktop.goto(new URL('/about/', target).href, { waitUntil: 'networkidle' }
 await desktop.screenshot({ path: 'qa/about-dark-desktop.png', fullPage: true });
 await desktop.goto(new URL('/jobs/', target).href, { waitUntil: 'networkidle' });
 await desktop.screenshot({ path: 'qa/jobs-dark-desktop.png', fullPage: true });
+await desktop.goto(new URL('/enterprise/', target).href, { waitUntil: 'networkidle' });
+await desktop.screenshot({ path: 'qa/enterprise-dark-viewport.png', fullPage: false });
+await desktop.screenshot({ path: 'qa/enterprise-dark-desktop.png', fullPage: true });
+await desktop.goto(new URL('/resources/', target).href, { waitUntil: 'networkidle' });
+await desktop.screenshot({ path: 'qa/resources-dark-desktop.png', fullPage: true });
 await desktop.goto(new URL('/typescript/', target).href, { waitUntil: 'networkidle' });
 await desktop.screenshot({ path: 'qa/typescript-dark-desktop.png', fullPage: true });
 await desktop.goto(new URL('/blog/', target).href, { waitUntil: 'networkidle' });
@@ -72,9 +77,9 @@ await desktop.goto(target, { waitUntil: 'networkidle' });
 await desktop.locator('.project-card').first().hover();
 await desktop.screenshot({ path: 'qa/home-light-hover-viewport.png', fullPage: false });
 await desktop.screenshot({ path: 'qa/home-light-desktop.png', fullPage: true });
-await desktop.getByRole('button', { name: 'Company' }).click();
+await desktop.getByRole('button', { name: 'Products' }).click();
 await desktop.waitForTimeout(220);
-await desktop.screenshot({ path: 'qa/company-menu-light.png', fullPage: false });
+await desktop.screenshot({ path: 'qa/products-menu-light.png', fullPage: false });
 await desktop.goto(new URL('/team/tristan-kruse/', target).href, { waitUntil: 'networkidle' });
 await desktop.screenshot({ path: 'qa/team-profile-light-viewport.png', fullPage: false });
 
@@ -85,9 +90,9 @@ await mobile.evaluate(() => globalThis.localStorage.setItem('archunit-theme', 'd
 await mobile.reload({ waitUntil: 'networkidle' });
 await mobile.screenshot({ path: 'qa/home-mobile-viewport.png', fullPage: false });
 await mobile.getByRole('button', { name: 'Toggle navigation' }).click();
-await mobile.getByRole('button', { name: 'Company' }).click();
+await mobile.getByRole('button', { name: 'Products' }).click();
 await mobile.waitForTimeout(220);
-await mobile.screenshot({ path: 'qa/company-menu-mobile.png', fullPage: false });
+await mobile.screenshot({ path: 'qa/products-menu-mobile.png', fullPage: false });
 await mobile.screenshot({ path: 'qa/home-mobile.png', fullPage: true });
 await mobile.goto(new URL('/team/', target).href, { waitUntil: 'networkidle' });
 await mobile.screenshot({ path: 'qa/team-mobile-viewport.png', fullPage: false });
@@ -97,6 +102,11 @@ await mobile.screenshot({ path: 'qa/team-profile-mobile-viewport.png', fullPage:
 await mobile.screenshot({ path: 'qa/team-profile-mobile.png', fullPage: true });
 await mobile.goto(new URL('/jobs/', target).href, { waitUntil: 'networkidle' });
 await mobile.screenshot({ path: 'qa/jobs-mobile.png', fullPage: true });
+await mobile.goto(new URL('/enterprise/', target).href, { waitUntil: 'networkidle' });
+await mobile.screenshot({ path: 'qa/enterprise-mobile-viewport.png', fullPage: false });
+await mobile.screenshot({ path: 'qa/enterprise-mobile.png', fullPage: true });
+await mobile.goto(new URL('/resources/', target).href, { waitUntil: 'networkidle' });
+await mobile.screenshot({ path: 'qa/resources-mobile.png', fullPage: true });
 await mobile.goto(new URL('/how-archunit-works/', target).href, { waitUntil: 'networkidle' });
 await mobile.screenshot({ path: 'qa/how-mobile-viewport.png', fullPage: false });
 await mobile.screenshot({ path: 'qa/how-mobile.png', fullPage: true });

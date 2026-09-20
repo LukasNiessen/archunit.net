@@ -1,0 +1,76 @@
+---
+import ConversionBand from '@components/ConversionBand.astro';
+import BaseLayout from '@layouts/BaseLayout.astro';
+
+const groups = [
+  {
+    title: 'Test frameworks',
+    copy: 'Keep architecture feedback in the runner developers already understand.',
+    items: ['Jest', 'Vitest', 'Jasmine', 'pytest', '.NET test', 'RSpec', 'Cargo test'],
+  },
+  {
+    title: 'Continuous integration',
+    copy: 'Run architecture rules with the same commands used on a workstation.',
+    items: ['GitHub Actions', 'GitLab CI/CD', 'Jenkins', 'Azure Pipelines', 'CircleCI'],
+  },
+  {
+    title: 'Project systems',
+    copy: 'Resolve the configuration and module model that governs the real codebase.',
+    items: ['tsconfig', 'Python packages', 'MSBuild', 'Bundler', 'Cargo', 'Go modules'],
+  },
+  {
+    title: 'Delivery workflows',
+    copy: 'Connect a failed rule to the review and ownership process around it.',
+    items: ['Pull requests', 'Merge requests', 'Quality gates', 'Monorepos', 'Release pipelines'],
+  },
+];
+---
+
+<BaseLayout
+  title="Integrations"
+  description="Integration patterns for running ArchUnit libraries with test frameworks, CI systems, project configuration, and delivery workflows."
+  canonicalPath="/integrations/"
+>
+  <section class="sales-hero sales-hero--compact">
+    <div class="shell sales-hero__grid">
+      <div>
+        <p class="hero-kicker">Integrations</p>
+        <h1>Architecture feedback where engineering already happens.</h1>
+      </div>
+      <div class="sales-hero__copy">
+        <p>
+          ArchUnit libraries work as code and tests. That keeps adoption close to source control,
+          project configuration, familiar runners, and the continuous integration path.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section class="integration-section">
+    <div class="shell integration-grid">
+      {groups.map((group) => (
+        <article>
+          <div>
+            <p class="eyebrow">{group.title}</p>
+            <h2>{group.copy}</h2>
+          </div>
+          <ul>
+            {group.items.map((item) => (
+              <li>{item}</li>
+            ))}
+          </ul>
+        </article>
+      ))}
+    </div>
+  </section>
+
+  <ConversionBand
+    eyebrow="Fit, then scale"
+    title="Keep the first integration boring."
+    copy="Use the test runner and CI path you already trust. Add richer reporting and shared policy after the core feedback loop works."
+    primaryLabel="Choose a library"
+    primaryHref="/#libraries"
+    secondaryLabel="Explore enterprise"
+    secondaryHref="/enterprise/"
+  />
+</BaseLayout>

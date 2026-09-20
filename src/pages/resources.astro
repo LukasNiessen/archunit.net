@@ -1,0 +1,61 @@
+---
+import ConversionBand from '@components/ConversionBand.astro';
+import { contactEmail } from '@data/contributors';
+import { enterpriseResources } from '@data/resources';
+import BaseLayout from '@layouts/BaseLayout.astro';
+
+const resourceHref = (title: string) =>
+  `mailto:${contactEmail}?subject=${encodeURIComponent('ArchUnit resource: ' + title)}`;
+---
+
+<BaseLayout
+  title="Resources"
+  description="ArchUnit white papers, field guides, case studies, and technical articles for architecture assurance and software design."
+  canonicalPath="/resources/"
+>
+  <section class="sales-hero sales-hero--compact">
+    <div class="shell sales-hero__grid">
+      <div>
+        <p class="hero-kicker">Resource library</p>
+        <h1>Ideas for architecture that must work in practice.</h1>
+      </div>
+      <div class="sales-hero__copy">
+        <p>
+          Research, field guidance, and implementation stories for leaders and engineers building
+          executable architecture controls.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section class="resource-library-section">
+    <div class="shell resource-library-grid">
+      {enterpriseResources.map((resource, index) => (
+        <article id={resource.slug}>
+          <div class="resource-card__top">
+            <span>{resource.type}</span>
+            <span>{resource.readingTime}</span>
+          </div>
+          <div>
+            <p class="resource-card__index">{String(index + 1).padStart(2, '0')}</p>
+            <h2>{resource.title}</h2>
+            <p>{resource.summary}</p>
+          </div>
+          <div class="resource-card__footer">
+            <span>{resource.audience}</span>
+            <a href={resourceHref(resource.title)}>Request the resource ↗</a>
+          </div>
+        </article>
+      ))}
+    </div>
+  </section>
+
+  <ConversionBand
+    eyebrow="Technical writing"
+    title="Prefer the implementation details?"
+    copy="Read project stories, tool comparisons, and concrete architecture-testing techniques from the people building the libraries."
+    primaryLabel="Read the blog"
+    primaryHref="/blog/"
+    secondaryLabel="Contact sales"
+  />
+</BaseLayout>

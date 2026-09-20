@@ -18,7 +18,7 @@ test('homepage presents the full library family', async ({ page }) => {
 
   if ((page.viewportSize()?.width ?? 0) > 760) {
     const brand = await page.locator('.site-header .brand').boundingBox();
-    const firstNavigationLink = await page.locator('.primary-nav > a').first().boundingBox();
+    const firstNavigationLink = await page.locator('.nav-dropdown__trigger').first().boundingBox();
     const themeControl = await page.locator('[data-theme-toggle]').boundingBox();
     expect(firstNavigationLink?.x ?? 0).toBeGreaterThan((brand?.x ?? 0) + (brand?.width ?? 0));
     expect(firstNavigationLink?.x ?? Infinity).toBeLessThan(
@@ -39,12 +39,15 @@ test('homepage presents the full library family', async ({ page }) => {
   await expect(page.getByRole('tabpanel', { name: 'PHP' })).toBeVisible();
   await expect(page.locator('body')).not.toContainText(String.fromCodePoint(0x2014));
 
-  if ((page.viewportSize()?.width ?? 1000) <= 760) {
+  const isMobile = (page.viewportSize()?.width ?? 1000) <= 760;
+  if (isMobile) {
     await page.getByRole('button', { name: 'Toggle navigation' }).click();
   }
-  const githubButton = page.getByRole('link', { name: 'GitHub', exact: true }).first();
-  await githubButton.hover();
-  const hoverColors = await githubButton.evaluate((element) => {
+  const startButton = isMobile
+    ? page.locator('.mobile-nav-actions .button--lime')
+    : page.locator('.header-started');
+  await startButton.hover();
+  const hoverColors = await startButton.evaluate((element) => {
     const style = getComputedStyle(element);
     return { background: style.backgroundColor, foreground: style.color };
   });
@@ -105,6 +108,9 @@ test('navigation and contributor content remain usable on mobile', async ({ page
   await expect(page.getByRole('heading', { name: /five people/i })).toBeVisible();
   await expect(page.locator('.team-card')).toHaveCount(5);
   await expect(page.locator('.team-card__profile')).toHaveCount(5);
+  const teamPortrait = await page.locator('.team-card__profile > img').first().boundingBox();
+  expect(Math.abs((teamPortrait?.width ?? 0) - (teamPortrait?.height ?? 0))).toBeLessThanOrEqual(1);
+  expect(teamPortrait?.width ?? Infinity).toBeLessThanOrEqual(120);
   await expect(page.getByRole('link', { name: /explore jobs/i })).toBeVisible();
 });
 
@@ -115,6 +121,8 @@ test('company navigation exposes about, people, jobs, and conversion actions', a
   }
   await page.getByRole('button', { name: 'Company' }).click();
   await expect(page.getByRole('link', { name: /^About/ }).first()).toBeVisible();
+  await expect(page.getByRole('link', { name: /^Mission/ }).first()).toBeVisible();
+  await expect(page.getByRole('link', { name: /^Principles/ }).first()).toBeVisible();
   await expect(page.getByRole('link', { name: /^People/ }).first()).toBeVisible();
   await expect(page.getByRole('link', { name: /^Jobs/ }).first()).toBeVisible();
 
@@ -129,6 +137,38 @@ test('company navigation exposes about, people, jobs, and conversion actions', a
     'href',
     /^mailto:lks\.niessen@gmail\.com/,
   );
+});
+
+test('enterprise navigation and sales resources are complete', async ({ page }) => {
+  await page.goto('/');
+  if ((page.viewportSize()?.width ?? 1000) <= 760) {
+    await page.getByRole('button', { name: 'Toggle navigation' }).click();
+  }
+  await page.getByRole('button', { name: 'Products' }).click();
+  await expect(page.getByRole('link', { name: /^Enterprise/ }).first()).toBeVisible();
+  await expect(page.getByRole('link', { name: /^Use cases/ }).first()).toBeVisible();
+  await expect(page.getByRole('link', { name: /^Integrations/ }).first()).toBeVisible();
+
+  for (const route of [
+    '/enterprise/',
+    '/use-cases/',
+    '/integrations/',
+    '/resources/',
+    '/mission/',
+    '/principles/',
+    '/support/',
+    '/status/',
+  ]) {
+    const response = await page.goto(route);
+    expect(response?.status()).toBe(200);
+    await expect(page.locator('h1')).toBeVisible();
+    await expect(page.locator('link[rel="canonical"]')).toHaveAttribute(
+      'href',
+      `https://www.archunit.net${route}`,
+    );
+  }
+  await page.goto('/resources/');
+  await expect(page.locator('.resource-library-grid article')).toHaveCount(6);
 });
 
 test('every team member has a complete, indexable profile', async ({ page }) => {
@@ -151,6 +191,10 @@ test('every team member has a complete, indexable profile', async ({ page }) => 
     await expect(page.locator('.profile-focus-grid article')).toHaveCount(3);
     await expect(page.locator('.profile-work-section li')).toHaveCount(3);
     await expect(page.locator('.profile-publication-card').first()).toBeVisible();
+    const relatedPortrait = await page.locator('.profile-team-grid img').first().boundingBox();
+    expect(
+      Math.abs((relatedPortrait?.width ?? 0) - (relatedPortrait?.height ?? 0)),
+    ).toBeLessThanOrEqual(1);
     await expect(page.getByRole('link', { name: /email/i }).first()).toHaveAttribute(
       'href',
       /^mailto:lks\.niessen@gmail\.com/,
@@ -263,6 +307,10 @@ test('key pages do not overflow the viewport', async ({ page }) => {
     '/privacy/',
     '/blog/why-archunitts-exists/',
     '/why-architecture-tests/',
+    '/enterprise/',
+    '/resources/',
+    '/mission/',
+    '/principles/',
   ]) {
     await page.goto(route);
     const dimensions = await page.evaluate(() => ({
