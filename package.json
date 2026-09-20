@@ -20,19 +20,19 @@
   },
   "dependencies": {
     "@astrojs/sitemap": "3.7.4",
-    "astro": "7.3.2"
+    "astro": "7.3.3"
   },
   "devDependencies": {
     "@astrojs/check": "0.9.10",
     "@eslint/js": "10.0.1",
     "@playwright/test": "1.63.0",
-    "@vitest/coverage-v8": "5.0.0",
+    "@vitest/coverage-v8": "5.0.1",
     "eslint": "10.10.0",
-    "eslint-plugin-astro": "3.1.0",
-    "prettier": "3.9.6",
-    "prettier-plugin-astro": "1.0.0",
-    "typescript": "6.0.3",
+    "eslint-plugin-astro": "3.2.1",
+    "prettier": "3.9.7",
+    "prettier-plugin-astro": "1.0.1",
+    "typescript": "7.0.2",
     "typescript-eslint": "8.70.0",
-    "vitest": "5.0.0"
+    "vitest": "5.0.1"
   }
 }
