@@ -278,7 +278,7 @@ export const posts: BlogPost[] = [
     publishedLabel: '18 October 2025',
     readingTime: '11 min read',
     sourceNote: 'Adapted from the original ArchUnitTS and eslint-plugin-import comparison.',
-    authorSlugs: ['tristan-kruse', 'robey-beswick'],
+    authorSlugs: ['lukas-niessen'],
     sections: [
       {
         heading: 'Start with the feedback loop',
@@ -383,7 +383,7 @@ export const posts: BlogPost[] = [
     publishedLabel: '2 July 2026',
     readingTime: '15 min read',
     sourceNote: 'Adapted from the original ArchUnitPython launch article.',
-    authorSlugs: ['tristan-kruse', 'deban-kumar-sahu'],
+    authorSlugs: ['lukas-niessen'],
     sections: [
       {
         heading: 'Python moves quickly',
@@ -535,7 +535,7 @@ export const posts: BlogPost[] = [
     publishedLabel: '20 August 2026',
     readingTime: '12 min read',
     sourceNote: 'Adapted from Lukas Niessen’s writing on architecture fitness functions.',
-    authorSlugs: ['jan-heimann'],
+    authorSlugs: ['lukas-niessen'],
     sections: [
       {
         heading: 'Working code can still be structurally wrong',

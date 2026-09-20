@@ -132,38 +132,40 @@ const schema = [
       </div>
     </section>
 
-    <section class="profile-publications-section">
-      <div class="shell">
-        <div class="profile-publications-heading">
-          <div>
-            <p class="eyebrow">Published work</p>
-            <h2>Ideas from {firstName}.</h2>
-          </div>
-          <a class="text-link" href="/blog/">
-            Explore every article →
-          </a>
-        </div>
-        <div class="profile-publications-grid">
-          {publishedPosts.map((post) => (
-            <a class="profile-publication-card" href={'/blog/' + post.slug + '/'}>
-              <div class="profile-publication-card__visual">
-                <img src="/images/og-card.png" alt="" width="1200" height="630" loading="lazy" />
-                <span>{post.category}</span>
-              </div>
-              <div class="profile-publication-card__body">
-                <div>
-                  <time datetime={post.published}>{post.publishedLabel}</time>
-                  <span>{post.readingTime}</span>
-                </div>
-                <h3>{post.title}</h3>
-                <p>{post.summary}</p>
-                <strong>Read article ↗</strong>
-              </div>
+    {publishedPosts.length > 0 && (
+      <section class="profile-publications-section">
+        <div class="shell">
+          <div class="profile-publications-heading">
+            <div>
+              <p class="eyebrow">Published work</p>
+              <h2>Ideas from {firstName}.</h2>
+            </div>
+            <a class="text-link" href="/blog/">
+              Explore every article →
             </a>
-          ))}
+          </div>
+          <div class="profile-publications-grid">
+            {publishedPosts.map((post) => (
+              <a class="profile-publication-card" href={'/blog/' + post.slug + '/'}>
+                <div class="profile-publication-card__visual">
+                  <img src="/images/og-card.png" alt="" width="1200" height="630" loading="lazy" />
+                  <span>{post.category}</span>
+                </div>
+                <div class="profile-publication-card__body">
+                  <div>
+                    <time datetime={post.published}>{post.publishedLabel}</time>
+                    <span>{post.readingTime}</span>
+                  </div>
+                  <h3>{post.title}</h3>
+                  <p>{post.summary}</p>
+                  <strong>Read article ↗</strong>
+                </div>
+              </a>
+            ))}
+          </div>
         </div>
-      </div>
-    </section>
+      </section>
+    )}
 
     <section class="profile-focus-section">
       <div class="shell">

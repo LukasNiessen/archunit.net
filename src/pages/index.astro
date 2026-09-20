@@ -434,6 +434,8 @@ const homeSchema = [
     const wait = (duration: number) =>
       new Promise<void>((resolve) => window.setTimeout(resolve, duration));
 
+    const underline = document.querySelector<HTMLElement>('.hero-word-underline');
+
     const renderLetters = (value: string) => {
       if (!libraryWord) return [];
       const fragment = document.createDocumentFragment();
@@ -445,12 +447,14 @@ const homeSchema = [
         return letter;
       });
       libraryWord.replaceChildren(fragment);
+      if (underline) {
+        underline.style.width = `${libraryWord.getBoundingClientRect().width}px`;
+      }
       return letters;
     };
 
     const cycleLibraryWord = async () => {
       if (!libraryWord) return;
-      const underline = document.querySelector<HTMLElement>('.hero-word-underline');
       let letters = renderLetters(libraryNames[0] ?? 'TS');
       await wait(1900);
 

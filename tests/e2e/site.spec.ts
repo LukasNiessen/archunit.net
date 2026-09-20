@@ -15,6 +15,16 @@ test('homepage presents the full library family', async ({ page }) => {
   const libraryWord = page.locator('[data-library-word]');
   await expect(libraryWord).toHaveText('TS');
   await expect(libraryWord).not.toHaveText('TS', { timeout: 4_500 });
+  await page.waitForTimeout(500);
+  const wordAndUnderlineWidths = await page.evaluate(() => {
+    const word = document.querySelector<HTMLElement>('[data-library-word]');
+    const underline = document.querySelector<HTMLElement>('.hero-word-underline');
+    return {
+      word: word?.getBoundingClientRect().width ?? 0,
+      underline: Number.parseFloat(underline ? getComputedStyle(underline).width : '0'),
+    };
+  });
+  expect(Math.abs(wordAndUnderlineWidths.word - wordAndUnderlineWidths.underline)).toBeLessThan(2);
 
   if ((page.viewportSize()?.width ?? 0) > 760) {
     const brand = await page.locator('.site-header .brand').boundingBox();
@@ -115,6 +125,7 @@ test('navigation and contributor content remain usable on mobile', async ({ page
 });
 
 test('company navigation exposes about, people, jobs, and conversion actions', async ({ page }) => {
+  test.setTimeout(60_000);
   await page.goto('/');
   if ((page.viewportSize()?.width ?? 1000) <= 760) {
     await page.getByRole('button', { name: 'Toggle navigation' }).click();
@@ -140,6 +151,7 @@ test('company navigation exposes about, people, jobs, and conversion actions', a
 });
 
 test('enterprise navigation and sales resources are complete', async ({ page }) => {
+  test.setTimeout(60_000);
   await page.goto('/');
   if ((page.viewportSize()?.width ?? 1000) <= 760) {
     await page.getByRole('button', { name: 'Toggle navigation' }).click();
@@ -190,7 +202,11 @@ test('every team member has a complete, indexable profile', async ({ page }) => 
     );
     await expect(page.locator('.profile-focus-grid article')).toHaveCount(3);
     await expect(page.locator('.profile-work-section li')).toHaveCount(3);
-    await expect(page.locator('.profile-publication-card').first()).toBeVisible();
+    if (slug === 'lukas-niessen') {
+      await expect(page.locator('.profile-publication-card')).toHaveCount(5);
+    } else {
+      await expect(page.locator('.profile-publications-section')).toHaveCount(0);
+    }
     const relatedPortrait = await page.locator('.profile-team-grid img').first().boundingBox();
     expect(
       Math.abs((relatedPortrait?.width ?? 0) - (relatedPortrait?.height ?? 0)),

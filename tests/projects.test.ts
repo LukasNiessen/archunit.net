@@ -113,6 +113,7 @@ describe('blog', () => {
     expect(posts.map((post) => post.slug)).toContain('archunitts-vs-tsarch');
     expect(posts.every((post) => post.sections.length >= 7)).toBe(true);
     expect(posts.every((post) => Number.parseInt(post.readingTime, 10) >= 10)).toBe(true);
+    expect(posts.every((post) => post.authorSlugs?.join(',') === 'lukas-niessen')).toBe(true);
     expect(
       posts.every(
         (post) =>
