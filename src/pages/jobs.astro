@@ -1,0 +1,151 @@
+---
+import ConversionBand from '@components/ConversionBand.astro';
+import { contactEmail } from '@data/contributors';
+import { jobs } from '@data/jobs';
+import BaseLayout from '@layouts/BaseLayout.astro';
+
+const schema = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'CollectionPage',
+    name: 'Jobs at ArchUnit',
+    url: 'https://www.archunit.net/jobs/',
+    description: 'Open engineering and go-to-market roles at ArchUnit.',
+  },
+  ...jobs.map((job) => ({
+    '@context': 'https://schema.org',
+    '@type': 'JobPosting',
+    title: job.title,
+    description: job.summary,
+    employmentType: 'FULL_TIME',
+    hiringOrganization: {
+      '@type': 'Organization',
+      name: 'ArchUnit',
+      sameAs: 'https://www.archunit.net/',
+    },
+    jobLocationType: 'TELECOMMUTE',
+    applicantLocationRequirements: {
+      '@type': 'AdministrativeArea',
+      name: 'Europe',
+    },
+    jobLocation: {
+      '@type': 'Place',
+      address: {
+        '@type': 'PostalAddress',
+        addressLocality: 'Munich',
+        addressCountry: 'DE',
+      },
+    },
+    url: 'https://www.archunit.net/jobs/#' + job.slug,
+  })),
+];
+---
+
+<BaseLayout
+  title="Jobs"
+  description="Join ArchUnit to build language-native architecture testing tools from Munich or remotely across Europe."
+  canonicalPath="/jobs/"
+  schema={schema}
+>
+  <section class="jobs-hero">
+    <div class="shell jobs-hero__grid">
+      <div>
+        <p class="hero-kicker">Careers at ArchUnit</p>
+        <h1>Build tools that keep ambitious codebases honest.</h1>
+      </div>
+      <div>
+        <p>
+          We are building language-native architecture testing tools for engineering teams that move
+          quickly and still care deeply about software design.
+        </p>
+        <p>
+          Our team works remotely across Europe and in Munich. We value precise thinking, direct
+          communication, practical ownership, and the patience to make complex tools feel simple.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section class="jobs-principles-section">
+    <div class="shell jobs-principles-grid">
+      <article>
+        <span>01</span>
+        <h2>Start from evidence.</h2>
+        <p>We make decisions from source, user behavior, benchmarks, and reproducible results.</p>
+      </article>
+      <article>
+        <span>02</span>
+        <h2>Own the whole path.</h2>
+        <p>Implementation, documentation, release quality, and user feedback belong together.</p>
+      </article>
+      <article>
+        <span>03</span>
+        <h2>Keep the interface clear.</h2>
+        <p>Deep technical work matters most when another person can understand and use it.</p>
+      </article>
+    </div>
+  </section>
+
+  <section class="open-roles-section" id="open-roles">
+    <div class="shell">
+      <div class="open-roles-heading">
+        <div>
+          <p class="eyebrow">Open roles</p>
+          <h2>Find the work that fits your strengths.</h2>
+        </div>
+        <p>All positions are full-time and available remotely in Europe or from Munich.</p>
+      </div>
+
+      <div class="job-list">
+        {jobs.map((job) => {
+          const applyHref = `mailto:${contactEmail}?subject=${encodeURIComponent(
+            'Application: ' + job.title,
+          )}`;
+          return (
+            <article class="job-opening" id={job.slug}>
+              <div class="job-opening__summary">
+                <div class="job-opening__meta">
+                  <span>{job.discipline}</span>
+                  <span>{job.location}</span>
+                </div>
+                <h3>{job.title}</h3>
+                <p>{job.summary}</p>
+                <a class="button button--lime" href={applyHref}>
+                  Apply by email
+                </a>
+              </div>
+              <div class="job-opening__details">
+                <div>
+                  <h4>What you will do</h4>
+                  <ul>
+                    {job.responsibilities.map((item) => (
+                      <li>{item}</li>
+                    ))}
+                  </ul>
+                </div>
+                <div>
+                  <h4>What you bring</h4>
+                  <ul>
+                    {job.qualifications.map((item) => (
+                      <li>{item}</li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            </article>
+          );
+        })}
+      </div>
+    </div>
+  </section>
+
+  <ConversionBand
+    eyebrow="Do not see your exact role?"
+    title="Good work rarely fits one title."
+    copy="If you care about developer tools, static analysis, or architecture feedback and think you can move the project forward, introduce yourself."
+    primaryLabel="Email the team"
+    primaryHref={`mailto:${contactEmail}?subject=${encodeURIComponent('Working with ArchUnit')}`}
+    secondaryLabel="Meet the team"
+    secondaryHref="/team/"
+  />
+</BaseLayout>

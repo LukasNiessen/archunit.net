@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { contributors, team } from '../src/data/contributors';
 import { documentationBySlug } from '../src/data/documentation';
+import { jobs } from '../src/data/jobs';
 import { posts } from '../src/data/posts';
 import { projectBySlug, projects, stableProjects } from '../src/data/projects';
 import { libraryStats, statsSnapshot } from '../src/data/stats';
@@ -120,5 +121,15 @@ describe('blog', () => {
           ) > 4_000,
       ),
     ).toBe(true);
+  });
+});
+
+describe('jobs', () => {
+  it('publishes five realistic roles without salary claims', () => {
+    expect(jobs).toHaveLength(5);
+    expect(jobs.filter((job) => job.discipline === 'Engineering')).toHaveLength(3);
+    expect(jobs.filter((job) => job.discipline === 'Go to market')).toHaveLength(2);
+    expect(jobs.every((job) => /Remote Europe|Munich/.test(job.location))).toBe(true);
+    expect(JSON.stringify(jobs)).not.toMatch(/salary|compensation/i);
   });
 });

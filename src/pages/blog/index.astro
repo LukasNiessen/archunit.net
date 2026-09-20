@@ -1,5 +1,6 @@
 ---
 import SectionHeading from '@components/SectionHeading.astro';
+import { team } from '@data/contributors';
 import { posts } from '@data/posts';
 import BaseLayout from '@layouts/BaseLayout.astro';
 
@@ -16,6 +17,11 @@ const schema = {
     datePublished: post.published,
     url: 'https://www.archunit.net/blog/' + post.slug + '/',
   })),
+};
+
+const postAuthorLabel = (authorSlugs?: string[]) => {
+  const authors = team.filter((member) => authorSlugs?.includes(member.slug));
+  return authors.length ? authors.map((author) => author.name).join(' and ') : 'ArchUnit platform';
 };
 ---
 
@@ -65,7 +71,9 @@ const schema = {
               <p>{post.summary}</p>
             </div>
             <div class="blog-card__footer">
-              <span>{post.readingTime}</span>
+              <span>
+                By {postAuthorLabel(post.authorSlugs)} · {post.readingTime}
+              </span>
               <span>Read article ↗</span>
             </div>
           </a>

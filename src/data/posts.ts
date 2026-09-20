@@ -17,6 +17,7 @@ export interface BlogPost {
   publishedLabel: string;
   readingTime: string;
   sourceNote: string;
+  authorSlugs?: string[];
   sections: BlogSection[];
 }
 
@@ -31,6 +32,7 @@ export const posts: BlogPost[] = [
     publishedLabel: '12 September 2026',
     readingTime: '14 min read',
     sourceNote: 'Adapted from Lukas Niessen’s original hands-on ArchUnitTS and tsarch comparison.',
+    authorSlugs: ['lukas-niessen'],
     sections: [
       {
         heading: 'The short answer',
@@ -172,6 +174,7 @@ export const posts: BlogPost[] = [
     publishedLabel: '15 October 2025',
     readingTime: '12 min read',
     sourceNote: 'Adapted from the original ArchUnitTS milestone essay by Lukas Niessen.',
+    authorSlugs: ['lukas-niessen'],
     sections: [
       {
         heading: 'A missing guardrail',
@@ -275,6 +278,7 @@ export const posts: BlogPost[] = [
     publishedLabel: '18 October 2025',
     readingTime: '11 min read',
     sourceNote: 'Adapted from the original ArchUnitTS and eslint-plugin-import comparison.',
+    authorSlugs: ['tristan-kruse', 'robey-beswick'],
     sections: [
       {
         heading: 'Start with the feedback loop',
@@ -379,6 +383,7 @@ export const posts: BlogPost[] = [
     publishedLabel: '2 July 2026',
     readingTime: '15 min read',
     sourceNote: 'Adapted from the original ArchUnitPython launch article.',
+    authorSlugs: ['tristan-kruse', 'deban-kumar-sahu'],
     sections: [
       {
         heading: 'Python moves quickly',
@@ -530,6 +535,7 @@ export const posts: BlogPost[] = [
     publishedLabel: '20 August 2026',
     readingTime: '12 min read',
     sourceNote: 'Adapted from Lukas Niessen’s writing on architecture fitness functions.',
+    authorSlugs: ['jan-heimann'],
     sections: [
       {
         heading: 'Working code can still be structurally wrong',

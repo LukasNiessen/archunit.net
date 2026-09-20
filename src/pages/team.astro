@@ -1,4 +1,5 @@
 ---
+import ConversionBand from '@components/ConversionBand.astro';
 import SectionHeading from '@components/SectionHeading.astro';
 import { contributors, team } from '@data/contributors';
 import BaseLayout from '@layouts/BaseLayout.astro';
@@ -131,23 +132,11 @@ const schema = {
     </div>
   </section>
 
-  <section class="cta-section">
-    <div class="shell">
-      <h2>
-        There is room for your <em>perspective.</em>
-      </h2>
-      <p>
-        Pick an ecosystem you know, explore the issues, and help architecture tests feel clearer,
-        faster, and more native to that community.
-      </p>
-      <a
-        class="button button--lime"
-        href="https://github.com/LukasNiessen"
-        target="_blank"
-        rel="noreferrer"
-      >
-        Find a repository ↗
-      </a>
-    </div>
-  </section>
+  <ConversionBand
+    eyebrow="Build with us"
+    title="There is room for your perspective."
+    copy="Explore an open role, contribute in an ecosystem you know, or talk with us about architecture guardrails for your team."
+    primaryLabel="Explore jobs"
+    primaryHref="/jobs/"
+  />
 </BaseLayout>

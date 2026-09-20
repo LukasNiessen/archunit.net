@@ -19,6 +19,8 @@ const routes = [
   'team/jan-heimann',
   'team/deban-kumar-sahu',
   'team/robey-beswick',
+  'about',
+  'jobs',
   'why-architecture-tests',
   'how-archunit-works',
   'stats',

@@ -1,5 +1,6 @@
 ---
-import { team, type TeamMember } from '@data/contributors';
+import { contactEmail, team, type TeamMember } from '@data/contributors';
+import { posts } from '@data/posts';
 import BaseLayout from '@layouts/BaseLayout.astro';
 
 export function getStaticPaths() {
@@ -14,7 +15,11 @@ const { member } = Astro.props;
 const currentIndex = team.findIndex((candidate) => candidate.slug === member.slug);
 const nextMember = team[(currentIndex + 1) % team.length] ?? team[0]!;
 const otherMembers = team.filter((candidate) => candidate.slug !== member.slug);
+const publishedPosts = posts.filter((post) => post.authorSlugs?.includes(member.slug));
+const firstName = member.name.split(' ')[0];
 const sameAs = [member.linkedinUrl, member.githubUrl].filter((url): url is string => Boolean(url));
+const emailHref = `mailto:${contactEmail}?subject=${encodeURIComponent(`Contact ${member.name} via ArchUnit`)}`;
+const demoHref = `mailto:${contactEmail}?subject=${encodeURIComponent('ArchUnit demo request')}`;
 const schema = [
   {
     '@context': 'https://schema.org',
@@ -27,6 +32,7 @@ const schema = [
       jobTitle: member.role,
       description: member.bio,
       image: 'https://www.archunit.net' + member.photoUrl,
+      email: contactEmail,
       sameAs,
       memberOf: {
         '@type': 'Organization',
@@ -65,42 +71,47 @@ const schema = [
   schema={schema}
 >
   <header class="profile-hero">
-    <div class="shell profile-hero__grid">
-      <div class="profile-portrait-wrap">
-        <img
-          class="profile-portrait"
-          src={member.photoUrl}
-          alt={member.name}
-          width="800"
-          height="1000"
-        />
-        <span>{String(currentIndex + 1).padStart(2, '0')} / 05</span>
-      </div>
-      <div class="profile-hero__copy">
-        <nav class="breadcrumbs" aria-label="Breadcrumb">
-          <a href="/">ArchUnit</a>
-          <span>/</span>
-          <a href="/team/">Team</a>
-          <span>/</span>
-          <span>{member.name}</span>
-        </nav>
-        <p class="eyebrow">{member.role}</p>
-        <h1>{member.name}</h1>
-        <p class="profile-headline">{member.headline}</p>
-        <div class="profile-actions">
-          <a class="button button--lime" href={member.linkedinUrl} target="_blank" rel="noreferrer">
-            LinkedIn ↗
-          </a>
-          {member.githubUrl && (
+    <div class="shell">
+      <nav class="breadcrumbs profile-breadcrumbs" aria-label="Breadcrumb">
+        <a href="/">ArchUnit</a>
+        <span>/</span>
+        <a href="/team/">People</a>
+        <span>/</span>
+        <span>{member.name}</span>
+      </nav>
+
+      <div class="profile-hero__banner">
+        <div class="profile-hero__copy">
+          <p class="eyebrow">{member.role}</p>
+          <h1>{member.name}</h1>
+          <p class="profile-headline">{member.bio}</p>
+          <div class="profile-actions">
+            <a class="button button--lime" href={emailHref}>
+              Email {firstName}
+            </a>
             <a
-              class="button button--ghost"
-              href={member.githubUrl}
+              class="button button--profile-ghost"
+              href={member.linkedinUrl}
               target="_blank"
               rel="noreferrer"
             >
-              GitHub ↗
+              LinkedIn ↗
+            </a>
+          </div>
+          {member.githubUrl && (
+            <a class="profile-github-link" href={member.githubUrl} target="_blank" rel="noreferrer">
+              View GitHub profile ↗
             </a>
           )}
+        </div>
+        <div class="profile-portrait-stage">
+          <img
+            class="profile-portrait"
+            src={member.cutoutUrl}
+            alt={member.name}
+            width="1256"
+            height="1256"
+          />
         </div>
       </div>
     </div>
@@ -110,7 +121,7 @@ const schema = [
     <section class="profile-story-section">
       <div class="shell profile-story-grid">
         <div>
-          <p class="eyebrow">At ArchUnit</p>
+          <p class="eyebrow">About {firstName}</p>
           <h2>{member.headline}</h2>
         </div>
         <div class="profile-story-copy">
@@ -121,11 +132,44 @@ const schema = [
       </div>
     </section>
 
+    <section class="profile-publications-section">
+      <div class="shell">
+        <div class="profile-publications-heading">
+          <div>
+            <p class="eyebrow">Published work</p>
+            <h2>Ideas from {firstName}.</h2>
+          </div>
+          <a class="text-link" href="/blog/">
+            Explore every article →
+          </a>
+        </div>
+        <div class="profile-publications-grid">
+          {publishedPosts.map((post) => (
+            <a class="profile-publication-card" href={'/blog/' + post.slug + '/'}>
+              <div class="profile-publication-card__visual">
+                <img src="/images/og-card.png" alt="" width="1200" height="630" loading="lazy" />
+                <span>{post.category}</span>
+              </div>
+              <div class="profile-publication-card__body">
+                <div>
+                  <time datetime={post.published}>{post.publishedLabel}</time>
+                  <span>{post.readingTime}</span>
+                </div>
+                <h3>{post.title}</h3>
+                <p>{post.summary}</p>
+                <strong>Read article ↗</strong>
+              </div>
+            </a>
+          ))}
+        </div>
+      </div>
+    </section>
+
     <section class="profile-focus-section">
       <div class="shell">
         <div class="profile-section-heading">
           <p class="eyebrow">Focus</p>
-          <h2>Where {member.name.split(' ')[0]} contributes.</h2>
+          <h2>Where {firstName} contributes.</h2>
         </div>
         <div class="profile-focus-grid">
           {member.focusAreas.map((area, index) => (
@@ -163,6 +207,32 @@ const schema = [
       </div>
     </section>
 
+    <section class="profile-contact-section" id="contact">
+      <div class="shell profile-contact-card">
+        <div>
+          <p class="eyebrow">Contact {firstName}</p>
+          <h2>Ready to make architecture visible?</h2>
+        </div>
+        <div>
+          <p>
+            Talk with {firstName} about architecture testing, the ArchUnit library family, or how
+            executable guardrails can fit your engineering workflow.
+          </p>
+          <div class="profile-contact-actions">
+            <a class="button button--lime" href={emailHref}>
+              Email {firstName}
+            </a>
+            <a class="button button--ghost" href={demoHref}>
+              Request a demo
+            </a>
+          </div>
+          <a class="profile-contact-email" href={emailHref}>
+            {contactEmail}
+          </a>
+        </div>
+      </div>
+    </section>
+
     <section class="profile-team-section">
       <div class="shell">
         <div class="profile-team-heading">
@@ -177,7 +247,7 @@ const schema = [
         <div class="profile-team-grid">
           {otherMembers.map((candidate) => (
             <a href={'/team/' + candidate.slug + '/'}>
-              <img src={candidate.photoUrl} alt={candidate.name} width="240" height="240" />
+              <img src={candidate.photoUrl} alt={candidate.name} width="800" height="800" />
               <span>{candidate.role}</span>
               <strong>{candidate.name}</strong>
             </a>
@@ -188,7 +258,7 @@ const schema = [
 
     <section class="profile-next-section">
       <a href={'/team/' + nextMember.slug + '/'}>
-        <span>Next team member</span>
+        <span>Meet another team member</span>
         <strong>{nextMember.name} →</strong>
       </a>
     </section>

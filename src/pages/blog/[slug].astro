@@ -1,5 +1,7 @@
 ---
 import CodeWindow from '@components/CodeWindow.astro';
+import ConversionBand from '@components/ConversionBand.astro';
+import { contactEmail, team } from '@data/contributors';
 import { posts, type BlogPost } from '@data/posts';
 import BaseLayout from '@layouts/BaseLayout.astro';
 
@@ -12,6 +14,17 @@ interface Props {
 }
 
 const { post } = Astro.props;
+const articleAuthors = team.filter((member) => post.authorSlugs?.includes(member.slug));
+const authorLabel = articleAuthors.length
+  ? articleAuthors.map((author) => author.name).join(' and ')
+  : 'ArchUnit platform';
+const authorSchema = articleAuthors.length
+  ? articleAuthors.map((author) => ({
+      '@type': 'Person',
+      name: author.name,
+      url: 'https://www.archunit.net/team/' + author.slug + '/',
+    }))
+  : { '@type': 'Organization', name: 'ArchUnit' };
 const schema = [
   {
     '@context': 'https://schema.org',
@@ -19,7 +32,7 @@ const schema = [
     headline: post.title,
     description: post.summary,
     datePublished: post.published,
-    author: { '@type': 'Organization', name: 'ArchUnit' },
+    author: authorSchema,
     publisher: { '@type': 'Organization', name: 'ArchUnit' },
     mainEntityOfPage: 'https://www.archunit.net/blog/' + post.slug + '/',
   },
@@ -61,6 +74,19 @@ const schema = [
           <time datetime={post.published}>{post.publishedLabel}</time>
           <span>{post.readingTime}</span>
         </div>
+        <p class="article-byline">
+          By{' '}
+          {articleAuthors.length ? (
+            articleAuthors.map((author, index) => (
+              <>
+                <a href={'/team/' + author.slug + '/'}>{author.name}</a>
+                {index < articleAuthors.length - 1 ? ' and ' : ''}
+              </>
+            ))
+          ) : (
+            <span>{authorLabel}</span>
+          )}
+        </p>
         <h1>{post.title}</h1>
         <p>{post.summary}</p>
       </div>
@@ -77,6 +103,28 @@ const schema = [
           ))}
         </ol>
         <p class="article-source-note">{post.sourceNote}</p>
+        <div class="article-aside-authors">
+          <p class="eyebrow">Written by</p>
+          {articleAuthors.length ? (
+            articleAuthors.map((author) => (
+              <a href={'/team/' + author.slug + '/'}>
+                <img src={author.photoUrl} alt="" width="42" height="42" loading="lazy" />
+                <span>
+                  <strong>{author.name}</strong>
+                  <small>{author.role}</small>
+                </span>
+              </a>
+            ))
+          ) : (
+            <div class="article-platform-author">
+              <img src="/logos/archunitts.png" alt="" width="42" height="42" />
+              <span>
+                <strong>ArchUnit platform</strong>
+                <small>Editorial team</small>
+              </span>
+            </div>
+          )}
+        </div>
       </aside>
       <div class="article-body">
         {post.sections.map((section, index) => (
@@ -118,15 +166,61 @@ const schema = [
     </div>
   </article>
 
-  <section class="cta-section">
+  <section class="article-author-section">
     <div class="shell">
-      <h2>
-        Turn one decision into <em>a test.</em>
-      </h2>
-      <p>Choose the implementation for your stack and start with the boundary that matters most.</p>
-      <a class="button button--lime" href="/#libraries">
-        Explore the libraries
-      </a>
+      <p class="eyebrow">Contact the author</p>
+      <div class="article-author-grid">
+        <div>
+          <h2>Continue the conversation.</h2>
+          <p>
+            Ask about the ideas in this article, discuss an architecture-testing use case, or share
+            an edge case from your own codebase.
+          </p>
+        </div>
+        <div class="article-author-cards">
+          {articleAuthors.length ? (
+            articleAuthors.map((author) => {
+              const emailHref = `mailto:${contactEmail}?subject=${encodeURIComponent(
+                'Contact ' + author.name + ' about: ' + post.title,
+              )}`;
+              return (
+                <article>
+                  <img
+                    src={author.photoUrl}
+                    alt={author.name}
+                    width="160"
+                    height="160"
+                    loading="lazy"
+                  />
+                  <div>
+                    <span>{author.role}</span>
+                    <h3>{author.name}</h3>
+                    <a class="button button--ghost" href={emailHref}>
+                      Contact {author.name.split(' ')[0]}
+                    </a>
+                  </div>
+                </article>
+              );
+            })
+          ) : (
+            <article>
+              <img src="/logos/archunitts.png" alt="ArchUnit" width="160" height="160" />
+              <div>
+                <span>Editorial</span>
+                <h3>ArchUnit platform</h3>
+                <a
+                  class="button button--ghost"
+                  href={`mailto:${contactEmail}?subject=${encodeURIComponent('ArchUnit article inquiry')}`}
+                >
+                  Contact the team
+                </a>
+              </div>
+            </article>
+          )}
+        </div>
+      </div>
     </div>
   </section>
+
+  <ConversionBand />
 </BaseLayout>

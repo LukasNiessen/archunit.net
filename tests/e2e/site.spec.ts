@@ -105,7 +105,30 @@ test('navigation and contributor content remain usable on mobile', async ({ page
   await expect(page.getByRole('heading', { name: /five people/i })).toBeVisible();
   await expect(page.locator('.team-card')).toHaveCount(5);
   await expect(page.locator('.team-card__profile')).toHaveCount(5);
-  await expect(page.getByRole('link', { name: /find a repository/i })).toBeVisible();
+  await expect(page.getByRole('link', { name: /explore jobs/i })).toBeVisible();
+});
+
+test('company navigation exposes about, people, jobs, and conversion actions', async ({ page }) => {
+  await page.goto('/');
+  if ((page.viewportSize()?.width ?? 1000) <= 760) {
+    await page.getByRole('button', { name: 'Toggle navigation' }).click();
+  }
+  await page.getByRole('button', { name: 'Company' }).click();
+  await expect(page.getByRole('link', { name: /^About/ }).first()).toBeVisible();
+  await expect(page.getByRole('link', { name: /^People/ }).first()).toBeVisible();
+  await expect(page.getByRole('link', { name: /^Jobs/ }).first()).toBeVisible();
+
+  const aboutResponse = await page.goto('/about/');
+  expect(aboutResponse?.status()).toBe(200);
+  await expect(page.getByRole('heading', { name: /architecture decisions/i })).toBeVisible();
+
+  const jobsResponse = await page.goto('/jobs/');
+  expect(jobsResponse?.status()).toBe(200);
+  await expect(page.locator('.job-opening')).toHaveCount(5);
+  await expect(page.getByRole('link', { name: /apply by email/i }).first()).toHaveAttribute(
+    'href',
+    /^mailto:lks\.niessen@gmail\.com/,
+  );
 });
 
 test('every team member has a complete, indexable profile', async ({ page }) => {
@@ -127,6 +150,11 @@ test('every team member has a complete, indexable profile', async ({ page }) => 
     );
     await expect(page.locator('.profile-focus-grid article')).toHaveCount(3);
     await expect(page.locator('.profile-work-section li')).toHaveCount(3);
+    await expect(page.locator('.profile-publication-card').first()).toBeVisible();
+    await expect(page.getByRole('link', { name: /email/i }).first()).toHaveAttribute(
+      'href',
+      /^mailto:lks\.niessen@gmail\.com/,
+    );
     const structuredData = await page.locator('script[type="application/ld+json"]').textContent();
     expect(structuredData).toContain('ProfilePage');
     expect(structuredData).toContain('Person');

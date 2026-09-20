@@ -1,5 +1,5 @@
 ---
-import GithubIcon from './GithubIcon.astro';
+import { contactEmail } from '@data/contributors';
 
 const path = Astro.url.pathname;
 const links = [
@@ -7,8 +7,14 @@ const links = [
   { href: '/how-archunit-works/', label: 'How it works' },
   { href: '/stats/', label: 'Stats' },
   { href: '/blog/', label: 'Blog' },
-  { href: '/team/', label: 'Team' },
 ];
+const companyLinks = [
+  { href: '/about/', label: 'About', copy: 'Why we build architecture guardrails.' },
+  { href: '/team/', label: 'People', copy: 'Meet the team behind the libraries.' },
+  { href: '/jobs/', label: 'Jobs', copy: 'Build language-native developer tools with us.' },
+];
+const companyActive = companyLinks.some((link) => path.startsWith(link.href));
+const contactHref = `mailto:${contactEmail}?subject=${encodeURIComponent('ArchUnit inquiry')}`;
 ---
 
 <header class="site-header" data-header>
@@ -28,6 +34,39 @@ const links = [
             {link.label}
           </a>
         ))}
+
+        <div class:list={['nav-dropdown', { active: companyActive }]} data-company-dropdown>
+          <button
+            class="nav-dropdown__trigger"
+            type="button"
+            aria-expanded="false"
+            aria-controls="company-menu"
+            data-company-toggle
+          >
+            Company
+            <svg viewBox="0 0 16 16" aria-hidden="true">
+              <path d="m4 6 4 4 4-4"></path>
+            </svg>
+          </button>
+          <div id="company-menu" class="nav-dropdown__panel">
+            <p>Company</p>
+            {companyLinks.map((link) => (
+              <a href={link.href} class:list={{ active: path.startsWith(link.href) }}>
+                <strong>{link.label}</strong>
+                <span>{link.copy}</span>
+              </a>
+            ))}
+          </div>
+        </div>
+
+        <div class="mobile-nav-actions">
+          <a class="button button--ghost" href={contactHref}>
+            Contact us
+          </a>
+          <a class="button button--lime" href="/#libraries">
+            Get started
+          </a>
+        </div>
       </nav>
     </div>
 
@@ -44,14 +83,11 @@ const links = [
           Use light mode
         </span>
       </button>
-      <a
-        class="button button--small button--light header-github"
-        href="https://github.com/LukasNiessen"
-        target="_blank"
-        rel="noreferrer"
-      >
-        <GithubIcon />
-        <span>GitHub</span>
+      <a class="button button--small button--ghost header-contact" href={contactHref}>
+        Contact us
+      </a>
+      <a class="button button--small button--lime header-started" href="/#libraries">
+        Get started
       </a>
       <button class="menu-button" type="button" aria-expanded="false" aria-controls="primary-nav">
         <span class="sr-only">Toggle navigation</span>
@@ -63,19 +99,42 @@ const links = [
 </header>
 
 <script>
-  const button = document.querySelector<HTMLButtonElement>('.menu-button');
-  const nav = document.querySelector<HTMLElement>('.primary-nav');
-  button?.addEventListener('click', () => {
-    const isOpen = button.getAttribute('aria-expanded') === 'true';
-    button.setAttribute('aria-expanded', String(!isOpen));
-    nav?.toggleAttribute('data-open', !isOpen);
+  const menuButton = document.querySelector<HTMLButtonElement>('.menu-button');
+  const navigation = document.querySelector<HTMLElement>('.primary-nav');
+  const companyDropdown = document.querySelector<HTMLElement>('[data-company-dropdown]');
+  const companyButton = document.querySelector<HTMLButtonElement>('[data-company-toggle]');
+
+  const closeCompanyMenu = () => {
+    companyButton?.setAttribute('aria-expanded', 'false');
+    companyDropdown?.removeAttribute('data-open');
+  };
+
+  menuButton?.addEventListener('click', () => {
+    const isOpen = menuButton.getAttribute('aria-expanded') === 'true';
+    menuButton.setAttribute('aria-expanded', String(!isOpen));
+    navigation?.toggleAttribute('data-open', !isOpen);
+    if (isOpen) closeCompanyMenu();
   });
 
-  nav?.querySelectorAll('a').forEach((link) => {
+  companyButton?.addEventListener('click', () => {
+    const isOpen = companyButton.getAttribute('aria-expanded') === 'true';
+    companyButton.setAttribute('aria-expanded', String(!isOpen));
+    companyDropdown?.toggleAttribute('data-open', !isOpen);
+  });
+
+  navigation?.querySelectorAll('a').forEach((link) => {
     link.addEventListener('click', () => {
-      button?.setAttribute('aria-expanded', 'false');
-      nav.removeAttribute('data-open');
+      menuButton?.setAttribute('aria-expanded', 'false');
+      navigation.removeAttribute('data-open');
+      closeCompanyMenu();
     });
+  });
+
+  document.addEventListener('keydown', (event) => {
+    if (event.key !== 'Escape') return;
+    menuButton?.setAttribute('aria-expanded', 'false');
+    navigation?.removeAttribute('data-open');
+    closeCompanyMenu();
   });
 
   const themeToggle = document.querySelector<HTMLButtonElement>('[data-theme-toggle]');

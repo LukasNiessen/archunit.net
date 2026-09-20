@@ -1,0 +1,44 @@
+---
+import { contactEmail } from '@data/contributors';
+
+interface Props {
+  eyebrow?: string;
+  title?: string;
+  copy?: string;
+  primaryLabel?: string;
+  primaryHref?: string;
+  secondaryLabel?: string;
+  secondaryHref?: string;
+}
+
+const demoHref = `mailto:${contactEmail}?subject=${encodeURIComponent('ArchUnit demo request')}`;
+const {
+  eyebrow = 'Architecture that keeps pace',
+  title = 'Start building with guardrails today.',
+  copy = 'Choose a language-native library, protect one important boundary, and keep the feedback inside the test suite your team already runs.',
+  primaryLabel = 'Get started',
+  primaryHref = '/#libraries',
+  secondaryLabel = 'Request a demo',
+  secondaryHref = demoHref,
+} = Astro.props;
+---
+
+<section class="conversion-band">
+  <div class="shell conversion-band__inner">
+    <div>
+      <p class="eyebrow">{eyebrow}</p>
+      <h2>{title}</h2>
+    </div>
+    <div class="conversion-band__action">
+      <p>{copy}</p>
+      <div class="conversion-band__buttons">
+        <a class="button button--lime" href={primaryHref}>
+          {primaryLabel}
+        </a>
+        <a class="button button--ghost" href={secondaryHref}>
+          {secondaryLabel}
+        </a>
+      </div>
+    </div>
+  </div>
+</section>

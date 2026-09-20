@@ -1,5 +1,6 @@
 ---
 import CodeWindow from '@components/CodeWindow.astro';
+import ConversionBand from '@components/ConversionBand.astro';
 import ProjectCard from '@components/ProjectCard.astro';
 import SectionHeading from '@components/SectionHeading.astro';
 import { contributors } from '@data/contributors';
@@ -319,20 +320,13 @@ const homeSchema = [
     </div>
   </section>
 
-  <section class="cta-section">
-    <div class="shell">
-      <h2>
-        Your architecture can be more than <em>a promise.</em>
-      </h2>
-      <p>
-        Pick the implementation for your stack and add the first boundary rule to the test suite you
-        already trust.
-      </p>
-      <a class="button button--lime" href="#libraries">
-        Find your library
-      </a>
-    </div>
-  </section>
+  <ConversionBand
+    eyebrow="Start with one boundary"
+    title="Build faster with architecture you can trust."
+    copy="Choose your ecosystem, encode one important boundary, and let every commit prove that the decision still holds."
+    primaryLabel="Choose a library"
+    primaryHref="#libraries"
+  />
 
   <script>
     const tabs = document.querySelectorAll<HTMLButtonElement>('[data-code-tab]');

@@ -1,5 +1,9 @@
 ---
+import { contactEmail } from '@data/contributors';
+
 const year = new Date().getUTCFullYear();
+const contactHref = `mailto:${contactEmail}?subject=${encodeURIComponent('ArchUnit inquiry')}`;
+const demoHref = `mailto:${contactEmail}?subject=${encodeURIComponent('ArchUnit demo request')}`;
 ---
 
 <footer class="site-footer">
@@ -19,7 +23,14 @@ const year = new Date().getUTCFullYear();
         <a href="/why-architecture-tests/">Why architecture tests</a>
         <a href="/stats/">Stats</a>
         <a href="/blog/">Blog</a>
-        <a href="/team/">Team</a>
+      </div>
+      <div>
+        <p class="footer-label">Company</p>
+        <a href="/about/">About</a>
+        <a href="/team/">People</a>
+        <a href="/jobs/">Jobs</a>
+        <a href={contactHref}>Contact us</a>
+        <a href={demoHref}>Request a demo</a>
       </div>
       <div>
         <p class="footer-label">Open source</p>

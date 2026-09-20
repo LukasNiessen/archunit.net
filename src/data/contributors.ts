@@ -15,9 +15,12 @@ export interface TeamMember {
   projectWork: string[];
   workingPrinciple: string;
   photoUrl: string;
+  cutoutUrl: string;
   linkedinUrl: string;
   githubUrl?: string;
 }
+
+export const contactEmail = 'lks.niessen@gmail.com';
 
 export const team: TeamMember[] = [
   {
@@ -56,6 +59,7 @@ export const team: TeamMember[] = [
     workingPrinciple:
       'An architecture rule earns its place when it is precise enough to trust and clear enough to act on.',
     photoUrl: '/team/lukas-niessen.jpg',
+    cutoutUrl: '/team/lukas-niessen-cutout.png',
     linkedinUrl: 'https://www.linkedin.com/in/lukasniessen/',
     githubUrl: 'https://github.com/LukasNiessen',
   },
@@ -95,6 +99,7 @@ export const team: TeamMember[] = [
     workingPrinciple:
       'Trust comes from handling the awkward repository cases with the same care as the clean example.',
     photoUrl: '/team/tristan-kruse.jpg',
+    cutoutUrl: '/team/tristan-kruse-cutout.png',
     linkedinUrl: 'https://www.linkedin.com/in/tristan-kruse/',
     githubUrl: 'https://github.com/TristanKruse',
   },
@@ -134,6 +139,7 @@ export const team: TeamMember[] = [
     workingPrinciple:
       'A guardrail should make the safe path easier to ship, not create another queue around the team.',
     photoUrl: '/team/jan-heimann.jpg',
+    cutoutUrl: '/team/jan-heimann-cutout.png',
     linkedinUrl: 'https://www.linkedin.com/in/jan-heimann/',
     githubUrl: 'https://github.com/janMagnusHeimann',
   },
@@ -172,7 +178,8 @@ export const team: TeamMember[] = [
     ],
     workingPrinciple:
       'Static analysis should be honest about the source, efficient over the project, and specific in its result.',
-    photoUrl: '/team/deban-kumar-sahu.jpg',
+    photoUrl: '/team/deban-kumar-sahu.png',
+    cutoutUrl: '/team/deban-kumar-sahu-cutout.png',
     linkedinUrl: 'https://www.linkedin.com/in/debankumarsahu/',
     githubUrl: 'https://github.com/DebanKsahu',
   },
@@ -212,6 +219,7 @@ export const team: TeamMember[] = [
     workingPrinciple:
       'The engine, its documentation, and the path to release are one developer experience.',
     photoUrl: '/team/robey-beswick.jpg',
+    cutoutUrl: '/team/robey-beswick-cutout.png',
     linkedinUrl: 'https://www.linkedin.com/in/robey-beswick/',
     githubUrl: 'https://github.com/RobeyBeswick',
   },
@@ -265,7 +273,7 @@ export const contributors: Contributor[] = [
   },
   {
     login: 'SinaRezaeiiiii',
-    avatarUrl: 'https://avatars.githubusercontent.com/u/209028443?v=4',
+    avatarUrl: '/team/sina-rezaei.png',
     profileUrl: 'https://github.com/SinaRezaeiiiii',
   },
   {
