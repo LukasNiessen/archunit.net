@@ -264,36 +264,36 @@ export const documentationBySlug: Record<string, ProjectDocumentation> = {
   },
   java: {
     introduction:
-      'ArchUnitJava is a public foundation backlog, not a released library. Its documentation describes the intended constraints so implementation work can be reviewed against an honest target.',
+      'ArchUnitJava 0.1.0 is a public beta on Maven Central. It imports compiled Java as data, projects an immutable dependency model, evaluates deterministic policies, and preserves structured evidence for JUnit and CI.',
     topics: [
       {
-        title: 'Start from Java source and symbols',
+        title: 'Import compiled Java without loading it',
         summary:
-          'The planned extractor will model source roots and symbols without compiling or executing the target project by default.',
+          'Point the importer at class directories, classpaths, or ordinary and multi-release JARs after the target project has compiled.',
         points: [
-          'Maven, Gradle, multi-module, and source-root discovery must be explicit and testable.',
-          'Files provide the common first vocabulary, with Java-native packages, types, and JPMS modules added where they improve the model.',
-          'Coordinates and namespaces must remain unambiguous beside the established third-party Java ArchUnit project.',
+          'Target classes are never loaded or initialized; bytecode is parsed as untrusted data.',
+          'The tested corpus covers javac bytecode from Java 8 through Java 25 while the analyzer itself runs on JDK 25.',
+          'Missing external types remain visible as incomplete analysis instead of being guessed or silently discarded.',
         ],
       },
       {
-        title: 'Preserve the shared grammar',
+        title: 'Choose the policy surface that fits the team',
         summary:
-          'The design target keeps selectors, should and shouldNot moods, dependency predicates, and structured violations recognizable across the family.',
+          'A strict properties interface covers common type and package dependency boundaries, while the Java API opens the complete model.',
         points: [
-          'Builders are intended to be lazy and immutable.',
-          'Graph algorithms should be pure and independent from Java project discovery.',
-          'JUnit 5 integration belongs at the assertion boundary rather than inside the rule core.',
+          'Rules cover dependencies, naming, inheritance, annotations, member access, cycles, layers, slices, JPMS modules, reachability, coverage, diagrams, and presets.',
+          'Empty selections fail by default, and incomplete analysis is distinct from a passing or failing architecture policy.',
+          'Reviewed baselines let an established codebase reject new findings while existing architecture debt is removed deliberately.',
         ],
       },
       {
-        title: 'Treat examples as design proposals',
+        title: 'Integrate with JUnit and delivery systems',
         summary:
-          'The README API is illustrative until the package coordinates, toolchain matrix, public types, and implementation land.',
+          'The recommended public-beta workflow calls CliRunner from an ordinary JUnit test, with lower-level assertions and a JUnit Platform engine available when needed.',
         points: [
-          'There is no published Maven artifact yet.',
-          'Repository issues are the source of truth for delivery order.',
-          'The page labels planned behavior clearly so readers do not mistake direction for availability.',
+          'Add io.github.tristankruse:archunitjava:0.1.0 as a test dependency from Maven Central.',
+          'Render findings as console text, canonical JSON, SARIF, or JUnit XML and dependency graphs as DOT, Mermaid, D2, CSV, JSON, or standalone HTML.',
+          'The pre-1.0 Java API remains provisional, so minor versions may require reviewed migration work.',
         ],
       },
     ],

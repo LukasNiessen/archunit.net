@@ -1,7 +1,9 @@
 ---
 import { contactEmail } from '@data/contributors';
+import GithubIcon from './GithubIcon.astro';
 
 const path = Astro.url.pathname;
+const githubUrl = 'https://github.com/LukasNiessen?tab=repositories&q=ArchUnit';
 interface NavigationLink {
   href: string;
   label: string;
@@ -49,7 +51,7 @@ const navigationGroups: NavigationGroup[] = [
       },
       { href: '/stats/', label: 'Project stats', copy: 'Adoption and ecosystem activity.' },
       {
-        href: 'https://github.com/LukasNiessen',
+        href: githubUrl,
         label: 'GitHub',
         copy: 'Source, issues, releases, and contribution.',
         external: true,
@@ -100,9 +102,7 @@ const contactHref = `mailto:${contactEmail}?subject=${encodeURIComponent('ArchUn
     <div class="header-left">
       <a class="brand" href="/" aria-label="ArchUnit home">
         <img class="brand-logo" src="/logos/archunitts.png" alt="" width="34" height="34" />
-        <span class="brand-wordmark">
-          Arch<span>Unit</span>
-        </span>
+        <span class="brand-wordmark">ArchUnit</span>
       </a>
 
       <nav id="primary-nav" class="primary-nav" aria-label="Primary navigation">
@@ -157,6 +157,16 @@ const contactHref = `mailto:${contactEmail}?subject=${encodeURIComponent('ArchUn
     </div>
 
     <div class="header-actions">
+      <a
+        class="button button--small button--ghost header-github"
+        href={githubUrl}
+        target="_blank"
+        rel="noreferrer"
+        aria-label="GitHub"
+      >
+        <GithubIcon />
+        <span>GitHub</span>
+      </a>
       <button class="theme-toggle" type="button" data-theme-toggle aria-label="Use light mode">
         <svg class="theme-icon theme-icon--sun" viewBox="0 0 24 24" aria-hidden="true">
           <circle cx="12" cy="12" r="4"></circle>

@@ -4,7 +4,7 @@ import ConversionBand from '@components/ConversionBand.astro';
 import ProjectCard from '@components/ProjectCard.astro';
 import SectionHeading from '@components/SectionHeading.astro';
 import { contributors } from '@data/contributors';
-import { posts } from '@data/posts';
+import { postsByNewest } from '@data/posts';
 import { projects, stableProjects } from '@data/projects';
 import { enterpriseResources } from '@data/resources';
 import BaseLayout from '@layouts/BaseLayout.astro';
@@ -305,7 +305,12 @@ const homeSchema = [
           <a class="button button--lime" href="/team/">
             Meet the team
           </a>
-          <a class="button" href="https://github.com/LukasNiessen" target="_blank" rel="noreferrer">
+          <a
+            class="button"
+            href="https://github.com/LukasNiessen?tab=repositories&q=ArchUnit"
+            target="_blank"
+            rel="noreferrer"
+          >
             Contribute on GitHub ↗
           </a>
         </div>
@@ -336,8 +341,12 @@ const homeSchema = [
         </a>
       </div>
       <div class="home-news-list">
-        {posts.slice(0, 3).map((post) => (
-          <a href={'/blog/' + post.slug + '/'}>
+        {postsByNewest.slice(0, 3).map((post) => (
+          <a
+            href={post.externalUrl ?? '/blog/' + post.slug + '/'}
+            target={post.externalUrl ? '_blank' : undefined}
+            rel={post.externalUrl ? 'noreferrer' : undefined}
+          >
             <div>
               <span>{post.category}</span>
               <time datetime={post.published}>{post.publishedLabel}</time>

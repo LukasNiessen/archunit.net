@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { contributors, team } from '../src/data/contributors';
 import { documentationBySlug } from '../src/data/documentation';
 import { jobs } from '../src/data/jobs';
-import { posts } from '../src/data/posts';
+import { posts, postsByNewest } from '../src/data/posts';
 import { projectBySlug, projects, stableProjects } from '../src/data/projects';
 import { enterpriseResources } from '../src/data/resources';
 import { libraryStats, statsSnapshot } from '../src/data/stats';
@@ -52,8 +52,8 @@ describe('project catalogue', () => {
 
   it('labels stable releases separately from previews and planned work', () => {
     expect(stableProjects.map((project) => project.slug)).toEqual(['typescript', 'python']);
-    expect(projects.filter((project) => project.status === 'planned')).toHaveLength(2);
-    expect(projects.filter((project) => project.status === 'preview')).toHaveLength(5);
+    expect(projects.filter((project) => project.status === 'planned')).toHaveLength(1);
+    expect(projects.filter((project) => project.status === 'preview')).toHaveLength(6);
   });
 });
 
@@ -84,6 +84,9 @@ describe('contributors', () => {
     expect(team.every((person) => person.focusAreas.length === 3)).toBe(true);
     expect(team.every((person) => person.projectWork.length >= 3)).toBe(true);
     expect(team.every((person) => person.workingPrinciple.length > 50)).toBe(true);
+    expect(team.find((person) => person.slug === 'tristan-kruse')?.email).toBe(
+      'krusetristan1@gmail.com',
+    );
   });
 });
 
@@ -108,14 +111,29 @@ describe('statistics snapshot', () => {
 
 describe('blog', () => {
   it('contains adapted, indexable project articles', () => {
-    expect(posts).toHaveLength(5);
+    expect(posts).toHaveLength(6);
     expect(new Set(posts.map((post) => post.slug)).size).toBe(posts.length);
     expect(posts.map((post) => post.slug)).toContain('archunitts-vs-tsarch');
-    expect(posts.every((post) => post.sections.length >= 7)).toBe(true);
-    expect(posts.every((post) => Number.parseInt(post.readingTime, 10) >= 10)).toBe(true);
-    expect(posts.every((post) => post.authorSlugs?.join(',') === 'lukas-niessen')).toBe(true);
+    const internalPosts = posts.filter((post) => !post.externalUrl);
+    const externalPosts = posts.filter((post) => post.externalUrl);
+    expect(internalPosts.every((post) => post.sections.length >= 7)).toBe(true);
+    expect(internalPosts.every((post) => Number.parseInt(post.readingTime, 10) >= 10)).toBe(true);
+    expect(internalPosts.every((post) => post.authorSlugs?.join(',') === 'lukas-niessen')).toBe(
+      true,
+    );
+    expect(externalPosts).toHaveLength(1);
+    expect(externalPosts[0]).toMatchObject({
+      title: 'Your Python Architecture Should Be Tested, Not Just Documented',
+      authorSlugs: ['tristan-kruse'],
+      published: '2026-07-26',
+      externalUrl:
+        'https://medium.com/@krusetristan1/your-python-architecture-should-be-tested-not-just-documented-23b2e7a18c00',
+    });
+    expect(postsByNewest.map((post) => post.published)).toEqual(
+      [...posts.map((post) => post.published)].sort().reverse(),
+    );
     expect(
-      posts.every(
+      internalPosts.every(
         (post) =>
           post.sections.reduce(
             (length, section) => length + section.paragraphs.join(' ').length,

@@ -18,10 +18,28 @@ export interface BlogPost {
   readingTime: string;
   sourceNote: string;
   authorSlugs?: string[];
+  externalUrl?: string;
+  imageUrl?: string;
   sections: BlogSection[];
 }
 
 export const posts: BlogPost[] = [
+  {
+    slug: 'your-python-architecture-should-be-tested-not-just-documented',
+    title: 'Your Python Architecture Should Be Tested, Not Just Documented',
+    summary:
+      'How ArchUnitPython turns dependency rules, layer boundaries, diagrams, and code metrics into tests your CI can enforce.',
+    category: 'Python',
+    published: '2026-07-26',
+    publishedLabel: '26 July 2026',
+    readingTime: '6 min read',
+    sourceNote: 'Published on Medium by Tristan Kruse.',
+    authorSlugs: ['tristan-kruse'],
+    externalUrl:
+      'https://medium.com/@krusetristan1/your-python-architecture-should-be-tested-not-just-documented-23b2e7a18c00',
+    imageUrl: 'https://miro.medium.com/v2/resize:fit:1200/1*XGKX9C-m5-b9ZdcdTGaTUg.png',
+    sections: [],
+  },
   {
     slug: 'archunitts-vs-tsarch',
     title: 'ArchUnitTS vs. tsarch in 2026: which architecture test should you choose?',
@@ -643,4 +661,8 @@ export const posts: BlogPost[] = [
   },
 ];
 
-export const postBySlug = new Map(posts.map((post) => [post.slug, post]));
+export const postsByNewest = [...posts].sort((a, b) => b.published.localeCompare(a.published));
+
+export const postBySlug = new Map(
+  posts.filter((post) => !post.externalUrl).map((post) => [post.slug, post]),
+);

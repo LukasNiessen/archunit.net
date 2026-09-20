@@ -18,6 +18,7 @@ export interface TeamMember {
   cutoutUrl: string;
   linkedinUrl: string;
   githubUrl?: string;
+  email?: string;
 }
 
 export const contactEmail = 'lks.niessen@gmail.com';
@@ -67,12 +68,13 @@ export const team: TeamMember[] = [
     slug: 'tristan-kruse',
     name: 'Tristan Kruse',
     role: 'Language & Ecosystem Lead',
+    email: 'krusetristan1@gmail.com',
     bio: 'Tristan contributes across ArchUnitPython and leads the development of ArchUnitRuby and ArchUnitJava. His work focuses on translating a shared architecture-testing model into language-native APIs, analyzers, test integrations, and developer workflows across different ecosystems.',
     headline: 'Making architecture tests useful outside the happy path.',
     profile: [
-      'Tristan works on the details that determine whether an architecture test remains useful in a real repository. That includes configuration, exclusions, conditional source behavior, rule rationale, and documentation that explains the result rather than merely listing an API.',
-      'In ArchUnitPython, his public work includes conditional-import classification, reusable rules loaded from configuration, project-level .archignore support, because rationales, and documentation for metric thresholds and exports. Those features share one concern: a rule must describe the codebase accurately before a team can trust the answer.',
-      'He also contributes an ecosystem perspective. The goal is not a mechanical port of TypeScript syntax. It is a familiar architecture-testing experience expressed in the conventions and workflows of the language using it.',
+      'Tristan works across ArchUnitPython and leads ArchUnitRuby and ArchUnitJava. He focuses on the details that determine whether an architecture test remains useful in a real repository: accurate extraction, explicit configuration, trustworthy rule evaluation, and documentation that explains the result rather than merely listing an API.',
+      'In ArchUnitPython, his work includes conditional-import classification, reusable configuration, project-level .archignore support, because rationales, and clearer guidance for metrics and graph exports. In ArchUnitRuby, he translates the shared architecture-testing model into Prism-based analysis, Ruby-native fluent rules, and RSpec, Minitest, and framework-neutral assertions.',
+      'For ArchUnitJava, Tristan helped take the project from an early foundation to a published public beta on Maven Central. The implementation reads compiled classes and JARs without loading application code, then connects deterministic policies, structured evidence, JUnit, CLI workflows, and generated documentation. Across all three ecosystems, the goal is a familiar ArchUnit mental model expressed through the language and toolchain developers already use.',
     ],
     focusAreas: [
       {
@@ -88,13 +90,13 @@ export const team: TeamMember[] = [
       {
         title: 'Ecosystem fit',
         description:
-          'Adapting the shared ArchUnit model to the expectations of Python and the other communities it serves.',
+          'Adapting the shared ArchUnit model to Python, Ruby, and Java without flattening their different analyzers, APIs, and test workflows.',
       },
     ],
     projectWork: [
-      'Added conditional-import classification and common rule configuration to ArchUnitPython.',
-      'Introduced project exclusions and human-readable rule rationales through .archignore and because clauses.',
-      'Improved the documentation around metrics, exports, and completed examples.',
+      'Added conditional-import classification, common rule configuration, project exclusions, and human-readable rationales to ArchUnitPython.',
+      'Leads ArchUnitRuby across Prism-based extraction, graph and metric capabilities, language-native rules, test integrations, and documentation.',
+      'Leads ArchUnitJava as a compiled-bytecode architecture engine with Maven Central distribution, JUnit and CLI integration, deterministic reports, and public documentation.',
     ],
     workingPrinciple:
       'Trust comes from handling the awkward repository cases with the same care as the clean example.',

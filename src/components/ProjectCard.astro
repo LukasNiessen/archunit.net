@@ -29,10 +29,12 @@ const style = '--card-accent:' + project.accent + ';--card-soft:' + project.acce
       size={featured ? 'large' : 'medium'}
       logo={logo}
     />
-    <span class:list={['status-pill', 'status-pill--' + project.status]}>
-      <span></span>
-      {project.statusLabel}
-    </span>
+    {project.slug === 'php' && (
+      <span class:list={['status-pill', 'status-pill--' + project.status]}>
+        <span></span>
+        {project.statusLabel}
+      </span>
+    )}
   </div>
   <div class="project-card__body">
     <span class="eyebrow">{project.language}</span>

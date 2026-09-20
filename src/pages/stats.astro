@@ -11,8 +11,7 @@ const schema = {
   '@context': 'https://schema.org',
   '@type': 'Dataset',
   name: 'ArchUnit open-source adoption snapshot',
-  description:
-    'GitHub stars and publicly reported package downloads for the ArchUnit library family, captured September 13, 2026.',
+  description: `GitHub stars and publicly reported package downloads for the ArchUnit library family, captured ${statsSnapshot.dateLabel}.`,
   dateModified: statsSnapshot.date,
   creator: { '@type': 'Organization', name: 'ArchUnit' },
   url: 'https://www.archunit.net/stats/',
@@ -21,7 +20,7 @@ const schema = {
 
 <BaseLayout
   title="Open-source statistics"
-  description="A September 13, 2026 snapshot of GitHub stars and publicly reported package downloads across the ArchUnit library family."
+  description={`A ${statsSnapshot.dateLabel} snapshot of GitHub stars and publicly reported package downloads across the ArchUnit library family.`}
   canonicalPath="/stats/"
   schema={schema}
   alternateHeader

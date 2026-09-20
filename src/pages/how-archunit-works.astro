@@ -204,10 +204,10 @@ const stages = [
     body: 'A file rule projects edges, a layer rule groups their endpoints by named regions, a slice rule derives component names, and a metric rule projects measurable source facts.',
     python:
       'The dependency evaluator filters source edges by the API selector, tests their targets against the infrastructure selector, and emits one typed violation for every forbidden match.',
-    pythonCode: '_resolve_import_targets(import_, file_path, project_path)',
+    pythonCode: 'violations = rule.check()',
     typescript:
       'ArchUnitTS follows the same projection and violation boundary asynchronously, which lets test-runner adapters await compiler-backed extraction.',
-    typescriptCode: 'ts.resolveModuleName(moduleName, sourceFile.fileName, options, compilerHost)',
+    typescriptCode: 'const violations = await rule.check();',
   },
   {
     number: '06',
@@ -307,6 +307,22 @@ const schema = {
         <b>→</b>
         <span>Report</span>
       </div>
+    </div>
+  </section>
+
+  <section class="how-stage-nav-section" aria-labelledby="walkthrough-chapters">
+    <div class="shell">
+      <nav class="how-stage-nav" aria-label="Walkthrough stages">
+        <p id="walkthrough-chapters">Jump to a stage</p>
+        <div>
+          {stages.map((stage, index) => (
+            <a href={`#walkthrough-stage-${index + 1}`}>
+              <span>{stage.number}</span>
+              {stage.eyebrow}
+            </a>
+          ))}
+        </div>
+      </nav>
     </div>
   </section>
 
@@ -489,8 +505,8 @@ const schema = {
                 </text>
               </g>
               <g class="how-svg-eval-edge">
-                <path d="M182 190h126"></path>
-                <path class="bad" d="M180 210C300 340 460 342 552 225"></path>
+                <path d="M182 190h126" fill="none"></path>
+                <path class="bad" d="M180 210C300 340 460 342 552 225" fill="none"></path>
               </g>
               <g class="how-svg-result">
                 <rect x="70" y="350" width="580" height="105" rx="12"></rect>
@@ -615,6 +631,7 @@ const schema = {
       <div class="how-stages">
         {stages.map((stage, index) => (
           <article
+            id={`walkthrough-stage-${index + 1}`}
             class="how-stage"
             data-how-stage={index + 1}
             data-how-title={stage.title}

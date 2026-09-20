@@ -1,6 +1,6 @@
 ---
 import { contactEmail, team, type TeamMember } from '@data/contributors';
-import { posts } from '@data/posts';
+import { postsByNewest } from '@data/posts';
 import BaseLayout from '@layouts/BaseLayout.astro';
 
 export function getStaticPaths() {
@@ -15,11 +15,12 @@ const { member } = Astro.props;
 const currentIndex = team.findIndex((candidate) => candidate.slug === member.slug);
 const nextMember = team[(currentIndex + 1) % team.length] ?? team[0]!;
 const otherMembers = team.filter((candidate) => candidate.slug !== member.slug);
-const publishedPosts = posts.filter((post) => post.authorSlugs?.includes(member.slug));
+const publishedPosts = postsByNewest.filter((post) => post.authorSlugs?.includes(member.slug));
 const firstName = member.name.split(' ')[0];
 const sameAs = [member.linkedinUrl, member.githubUrl].filter((url): url is string => Boolean(url));
-const emailHref = `mailto:${contactEmail}?subject=${encodeURIComponent(`Contact ${member.name} via ArchUnit`)}`;
-const demoHref = `mailto:${contactEmail}?subject=${encodeURIComponent('ArchUnit demo request')}`;
+const memberEmail = member.email ?? contactEmail;
+const emailHref = `mailto:${memberEmail}?subject=${encodeURIComponent(`Contact ${member.name} via ArchUnit`)}`;
+const demoHref = `mailto:${memberEmail}?subject=${encodeURIComponent('ArchUnit demo request')}`;
 const schema = [
   {
     '@context': 'https://schema.org',
@@ -32,7 +33,7 @@ const schema = [
       jobTitle: member.role,
       description: member.bio,
       image: 'https://www.archunit.net' + member.photoUrl,
-      email: contactEmail,
+      email: memberEmail,
       sameAs,
       memberOf: {
         '@type': 'Organization',
@@ -146,9 +147,20 @@ const schema = [
           </div>
           <div class="profile-publications-grid">
             {publishedPosts.map((post) => (
-              <a class="profile-publication-card" href={'/blog/' + post.slug + '/'}>
+              <a
+                class="profile-publication-card"
+                href={post.externalUrl ?? '/blog/' + post.slug + '/'}
+                target={post.externalUrl ? '_blank' : undefined}
+                rel={post.externalUrl ? 'noreferrer' : undefined}
+              >
                 <div class="profile-publication-card__visual">
-                  <img src="/images/og-card.png" alt="" width="1200" height="630" loading="lazy" />
+                  <img
+                    src={post.imageUrl ?? '/images/og-card.png'}
+                    alt={post.imageUrl ? `Illustration for ${post.title}` : ''}
+                    width="1200"
+                    height="630"
+                    loading="lazy"
+                  />
                   <span>{post.category}</span>
                 </div>
                 <div class="profile-publication-card__body">
@@ -158,7 +170,7 @@ const schema = [
                   </div>
                   <h3>{post.title}</h3>
                   <p>{post.summary}</p>
-                  <strong>Read article ↗</strong>
+                  <strong>{post.externalUrl ? 'Read on Medium ↗' : 'Read article ↗'}</strong>
                 </div>
               </a>
             ))}
@@ -229,7 +241,7 @@ const schema = [
             </a>
           </div>
           <a class="profile-contact-email" href={emailHref}>
-            {contactEmail}
+            {memberEmail}
           </a>
         </div>
       </div>

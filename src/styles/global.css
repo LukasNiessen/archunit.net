@@ -174,14 +174,11 @@
     display: none;
   }
   .brand-wordmark {
+    color: var(--text);
     font-family: 'Arial Black', 'Helvetica Neue', Arial, sans-serif;
     font-size: 0.89rem;
     font-weight: 900;
     letter-spacing: -0.075em;
-  }
-  .brand-wordmark span {
-    color: var(--muted-bright);
-    font-weight: 600;
   }
 
   /* Editorial people profiles */
@@ -2771,6 +2768,49 @@
     color: var(--lime);
     font-weight: 400;
   }
+  .how-stage-nav-section {
+    padding-bottom: clamp(58px, 7vw, 94px);
+  }
+  .how-stage-nav {
+    padding-block: 18px;
+    border-block: 1px solid var(--line);
+  }
+  .how-stage-nav > p {
+    margin-bottom: 14px;
+    color: var(--muted);
+    font-size: 0.68rem;
+    font-weight: 720;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+  .how-stage-nav > div {
+    display: grid;
+    grid-template-columns: repeat(8, minmax(0, 1fr));
+    gap: 6px;
+  }
+  .how-stage-nav a {
+    display: grid;
+    min-width: 0;
+    padding: 11px 10px;
+    border-radius: 7px;
+    color: var(--muted-bright);
+    font-size: 0.76rem;
+    font-weight: 650;
+    text-decoration: none;
+    transition:
+      background 160ms ease,
+      color 160ms ease;
+  }
+  .how-stage-nav a:hover {
+    background: var(--ink-raised);
+    color: var(--text);
+  }
+  .how-stage-nav a span {
+    margin-bottom: 9px;
+    color: var(--lime);
+    font-size: 0.62rem;
+    letter-spacing: 0.08em;
+  }
 
   .how-walkthrough {
     padding: 80px 0 130px;
@@ -2917,6 +2957,12 @@
   .how-svg-feedback .bad {
     fill: #ff9d87;
     stroke: #ff9d87;
+  }
+  .how-svg-eval-edge path.bad {
+    fill: none;
+  }
+  .how-stage {
+    scroll-margin-top: 96px;
   }
   .how-svg-semantics .title,
   .how-svg-feedback .title {
@@ -3318,6 +3364,9 @@
     .how-chapter-nav {
       grid-template-columns: repeat(3, minmax(0, 1fr));
     }
+    .how-stage-nav > div {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
     .how-graph-visual {
       width: min(100%, 720px);
     }
@@ -3372,6 +3421,15 @@
   }
 
   @media (max-width: 760px) {
+    .how-stage-nav > div {
+      display: flex;
+      overflow-x: auto;
+      padding-bottom: 4px;
+      scrollbar-width: thin;
+    }
+    .how-stage-nav a {
+      flex: 0 0 112px;
+    }
     .documentation-topic {
       min-height: auto;
       grid-template-columns: 1fr;
@@ -3720,13 +3778,13 @@
     object-fit: cover;
   }
   .brand-wordmark {
+    color: var(--text);
     font-size: 0.92rem;
     font-weight: 760;
     letter-spacing: -0.03em;
   }
-  .brand-wordmark span {
-    color: var(--muted);
-    font-weight: 500;
+  .header-github {
+    gap: 7px;
   }
   .primary-nav {
     display: flex;
@@ -5200,6 +5258,21 @@
   }
   .blog-card {
     min-height: 410px;
+  }
+  .blog-card__image {
+    overflow: hidden;
+    margin-top: 24px;
+    aspect-ratio: 16 / 9;
+    border-radius: 10px;
+    background: var(--ink-soft);
+  }
+  .blog-card__image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .blog-card__image + div h2 {
+    margin-top: 28px;
   }
   .blog-card--featured {
     grid-column: span 2;

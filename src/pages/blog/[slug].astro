@@ -6,7 +6,9 @@ import { posts, type BlogPost } from '@data/posts';
 import BaseLayout from '@layouts/BaseLayout.astro';
 
 export function getStaticPaths() {
-  return posts.map((post) => ({ params: { slug: post.slug }, props: { post } }));
+  return posts
+    .filter((post) => !post.externalUrl)
+    .map((post) => ({ params: { slug: post.slug }, props: { post } }));
 }
 
 interface Props {
@@ -180,7 +182,8 @@ const schema = [
         <div class="article-author-cards">
           {articleAuthors.length ? (
             articleAuthors.map((author) => {
-              const emailHref = `mailto:${contactEmail}?subject=${encodeURIComponent(
+              const authorEmail = author.email ?? contactEmail;
+              const emailHref = `mailto:${authorEmail}?subject=${encodeURIComponent(
                 'Contact ' + author.name + ' about: ' + post.title,
               )}`;
               return (

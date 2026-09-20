@@ -92,7 +92,7 @@ const schema = [
               {project.longDescription}
             </p>
             <div class="detail-meta">
-              <span>{project.statusLabel}</span>
+              {project.slug === 'php' && <span>{project.statusLabel}</span>}
               <span>{project.runtime}</span>
               <span>{project.license}</span>
             </div>
@@ -224,8 +224,10 @@ const schema = [
       <div class="shell">
         <div class="maturity-panel" data-reveal>
           <div class="maturity-copy">
-            <p class="eyebrow">Current maturity</p>
-            <h2>{project.statusLabel}</h2>
+            <p class="eyebrow">
+              {project.slug === 'php' ? 'Current maturity' : 'Release and compatibility'}
+            </p>
+            <h2>{project.slug === 'php' ? project.statusLabel : project.release}</h2>
             <p>{project.maturityNote}</p>
             {project.packageUrl && (
               <div class="detail-actions">

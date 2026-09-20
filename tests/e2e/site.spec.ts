@@ -11,10 +11,22 @@ test('homepage presents the full library family', async ({ page }) => {
     page.getByRole('heading', { name: /architecture tests in the language/i }),
   ).toBeVisible();
   await expect(page.locator('.project-card')).toHaveCount(9);
+  await expect(page.locator('.project-card .status-pill')).toHaveCount(1);
+  await expect(page.locator('.project-card .status-pill')).toHaveText(/Foundation stage/i);
   await expect(page.getByRole('tab')).toHaveCount(9);
+  await expect(page.locator('.site-header .brand-wordmark')).toHaveText('ArchUnit');
+  await expect(page.locator('.site-header .brand-wordmark span')).toHaveCount(0);
+  await expect(page.locator('.header-github')).toHaveAttribute('aria-label', 'GitHub');
+  await expect(page.locator('.header-github')).toHaveAttribute(
+    'href',
+    'https://github.com/LukasNiessen?tab=repositories&q=ArchUnit',
+  );
   const libraryWord = page.locator('[data-library-word]');
-  await expect(libraryWord).toHaveText('TS');
-  await expect(libraryWord).not.toHaveText('TS', { timeout: 4_500 });
+  const initialLibraryWord = (await libraryWord.textContent()) ?? '';
+  expect(['TS', 'Python', '.NET', 'Ruby', 'Rust', 'Zig', 'Go', 'Java', 'PHP']).toContain(
+    initialLibraryWord,
+  );
+  await expect(libraryWord).not.toHaveText(initialLibraryWord, { timeout: 5_500 });
   await page.waitForTimeout(500);
   const wordAndUnderlineWidths = await page.evaluate(() => {
     const word = document.querySelector<HTMLElement>('[data-library-word]');
@@ -86,6 +98,24 @@ test('every implementation has an indexable detail page', async ({ page }) => {
     );
     await expect(page.locator('script[type="application/ld+json"]')).toHaveCount(1);
     await expect(page.locator('.documentation-topic')).toHaveCount(3);
+    if (slug !== 'php') {
+      await expect(page.locator('.detail-meta')).not.toContainText(/Production ready|preview/i);
+    }
+    if (slug === 'java') {
+      await expect(page.getByRole('link', { name: /Documentation/i }).first()).toHaveAttribute(
+        'href',
+        'https://lukasniessen.github.io/ArchUnitJava/',
+      );
+      await expect(page.getByRole('link', { name: /Maven Central/i })).toHaveAttribute(
+        'href',
+        'https://central.sonatype.com/artifact/io.github.tristankruse/archunitjava/0.1.0',
+      );
+    }
+    if (slug === 'ruby') {
+      await expect(page.locator('.deep-dive-section')).toContainText(
+        'ArchUnit.assert_passes(rule)',
+      );
+    }
     const mark = await page.locator('.detail-title-row .project-mark').boundingBox();
     expect(mark).not.toBeNull();
     expect(Math.abs((mark?.width ?? 0) - (mark?.height ?? 0))).toBeLessThanOrEqual(1);
@@ -204,6 +234,12 @@ test('every team member has a complete, indexable profile', async ({ page }) => 
     await expect(page.locator('.profile-work-section li')).toHaveCount(3);
     if (slug === 'lukas-niessen') {
       await expect(page.locator('.profile-publication-card')).toHaveCount(5);
+    } else if (slug === 'tristan-kruse') {
+      await expect(page.locator('.profile-publication-card')).toHaveCount(1);
+      await expect(page.locator('.profile-publication-card')).toHaveAttribute(
+        'href',
+        'https://medium.com/@krusetristan1/your-python-architecture-should-be-tested-not-just-documented-23b2e7a18c00',
+      );
     } else {
       await expect(page.locator('.profile-publications-section')).toHaveCount(0);
     }
@@ -213,7 +249,9 @@ test('every team member has a complete, indexable profile', async ({ page }) => 
     ).toBeLessThanOrEqual(1);
     await expect(page.getByRole('link', { name: /email/i }).first()).toHaveAttribute(
       'href',
-      /^mailto:lks\.niessen@gmail\.com/,
+      slug === 'tristan-kruse'
+        ? /^mailto:krusetristan1@gmail\.com/
+        : /^mailto:lks\.niessen@gmail\.com/,
     );
     const structuredData = await page.locator('script[type="application/ld+json"]').textContent();
     expect(structuredData).toContain('ProfilePage');
@@ -240,7 +278,16 @@ test('theme choice persists across navigation and reloads', async ({ page }) => 
 
 test('blog index and adapted articles are statically accessible', async ({ page }) => {
   await page.goto('/blog/');
-  await expect(page.locator('.blog-card')).toHaveCount(5);
+  await expect(page.locator('.blog-card')).toHaveCount(6);
+  await expect(page.locator('.blog-card').first()).toContainText('12 September 2026');
+  await expect(
+    page.getByRole('link', {
+      name: /Your Python Architecture Should Be Tested, Not Just Documented/i,
+    }),
+  ).toHaveAttribute(
+    'href',
+    'https://medium.com/@krusetristan1/your-python-architecture-should-be-tested-not-just-documented-23b2e7a18c00',
+  );
   const response = await page.goto('/blog/archunitts-vs-tsarch/');
   expect(response?.status()).toBe(200);
   await expect(
@@ -262,9 +309,11 @@ test('the how-it-works walkthrough explains and advances the pipeline', async ({
   await page.goto('/how-archunit-works/');
   await expect(page.getByRole('heading', { name: /how archunit sees your system/i })).toBeVisible();
   await expect(page.locator('[data-how-stage]')).toHaveCount(8);
+  await expect(page.locator('.how-stage-nav a')).toHaveCount(8);
   await expect(page.getByText('Python, concretely')).toHaveCount(8);
   await expect(page.locator('.how-walkthrough .inline-code')).toHaveCount(16);
   await expect(page.locator('.how-chapter-nav a')).toHaveCount(6);
+  await expect(page.locator('.how-svg-eval-edge path.bad')).toHaveAttribute('fill', 'none');
   await expect(page.locator('.resolution-table tbody tr')).toHaveCount(5);
   await expect(page.locator('#technical-extraction .code-window')).toHaveCount(2);
   await expect(page.locator('#technical-extraction .inline-code')).toHaveCount(18);
@@ -289,8 +338,8 @@ test('the how-it-works walkthrough explains and advances the pipeline', async ({
 
 test('stats, privacy, and thank-you pages expose intentional metadata', async ({ page }) => {
   await page.goto('/stats/');
-  await expect(page.getByText('733', { exact: true })).toBeVisible();
-  await expect(page.getByText('962,975', { exact: true })).toBeVisible();
+  await expect(page.getByText('1,166', { exact: true })).toBeVisible();
+  await expect(page.getByText('1,006,921', { exact: true })).toBeVisible();
   await expect(page.locator('.stars-row')).toHaveCount(9);
   await expect(page.locator('.downloads-table tbody tr')).toHaveCount(9);
 
