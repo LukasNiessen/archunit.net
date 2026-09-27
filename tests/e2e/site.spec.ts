@@ -307,19 +307,17 @@ test('blog index and adapted articles are statically accessible', async ({ page 
 
 test('the how-it-works walkthrough explains and advances the pipeline', async ({ page }) => {
   await page.goto('/how-archunit-works/');
-  await expect(page.getByRole('heading', { name: /how archunit sees your system/i })).toBeVisible();
-  await expect(page.locator('[data-how-stage]')).toHaveCount(8);
-  await expect(page.locator('.how-stage-nav a')).toHaveCount(8);
-  await expect(page.getByText('Python, concretely')).toHaveCount(8);
-  await expect(page.locator('.how-walkthrough .inline-code')).toHaveCount(16);
-  await expect(page.locator('.how-chapter-nav a')).toHaveCount(6);
-  await expect(page.locator('.how-svg-eval-edge path.bad')).toHaveAttribute('fill', 'none');
-  await expect(page.locator('.resolution-table tbody tr')).toHaveCount(5);
-  await expect(page.locator('#technical-extraction .code-window')).toHaveCount(2);
-  await expect(page.locator('#technical-extraction .inline-code')).toHaveCount(18);
-  await expect(page.locator('#technical-graph .code-window')).toHaveCount(2);
-  await expect(page.locator('.evaluation-truth-table')).toBeVisible();
-  await expect(page.getByRole('heading', { name: /static analysis is strongest/i })).toBeVisible();
+  await expect(page.getByRole('heading', { name: /source code becomes a graph/i })).toBeVisible();
+  await expect(page.locator('.deep-chapters a')).toHaveCount(7);
+  await expect(page.locator('.definition-band article')).toHaveCount(3);
+  await expect(page.getByText(/directed acyclic graph/i)).toBeVisible();
+  await expect(page.getByText(/abstract syntax tree/i)).toBeVisible();
+  await expect(page.locator('#discover-parse .code-window')).toHaveCount(3);
+  await expect(page.locator('[data-evidence-terminal] [data-log-line]')).toHaveCount(17);
+  await page.getByRole('button', { name: 'Run the trace' }).click();
+  await expect(page.locator('[data-log-line]').first()).toHaveAttribute('data-visible', '');
+  await expect(page.locator('.evaluation-machine')).toBeVisible();
+  await expect(page.getByText('What static analysis can support')).toBeVisible();
   const unformattedCodeCount = await page
     .locator('#main-content code')
     .evaluateAll(
@@ -330,16 +328,21 @@ test('the how-it-works walkthrough explains and advances the pipeline', async ({
         ).length,
     );
   expect(unformattedCodeCount).toBe(0);
-  await page.locator('[data-how-stage="7"]').scrollIntoViewIfNeeded();
-  if ((page.viewportSize()?.width ?? 1000) > 820) {
-    await expect(page.locator('[data-how-visual]')).toHaveAttribute('data-active-stage', '7');
-  }
+  await page.locator('#evaluate').evaluate((section) => {
+    globalThis.scrollTo({ top: section.getBoundingClientRect().top + globalThis.scrollY - 140 });
+  });
+  await expect(page.locator('[data-chapter-link="evaluate"]')).toHaveAttribute('data-current', '');
+  await page.getByRole('button', { name: /add return edge/i }).click();
+  await expect(page.getByRole('button', { name: /remove return edge/i })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  );
 });
 
 test('stats, privacy, and thank-you pages expose intentional metadata', async ({ page }) => {
   await page.goto('/stats/');
-  await expect(page.getByText('1,166', { exact: true })).toBeVisible();
-  await expect(page.getByText('1,006,921', { exact: true })).toBeVisible();
+  await expect(page.getByText('1,181', { exact: true })).toBeVisible();
+  await expect(page.getByText('1,080,471', { exact: true })).toBeVisible();
   await expect(page.locator('.stars-row')).toHaveCount(9);
   await expect(page.locator('.downloads-table tbody tr')).toHaveCount(9);
 

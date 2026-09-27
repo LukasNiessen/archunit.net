@@ -46,32 +46,26 @@ await desktop.goto(new URL('/stats/', target).href, { waitUntil: 'networkidle' }
 await desktop.screenshot({ path: 'qa/stats-dark-desktop.png', fullPage: true });
 await desktop.goto(new URL('/how-archunit-works/', target).href, { waitUntil: 'networkidle' });
 await desktop.screenshot({ path: 'qa/how-dark-hero.png', fullPage: false });
-await desktop.locator('[data-how-stage="4"]').scrollIntoViewIfNeeded();
-await desktop.waitForTimeout(450);
-await desktop.screenshot({ path: 'qa/how-dark-grammar.png', fullPage: false });
-await desktop.locator('[data-how-stage="7"]').scrollIntoViewIfNeeded();
-await desktop.waitForTimeout(450);
-await desktop.screenshot({ path: 'qa/how-dark-algorithms.png', fullPage: false });
-await desktop.locator('#technical-extraction').evaluate((section) => {
-  section.ownerDocument.documentElement.style.scrollBehavior = 'auto';
-  globalThis.scrollTo({ top: section.offsetTop - 80 });
-});
-await desktop.screenshot({ path: 'qa/how-dark-extraction.png', fullPage: false });
-await desktop.locator('#technical-resolution').evaluate((section) => {
-  section.ownerDocument.documentElement.style.scrollBehavior = 'auto';
-  globalThis.scrollTo({ top: section.offsetTop - 80 });
-});
-await desktop.screenshot({ path: 'qa/how-dark-resolution.png', fullPage: false });
-await desktop.locator('#technical-graph').evaluate((section) => {
-  section.ownerDocument.documentElement.style.scrollBehavior = 'auto';
-  globalThis.scrollTo({ top: section.offsetTop - 80 });
-});
-await desktop.screenshot({ path: 'qa/how-dark-graph.png', fullPage: false });
-await desktop.locator('#technical-performance').evaluate((section) => {
-  section.ownerDocument.documentElement.style.scrollBehavior = 'auto';
-  globalThis.scrollTo({ top: section.offsetTop - 80 });
-});
-await desktop.screenshot({ path: 'qa/how-dark-performance.png', fullPage: false });
+for (const [sectionId, screenshotName] of [
+  ['discover-parse', 'how-dark-discovery.png'],
+  ['resolve-graph', 'how-dark-evidence-lab.png'],
+  ['fluent-rule', 'how-dark-fluent-rule.png'],
+  ['evaluate', 'how-dark-evaluation.png'],
+  ['algorithms', 'how-dark-algorithms.png'],
+  ['feedback', 'how-dark-feedback.png'],
+]) {
+  await desktop.locator(`#${sectionId}`).evaluate((section) => {
+    section.ownerDocument.documentElement.style.scrollBehavior = 'auto';
+    globalThis.scrollTo({ top: section.offsetTop - 80 });
+  });
+  await desktop.waitForTimeout(120);
+  await desktop.screenshot({ path: `qa/${screenshotName}`, fullPage: false });
+}
+await desktop.getByRole('button', { name: 'Run the trace' }).click();
+await desktop.locator('[data-log-line]').last().waitFor({ state: 'visible', timeout: 10_000 });
+await desktop.locator('[data-evidence-terminal]').scrollIntoViewIfNeeded();
+await desktop.screenshot({ path: 'qa/how-dark-real-trace.png', fullPage: false });
+await desktop.screenshot({ path: 'qa/how-dark-desktop.png', fullPage: true });
 await desktop.evaluate(() => globalThis.localStorage.setItem('archunit-theme', 'light'));
 await desktop.goto(target, { waitUntil: 'networkidle' });
 await desktop.locator('.project-card').first().hover();
@@ -109,6 +103,15 @@ await mobile.goto(new URL('/resources/', target).href, { waitUntil: 'networkidle
 await mobile.screenshot({ path: 'qa/resources-mobile.png', fullPage: true });
 await mobile.goto(new URL('/how-archunit-works/', target).href, { waitUntil: 'networkidle' });
 await mobile.screenshot({ path: 'qa/how-mobile-viewport.png', fullPage: false });
+for (const [sectionId, screenshotName] of [
+  ['discover-parse', 'how-mobile-discovery.png'],
+  ['resolve-graph', 'how-mobile-evidence-lab.png'],
+  ['evaluate', 'how-mobile-evaluation.png'],
+]) {
+  await mobile.locator(`#${sectionId}`).scrollIntoViewIfNeeded();
+  await mobile.waitForTimeout(120);
+  await mobile.screenshot({ path: `qa/${screenshotName}`, fullPage: false });
+}
 await mobile.screenshot({ path: 'qa/how-mobile.png', fullPage: true });
 await mobile.goto(new URL('/stats/', target).href, { waitUntil: 'networkidle' });
 await mobile.screenshot({ path: 'qa/stats-mobile-viewport.png', fullPage: false });

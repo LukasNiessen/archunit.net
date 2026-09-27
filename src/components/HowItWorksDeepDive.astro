@@ -1,0 +1,2188 @@
+---
+import CodeWindow from './CodeWindow.astro';
+import InlineCode from './InlineCode.astro';
+
+const pythonDiscovery = [
+  'for dirpath, dirnames, filenames in os.walk(root):',
+  '    dirnames[:] = [',
+  '        name for name in dirnames',
+  '        if not _should_exclude_path(',
+  '            os.path.join(dirpath, name), root, exclude, is_dir=True',
+  '        )',
+  '    ]',
+  '    for filename in filenames:',
+  '        if filename.endswith(".py"):',
+  '            py_files.append(os.path.abspath(',
+  '                os.path.join(dirpath, filename)',
+  '            ))',
+].join('\n');
+
+const pythonAst = [
+  'with open(file_path, "r", encoding="utf-8", errors="replace") as file:',
+  '    source = file.read()',
+  '',
+  'tree = ast.parse(source, filename=file_path)',
+  '',
+  'for node in ast.walk(tree):',
+  '    if isinstance(node, ast.Import):',
+  '        record_import(node)',
+  '    elif isinstance(node, ast.ImportFrom):',
+  '        record_from_import(node)',
+  '    elif isinstance(node, ast.Call):',
+  '        record_literal_dynamic_import(node)',
+].join('\n');
+
+const pythonResolution = [
+  'resolved, is_external = _resolve_import(',
+  '    located_import.module_name,',
+  '    source_file,',
+  '    project_root,',
+  '    located_import.resolution_kind or located_import.import_kind,',
+  ')',
+  '',
+  'edges.append(Edge(',
+  '    source=_normalize(source_file),',
+  '    target=resolved,',
+  '    external=is_external,',
+  '    import_kinds=_edge_import_kinds(located_import),',
+  '))',
+].join('\n');
+
+const typescriptProgram = [
+  'const source = ts.readConfigFile(configPath, ts.sys.readFile);',
+  'const parsed = ts.parseJsonConfigFileContent(',
+  '  source.config, ts.sys, path.dirname(configPath), {}, configPath',
+  ');',
+  'const host = ts.createCompilerHost(parsed.options);',
+  'const program = ts.createProgram({',
+  '  rootNames: parsed.fileNames,',
+  '  options: parsed.options,',
+  '  host,',
+  '});',
+].join('\n');
+
+const typescriptResolution = [
+  'ts.forEachChild(sourceFile, node => {',
+  '  if (!ts.isImportDeclaration(node)) return;',
+  '  const moduleName = node.moduleSpecifier.text;',
+  '  const resolved = ts.resolveModuleName(',
+  '    moduleName,',
+  '    sourceFile.fileName,',
+  '    compilerOptions,',
+  '    compilerHost',
+  '  ).resolvedModule;',
+  '  if (!resolved) return;',
+  '  imports.push({',
+  '    source: normalize(sourceFile.fileName),',
+  '    target: normalize(resolved.resolvedFileName),',
+  '    external: resolved.isExternalLibraryImport ?? false,',
+  '    importKinds: determineImportKinds(node),',
+  '  });',
+  '});',
+].join('\n');
+
+const pythonRule = [
+  'rule = (',
+  '    project_files("src/")',
+  '    .in_folder("**/ui/**")',
+  '    .should_not()',
+  '    .depend_on_files()',
+  '    .in_folder("**/db/**")',
+  '    .because("UI code must not own persistence")',
+  ')',
+  '',
+  'assert_passes(rule)',
+].join('\n');
+
+const typescriptRule = [
+  'const rule = projectFiles("tsconfig.json")',
+  "  .inFolder('src/ui')",
+  '  .shouldNot()',
+  '  .dependOnFiles()',
+  "  .inFolder('src/db');",
+  '',
+  'const violations = await rule.check({',
+  "  logging: { enabled: true, level: 'debug' },",
+  '});',
+].join('\n');
+
+const pythonEvaluation = [
+  'graph = extract_graph(project_path, options=options)',
+  'edges = project_edges(graph, per_internal_edge())',
+  '',
+  'for edge in edges:',
+  '    source_matches = all(',
+  '        matches_pattern(edge.source_label, rule_filter)',
+  '        for rule_filter in subject_filters',
+  '    )',
+  '    if not source_matches:',
+  '        continue',
+  '',
+  '    target_matches = all(',
+  '        matches_pattern(edge.target_label, rule_filter)',
+  '        for rule_filter in object_filters',
+  '    )',
+  '    if is_negated and target_matches:',
+  '        violations.append(ViolatingFileDependency(',
+  '            dependency=edge, is_negated=True',
+  '        ))',
+].join('\n');
+
+const assertionBoundary = [
+  'def assert_passes(checkable, options=None):',
+  '    violations = checkable.check(options)',
+  '    if violations:',
+  '        because = getattr(checkable, "because_reason", None)',
+  '        raise AssertionError(',
+  '            format_violations(violations, because=because)',
+  '        )',
+].join('\n');
+
+const realTrace = [
+  { level: 'info', text: '[INFO] Starting architecture rule check: Dependency check: 1 filters' },
+  {
+    level: 'info',
+    text: '[INFO] Using TypeScript config file: <repo>/test/layered-arch/layered-arch-1/tsconfig.json',
+  },
+  { level: 'info', text: '[INFO] TypeScript program created with 199 source files' },
+  { level: 'debug', text: '[DEBUG] Project source files: 2' },
+  { level: 'debug', text: '[DEBUG] Node modules files: 197' },
+  { level: 'debug', text: '[DEBUG] Processing file 1/2: src/db/db.ts' },
+  { level: 'debug', text: '[DEBUG] Processing file 2/2: src/ui/ui.ts' },
+  { level: 'debug', text: '[DEBUG] Processing import: "../db/db" in src/ui/ui.ts' },
+  { level: 'debug', text: '[DEBUG] Resolved "../db/db" to: src/db/db.ts (external: false)' },
+  { level: 'info', text: '[INFO] Import analysis completed:' },
+  { level: 'info', text: '[INFO]   - Total edges found: 132' },
+  { level: 'info', text: '[INFO]   - Files processed: 2' },
+  { level: 'info', text: '[INFO] Graph extraction completed with 132 edges' },
+  { level: 'debug', text: '[DEBUG] Analyzing dependencies across 124 edges' },
+  { level: 'info', text: '[INFO] Found edge: From src/ui/ui.ts to src/db/db.ts' },
+  {
+    level: 'warn',
+    text: '[WARN] Violation found: Dependency violation: {"dependency":{"sourceLabel":"src/ui/ui.ts","targetLabel":"src/db/db.ts","cumulatedEdges":[{"source":"src/ui/ui.ts","target":"src/db/db.ts","external":false,"importKinds":["value","named"]}]},"isNegated":true}',
+  },
+  {
+    level: 'warn',
+    text: '[WARN] Completed architecture rule check: Dependency check: 1 filters (1 violations)',
+  },
+];
+
+const chapters = [
+  ['mental-model', '01', 'Mental model'],
+  ['discover-parse', '02', 'Discover and parse'],
+  ['resolve-graph', '03', 'Resolve and graph'],
+  ['fluent-rule', '04', 'Fluent rule'],
+  ['evaluate', '05', 'Evaluate'],
+  ['algorithms', '06', 'Algorithms'],
+  ['feedback', '07', 'Feedback'],
+];
+---
+
+<div class="deep-how" data-deep-how>
+  <section class="deep-hero" id="mental-model">
+    <div class="deep-shell deep-hero__grid">
+      <div>
+        <p class="deep-kicker">How ArchUnit works, from first principles</p>
+        <h1>Source code becomes a graph. Rules become questions.</h1>
+      </div>
+      <div class="deep-hero__copy">
+        <p>
+          ArchUnit does not run your application and watch requests move through it. It inspects
+          source structure, resolves dependency evidence, builds a directed graph, and evaluates a
+          precise architectural sentence against that graph.
+        </p>
+        <p>
+          The language adapter changes. Python reads Python syntax; TypeScript asks the TypeScript
+          compiler. The reasoning after extraction stays recognizable.
+        </p>
+      </div>
+    </div>
+    <div class="deep-shell deep-equation" aria-label="The ArchUnit processing model">
+      <span>source text</span>
+      <b>→</b>
+      <span>syntax</span>
+      <b>→</b>
+      <span>resolved imports</span>
+      <b>→</b>
+      <span>directed graph</span>
+      <b>→</b>
+      <span>rule projection</span>
+      <b>→</b>
+      <span>violations</span>
+    </div>
+  </section>
+
+  <nav class="deep-chapters" aria-label="How ArchUnit Works chapters">
+    <div class="deep-shell">
+      {chapters.map(([id, number, label]) => (
+        <a href={'#' + id} data-chapter-link={id}>
+          <span>{number}</span>
+          {label}
+        </a>
+      ))}
+    </div>
+  </nav>
+
+  <section class="deep-section deep-principles">
+    <div class="deep-shell">
+      <div class="deep-section-heading">
+        <p class="deep-kicker">The smallest useful model</p>
+        <h2>Four ideas explain the whole library.</h2>
+        <p>
+          Everything else is an implementation detail, optimization, language adaptation, or
+          presentation layer around these four ideas.
+        </p>
+      </div>
+      <div class="principle-grid">
+        <article>
+          <span>01</span>
+          <h3>Node</h3>
+          <p>
+            A stable identity for something architecture rules can talk about. File rules primarily
+            use source files such as <InlineCode code="src/ui/ui.ts" language="typescript" />.
+          </p>
+        </article>
+        <article>
+          <span>02</span>
+          <h3>Directed edge</h3>
+          <p>
+            An arrow from the depender to the dependency. If A imports B, the graph records
+            <InlineCode code="A → B" language="text" />. Direction is architectural evidence.
+          </p>
+        </article>
+        <article>
+          <span>03</span>
+          <h3>Projection</h3>
+          <p>
+            A focused view of the raw graph. The same edges can be viewed as files, folders, layers,
+            slices, internal dependencies, external modules, or cycle paths.
+          </p>
+        </article>
+        <article>
+          <span>04</span>
+          <h3>Violation</h3>
+          <p>
+            Structured evidence that the projected graph disagrees with a rule. It remains data
+            until a test adapter decides to raise, fail, print, or render it.
+          </p>
+        </article>
+      </div>
+      <div class="not-dag">
+        <strong>Important: this is not assumed to be a DAG.</strong>
+        <p>
+          DAG means directed acyclic graph, not directed asynchronous graph. Real code can contain
+          cycles, and finding them is one of ArchUnit's jobs. The dependency model is directed, but
+          it is allowed to be cyclic.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section class="deep-section deep-discovery" id="discover-parse">
+    <div class="deep-shell">
+      <div class="deep-section-heading deep-section-heading--wide">
+        <p class="deep-kicker">Chapter 02 / Discover and parse</p>
+        <h2>Before a graph exists, the library must turn a project into trustworthy evidence.</h2>
+        <p>
+          Static analysis means inspecting program text and its structure without executing the
+          application. It can prove relationships represented by supported syntax. It does not guess
+          values that exist only at runtime.
+        </p>
+      </div>
+
+      <div class="definition-band">
+        <article>
+          <span>Python standard library</span>
+          <h3>
+            <InlineCode code="os.walk()" language="python" /> finds candidate files.
+          </h3>
+          <p>
+            <InlineCode code="os" language="python" /> is Python's built-in operating-system module.
+            <InlineCode code="os.walk(root)" language="python" /> recursively yields a directory
+            path, its child-directory names, and its filenames. ArchUnitPython mutates
+            <InlineCode code="dirnames[:]" language="python" /> to stop recursion into excluded
+            environments, caches, builds, and paths from{' '}
+            <InlineCode code=".archignore" language="text" />.
+          </p>
+        </article>
+        <article>
+          <span>Python standard library</span>
+          <h3>
+            <InlineCode code="ast.parse()" language="python" /> turns text into structure.
+          </h3>
+          <p>
+            AST stands for Abstract Syntax Tree. Python's built-in{' '}
+            <InlineCode code="ast" language="python" />
+            module parses characters into nodes such as{' '}
+            <InlineCode code="Import" language="python" />,
+            <InlineCode code="ImportFrom" language="python" />, and{' '}
+            <InlineCode code="Call" language="python" />. Parsing does not import the module and
+            does not execute its top-level code.
+          </p>
+        </article>
+        <article>
+          <span>Tree traversal</span>
+          <h3>
+            <InlineCode code="ast.walk()" language="python" /> visits every descendant.
+          </h3>
+          <p>
+            ArchUnitPython classifies ordinary imports, relative imports, imports under
+            <InlineCode code="TYPE_CHECKING" language="python" />, optional imports inside
+            <InlineCode code="try/except ImportError" language="python" />, and literal calls to
+            <InlineCode code="importlib.import_module()" language="python" /> or
+            <InlineCode code="__import__()" language="python" />.
+          </p>
+        </article>
+      </div>
+
+      <div class="deep-code-pair">
+        <div class="deep-code">
+          <p>
+            <span>Python</span> File discovery from the current extractor
+          </p>
+          <CodeWindow code={pythonDiscovery} filename="extract_graph.py" language="python" copy />
+        </div>
+        <div class="deep-code">
+          <p>
+            <span>Python</span> Syntax extraction, reduced to the relevant path
+          </p>
+          <CodeWindow code={pythonAst} filename="extract_graph.py" language="python" copy />
+        </div>
+      </div>
+
+      <div class="compiler-explainer">
+        <div>
+          <p class="deep-kicker">TypeScript takes a compiler-backed route</p>
+          <h3>The compiler already knows what the project means.</h3>
+          <p>
+            A TypeScript import cannot be resolved correctly from its text alone. Configuration can
+            change file inclusion, module resolution, aliases, JSX behavior, and referenced
+            projects. ArchUnitTS therefore reads <InlineCode code="tsconfig.json" language="json" />
+            with the TypeScript Compiler API.
+          </p>
+          <ol>
+            <li>
+              <InlineCode code="ts.readConfigFile()" language="typescript" /> reads JSON through
+              TypeScript's filesystem abstraction.
+            </li>
+            <li>
+              <InlineCode code="ts.parseJsonConfigFileContent()" language="typescript" /> applies
+              include, exclude, paths, and compiler options.
+            </li>
+            <li>
+              <InlineCode code="ts.createCompilerHost()" language="typescript" /> supplies file and
+              module-resolution operations.
+            </li>
+            <li>
+              <InlineCode code="ts.createProgram()" language="typescript" /> creates the compiler's
+              coherent view of all source files.
+            </li>
+          </ol>
+        </div>
+        <div class="deep-code">
+          <CodeWindow
+            code={typescriptProgram}
+            filename="extract-graph.ts"
+            language="typescript"
+            copy
+          />
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="deep-section deep-lab-section" id="resolve-graph">
+    <div class="deep-shell">
+      <div class="deep-section-heading deep-section-heading--wide">
+        <p class="deep-kicker">Chapter 03 / Resolve and build the graph</p>
+        <h2>An import statement is evidence. Resolution turns it into an edge.</h2>
+        <p>
+          The text <InlineCode code="../db/db" language="typescript" /> is not yet a target. It must
+          be interpreted from the importing file under the project's language rules. Only then can
+          the graph say that <InlineCode code="src/ui/ui.ts" language="typescript" /> depends on
+          <InlineCode code="src/db/db.ts" language="typescript" />.
+        </p>
+      </div>
+
+      <div class="evidence-lab" data-evidence-lab>
+        <div class="ide-frame">
+          <div class="ide-titlebar">
+            <span class="window-dots" aria-hidden="true">
+              <i></i>
+              <i></i>
+              <i></i>
+            </span>
+            <strong>real fixture / ArchUnitTS</strong>
+            <button type="button" data-run-trace>
+              Run the trace
+            </button>
+          </div>
+          <div class="ide-body">
+            <aside aria-label="Fixture files">
+              <span>layered-arch-1</span>
+              <span>src/</span>
+              <button type="button" class="active">
+                ui/ui.ts
+              </button>
+              <span>db/db.ts</span>
+              <span>tsconfig.json</span>
+            </aside>
+            <div class="ide-editor code-window">
+              <div class="ide-tab">ui.ts</div>
+              <pre aria-label="The real TypeScript fixture source"><code><span class="token-comment">// This import is a violation!</span>
+<span class="token-keyword">import</span> <span class="token-punctuation">&#123;</span> startDb <span class="token-punctuation">&#125;</span> <span class="token-keyword">from</span> <span class="token-string">'../db/db'</span>;
+
+<span class="token-keyword">export function</span> <span class="token-function">openUi</span><span class="token-punctuation">()</span> <span class="token-punctuation">&#123;</span>
+  console.log<span class="token-punctuation">(</span><span class="token-string">'Opened UI'</span><span class="token-punctuation">)</span>;
+  startDb<span class="token-punctuation">()</span>;
+<span class="token-punctuation">&#125;</span></code></pre>
+            </div>
+          </div>
+        </div>
+
+        <div class="lab-graph" data-lab-graph>
+          <div class="lab-status">
+            <span data-lab-step>Ready</span>
+            <strong>directed dependency graph</strong>
+          </div>
+          <svg
+            viewBox="0 0 760 410"
+            role="img"
+            aria-label="A real TypeScript import becoming a directed graph edge"
+          >
+            <defs>
+              <marker
+                id="deep-arrow"
+                markerWidth="9"
+                markerHeight="9"
+                refX="7"
+                refY="4.5"
+                orient="auto"
+              >
+                <path d="M0 0L9 4.5L0 9z"></path>
+              </marker>
+            </defs>
+            <path
+              class="lab-edge"
+              d="M260 210C355 120 450 120 535 205"
+              marker-end="url(#deep-arrow)"
+            ></path>
+            <g class="lab-node lab-node--source">
+              <rect x="70" y="145" width="205" height="128" rx="18"></rect>
+              <text x="95" y="184">
+                NODE A
+              </text>
+              <text x="95" y="220">
+                src/ui/ui.ts
+              </text>
+              <text x="95" y="247">
+                imports ../db/db
+              </text>
+            </g>
+            <g class="lab-node lab-node--target">
+              <rect x="515" y="145" width="190" height="128" rx="18"></rect>
+              <text x="540" y="184">
+                NODE B
+              </text>
+              <text x="540" y="220">
+                src/db/db.ts
+              </text>
+              <text x="540" y="247">
+                internal target
+              </text>
+            </g>
+            <g class="lab-edge-card">
+              <rect x="282" y="270" width="230" height="100" rx="15"></rect>
+              <text x="307" y="305">
+                EDGE A → B
+              </text>
+              <text x="307" y="332">
+                external: false
+              </text>
+              <text x="307" y="353">
+                kinds: value, named
+              </text>
+            </g>
+          </svg>
+          <p>
+            The arrow points from the file that imports to the file being imported. Reversing it
+            would reverse the architecture rule.
+          </p>
+        </div>
+
+        <div class="evidence-terminal code-window" data-evidence-terminal>
+          <div class="terminal-bar">
+            <span>archunit debug output</span>
+            <span>captured 27 Sep 2026</span>
+          </div>
+          <pre><code>{realTrace.map((line, index) => (
+            <span class={'log-line log-line--' + line.level} data-log-line={index}>{line.text}</span>
+          ))}</code></pre>
+          <div class="terminal-foot">
+            <p>
+              This is a filtered real run of the repository's layered-architecture fixture. Only the
+              machine-specific repository prefix was replaced with{' '}
+              <InlineCode code="<repo>" language="text" />; Windows separators were normalized for
+              display. The messages, counts, ordering, paths, and violation evidence come from the
+              run.
+            </p>
+            <button type="button" data-reset-trace>
+              Reset
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="trace-explanation">
+        <article>
+          <span>Why 199 source files?</span>
+          <p>
+            A TypeScript <InlineCode code="Program" language="typescript" /> includes project files
+            plus declaration files required by its configured type environment. The trace identifies
+            2 project files and 197 files from installed type packages.
+          </p>
+        </article>
+        <article>
+          <span>Why 132 raw edges?</span>
+          <p>
+            Extraction records resolver-visible relationships before the architecture rule narrows
+            the model. Projection produced 124 dependency edges for this run, then the subject and
+            object filters selected the one forbidden project edge.
+          </p>
+        </article>
+        <article>
+          <span>Why self-edges?</span>
+          <p>
+            The real trace includes <InlineCode code="ui.ts → ui.ts" language="text" /> and
+            <InlineCode code="db.ts → db.ts" language="text" />. Self-edges keep files with no
+            imports visible as nodes. Relationship projections can discard them later.
+          </p>
+        </article>
+      </div>
+
+      <div class="resolution-detail">
+        <div>
+          <p class="deep-kicker">Python resolution</p>
+          <h3>Resolve against files that actually exist.</h3>
+          <p>
+            For a relative import, leading dots determine how far to move from the source directory.
+            ArchUnitPython tries <InlineCode code="module.py" language="python" /> and then{' '}
+            <InlineCode code="module/__init__.py" language="python" />. Absolute imports are tested
+            from the project root and its parent. A target found inside the project is internal; an
+            unresolved module name remains external.
+          </p>
+          <p>
+            Literal dynamic imports can be resolved. A computed call such as
+            <InlineCode code="import_module(prefix + name)" language="python" /> cannot, because the
+            target only exists at runtime. The extractor does not invent an edge.
+          </p>
+        </div>
+        <div class="deep-code">
+          <CodeWindow code={pythonResolution} filename="extract_graph.py" language="python" copy />
+        </div>
+        <div>
+          <p class="deep-kicker">TypeScript resolution</p>
+          <h3>Ask the compiler host the same question the project asks.</h3>
+          <p>
+            <InlineCode code="ts.resolveModuleName()" language="typescript" /> receives the import
+            text, importing filename, applicable compiler options, and compiler host. That lets path
+            aliases, extension rules, package metadata, and referenced configurations participate in
+            target identity.
+          </p>
+        </div>
+        <div class="deep-code">
+          <CodeWindow
+            code={typescriptResolution}
+            filename="extract-graph.ts"
+            language="typescript"
+            copy
+          />
+        </div>
+      </div>
+
+      <div class="graph-contract">
+        <div>
+          <p class="deep-kicker">The graph contract</p>
+          <h3>One small record carries the source evidence forward.</h3>
+        </div>
+        <dl>
+          <div>
+            <dt>
+              <InlineCode code="source" language="python" />
+            </dt>
+            <dd>The importing file identity.</dd>
+          </div>
+          <div>
+            <dt>
+              <InlineCode code="target" language="python" />
+            </dt>
+            <dd>The resolved file or external module identity.</dd>
+          </div>
+          <div>
+            <dt>
+              <InlineCode code="external" language="python" />
+            </dt>
+            <dd>Whether the target belongs outside the analyzed project.</dd>
+          </div>
+          <div>
+            <dt>
+              <InlineCode code="import_kinds" language="python" />
+            </dt>
+            <dd>Syntax and context such as relative, type-only, conditional, value, or named.</dd>
+          </div>
+        </dl>
+        <p>
+          ArchUnitPython stores normalized absolute paths in raw edges. ArchUnitTS stores paths
+          relative to its configuration root. Each implementation must be internally stable;
+          projections create the labels that selectors and reports consume.
+        </p>
+      </div>
+
+      <div class="cycle-lab" data-cycle-lab>
+        <div>
+          <p class="deep-kicker">Graph laboratory</p>
+          <h3>A directed graph can still contain cycles.</h3>
+          <p>
+            Add one return dependency and the same graph becomes cyclic. Nothing about the graph
+            builder assumes acyclicity.
+          </p>
+          <button type="button" data-cycle-toggle aria-pressed="false">
+            Add return edge
+          </button>
+          <p data-cycle-status>No cycle: UI depends on DB.</p>
+        </div>
+        <svg viewBox="0 0 760 340" role="img" aria-label="Interactive directed graph cycle example">
+          <defs>
+            <marker
+              id="cycle-arrow"
+              markerWidth="9"
+              markerHeight="9"
+              refX="7"
+              refY="4.5"
+              orient="auto"
+            >
+              <path d="M0 0L9 4.5L0 9z"></path>
+            </marker>
+          </defs>
+          <path
+            class="cycle-edge cycle-edge--forward"
+            d="M260 125C350 55 440 55 525 125"
+            marker-end="url(#cycle-arrow)"
+          ></path>
+          <path
+            class="cycle-edge cycle-edge--return"
+            d="M525 215C440 292 350 292 260 215"
+            marker-end="url(#cycle-arrow)"
+          ></path>
+          <g>
+            <circle cx="205" cy="170" r="78"></circle>
+            <text x="205" y="165">
+              UI
+            </text>
+            <text x="205" y="190">
+              source node
+            </text>
+          </g>
+          <g>
+            <circle cx="575" cy="170" r="78"></circle>
+            <text x="575" y="165">
+              DB
+            </text>
+            <text x="575" y="190">
+              target node
+            </text>
+          </g>
+        </svg>
+      </div>
+    </div>
+  </section>
+
+  <section class="deep-section deep-rule-section" id="fluent-rule">
+    <div class="deep-shell">
+      <div class="deep-section-heading deep-section-heading--wide">
+        <p class="deep-kicker">Chapter 04 / Turn intent into a fluent rule</p>
+        <h2>The fluent API is a sentence-shaped plan, not the graph itself.</h2>
+        <p>
+          Building the chain records a subject, a mood, a predicate, an object, and optionally a
+          rationale. Expensive work begins only at the terminal
+          <InlineCode code="check()" language="python" /> or the test-framework assertion.
+        </p>
+      </div>
+
+      <div
+        class="sentence-machine"
+        aria-label="An architecture sentence broken into fluent API stages"
+      >
+        <div>
+          <span>entry</span>
+          <strong>project files</strong>
+        </div>
+        <b>→</b>
+        <div>
+          <span>subject</span>
+          <strong>in UI</strong>
+        </div>
+        <b>→</b>
+        <div>
+          <span>mood</span>
+          <strong>should not</strong>
+        </div>
+        <b>→</b>
+        <div>
+          <span>predicate</span>
+          <strong>depend on files</strong>
+        </div>
+        <b>→</b>
+        <div>
+          <span>object</span>
+          <strong>in DB</strong>
+        </div>
+        <b>→</b>
+        <div>
+          <span>terminal</span>
+          <strong>check</strong>
+        </div>
+      </div>
+
+      <div class="deep-code-pair">
+        <div class="deep-code">
+          <p>
+            <span>Python</span> The sentence and its architectural reason
+          </p>
+          <CodeWindow code={pythonRule} filename="test_architecture.py" language="python" copy />
+        </div>
+        <div class="deep-code">
+          <p>
+            <span>TypeScript</span> The real fixture rule with debug logging
+          </p>
+          <CodeWindow
+            code={typescriptRule}
+            filename="architecture.spec.ts"
+            language="typescript"
+            copy
+          />
+        </div>
+      </div>
+
+      <div class="rule-parts">
+        <article>
+          <span>Subject filters</span>
+          <p>Select source labels. Multiple scope filters combine to narrow the population.</p>
+        </article>
+        <article>
+          <span>Mood</span>
+          <p>
+            <InlineCode code="should_not()" language="python" /> sets negated semantics. It does not
+            mean that violations pass.
+          </p>
+        </article>
+        <article>
+          <span>Object filters</span>
+          <p>
+            Select dependency targets. For this rule, a matching directed edge is forbidden
+            evidence.
+          </p>
+        </article>
+        <article>
+          <span>Rationale</span>
+          <p>
+            <InlineCode code="because()" language="python" /> travels to the assertion message so
+            policy and evidence stay together.
+          </p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="deep-section deep-evaluation-section" id="evaluate">
+    <div class="deep-shell">
+      <div class="deep-section-heading deep-section-heading--wide">
+        <p class="deep-kicker">Chapter 05 / Evaluate the rule</p>
+        <h2>The evaluator is a small machine over an in-memory graph.</h2>
+        <p>
+          Language-specific parsing is finished. From here the rule terminal projects graph edges,
+          applies selectors, and creates typed violations. The negative dependency example can be
+          described without knowing Python or TypeScript syntax.
+        </p>
+      </div>
+
+      <div class="evaluation-machine">
+        <div class="evaluation-flow">
+          <article>
+            <span>1</span>
+            <strong>Extract</strong>
+            <p>Obtain the cached or newly built raw graph.</p>
+          </article>
+          <article>
+            <span>2</span>
+            <strong>Project</strong>
+            <p>Keep internal edges and create stable source and target labels.</p>
+          </article>
+          <article>
+            <span>3</span>
+            <strong>Select subject</strong>
+            <p>Does the source label match every UI filter?</p>
+          </article>
+          <article>
+            <span>4</span>
+            <strong>Select object</strong>
+            <p>Does the target label match every DB filter?</p>
+          </article>
+          <article>
+            <span>5</span>
+            <strong>Judge mood</strong>
+            <p>
+              For <InlineCode code="should_not()" language="python" />, a double match is a
+              violation.
+            </p>
+          </article>
+          <article>
+            <span>6</span>
+            <strong>Return evidence</strong>
+            <p>Keep the projected edge and its underlying raw imports.</p>
+          </article>
+        </div>
+        <div class="deep-code">
+          <CodeWindow
+            code={pythonEvaluation}
+            filename="depend_on_files.py"
+            language="python"
+            copy
+          />
+        </div>
+      </div>
+
+      <div class="evaluation-example">
+        <div class="eval-row eval-row--head">
+          <span>source</span>
+          <span>target</span>
+          <span>subject match</span>
+          <span>object match</span>
+          <span>result</span>
+        </div>
+        <div class="eval-row">
+          <strong>src/ui/ui.ts</strong>
+          <strong>src/db/db.ts</strong>
+          <span>yes</span>
+          <span>yes</span>
+          <b>violation</b>
+        </div>
+        <div class="eval-row">
+          <strong>src/ui/ui.ts</strong>
+          <strong>src/ui/ui.ts</strong>
+          <span>yes</span>
+          <span>no</span>
+          <em>ignored</em>
+        </div>
+        <div class="eval-row">
+          <strong>src/db/db.ts</strong>
+          <strong>src/db/db.ts</strong>
+          <span>no</span>
+          <span>yes</span>
+          <em>ignored</em>
+        </div>
+      </div>
+
+      <div class="empty-test-note">
+        <div>
+          <p class="deep-kicker">Zero matches need an explicit policy</p>
+          <h3>A green test that inspected nothing is dangerous.</h3>
+        </div>
+        <p>
+          Empty-selection handling lives at each terminal. Python's cycle and pattern terminals call
+          <InlineCode code="_check_empty_test()" language="python" /> and return an
+          <InlineCode code="EmptyTestViolation" language="python" /> unless
+          <InlineCode code="allow_empty_tests" language="python" /> is enabled. ArchUnitTS
+          dependency evaluation checks its selected source and target populations similarly. This
+          guard is concrete terminal behavior, not a magical property of the graph.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section class="deep-section deep-algorithm-section" id="algorithms">
+    <div class="deep-shell">
+      <div class="deep-section-heading deep-section-heading--wide">
+        <p class="deep-kicker">Chapter 06 / Algorithms</p>
+        <h2>Different architecture questions require different graph operations.</h2>
+        <p>
+          A forbidden direct dependency is local: inspect candidate edges. A cycle is global: find a
+          path that eventually returns to its starting node. ArchUnit chooses the operation that
+          matches the meaning of the rule.
+        </p>
+      </div>
+
+      <div class="algorithm-grid">
+        <article>
+          <span>Direct dependency</span>
+          <h3>Filter edges.</h3>
+          <p>
+            Project to the relevant edge type, match source labels, match target labels, and emit
+            one finding for every forbidden relationship.
+          </p>
+          <strong>Work grows with inspected edges.</strong>
+        </article>
+        <article>
+          <span>Cycle detection, phase one</span>
+          <h3>Tarjan finds strongly connected components.</h3>
+          <p>
+            A strongly connected component is a region where every node can reach every other node.
+            Tarjan identifies those regions in linear time over nodes and edges.
+          </p>
+          <strong>Discard regions that cannot contain a cycle.</strong>
+        </article>
+        <article>
+          <span>Cycle detection, phase two</span>
+          <h3>Johnson enumerates simple cycles.</h3>
+          <p>
+            Johnson's algorithm runs inside the relevant components and returns complete cycle paths
+            without repeating vertices inside one path.
+          </p>
+          <strong>Work also depends on how many cycles must be reported.</strong>
+        </article>
+      </div>
+
+      <div class="algorithm-visual">
+        <div>
+          <span>A</span>
+          <small>component 1</small>
+        </div>
+        <i>→</i>
+        <div>
+          <span>B</span>
+          <small>component 1</small>
+        </div>
+        <i>→</i>
+        <div>
+          <span>C</span>
+          <small>component 1</small>
+        </div>
+        <i class="algorithm-return">?</i>
+        <div class="algorithm-isolated">
+          <span>D</span>
+          <small>acyclic</small>
+        </div>
+        <p>
+          Tarjan keeps A, B, C together. Johnson reports A → B → C → A. D is eliminated from cycle
+          enumeration.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section class="deep-section deep-feedback-section" id="feedback">
+    <div class="deep-shell">
+      <div class="deep-section-heading deep-section-heading--wide">
+        <p class="deep-kicker">Chapter 07 / Cross the test boundary last</p>
+        <h2>A rule returns data. An assertion turns that data into a failed test.</h2>
+        <p>
+          Separating evaluation from presentation makes the same findings usable by pytest, Jest,
+          Vitest, CI logs, reports, and custom tools. It also keeps the core algorithms testable
+          without a test runner.
+        </p>
+      </div>
+
+      <div class="assertion-grid">
+        <div class="deep-code">
+          <CodeWindow
+            code={assertionBoundary}
+            filename="testing/assertion.py"
+            language="python"
+            copy
+          />
+        </div>
+        <div class="assertion-steps">
+          <article>
+            <span>01</span>
+            <p>
+              <InlineCode code="checkable.check(options)" language="python" /> returns a list of
+              typed violations.
+            </p>
+          </article>
+          <article>
+            <span>02</span>
+            <p>
+              If the list is empty, <InlineCode code="assert_passes()" language="python" /> returns
+              normally.
+            </p>
+          </article>
+          <article>
+            <span>03</span>
+            <p>
+              If findings exist, the formatter includes their concrete details and the optional{' '}
+              <InlineCode code="because_reason" language="python" />.
+            </p>
+          </article>
+          <article>
+            <span>04</span>
+            <p>
+              Only then does the adapter raise{' '}
+              <InlineCode code="AssertionError" language="python" />. TypeScript's{' '}
+              <InlineCode code="toPassAsync()" language="typescript" /> performs the corresponding
+              runner integration.
+            </p>
+          </article>
+        </div>
+      </div>
+
+      <div class="trust-boundary">
+        <div>
+          <span>What static analysis can support</span>
+          <ul>
+            <li>Supported import syntax and statically resolvable targets</li>
+            <li>Dependency direction, cycles, layers, slices, and reachability over those edges</li>
+            <li>Naming, placement, source counts, and supported static metrics</li>
+          </ul>
+        </div>
+        <div>
+          <span>What it must not invent</span>
+          <ul>
+            <li>Computed module names known only after runtime values exist</li>
+            <li>Reflection, monkey patching, or container wiring without source evidence</li>
+            <li>Whether a business boundary is a good architectural decision</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="deep-summary">
+        <p class="deep-kicker">The complete machine</p>
+        <h2>Discover. Parse. Resolve. Build. Project. Judge. Explain.</h2>
+        <p>
+          The parser is language-native. The graph is explicit. The rule is readable. The finding
+          keeps its evidence. That is how an architectural intention becomes an ordinary test the
+          team can run on every change.
+        </p>
+        <div>
+          <a class="button button--lime" href="/#libraries">
+            Choose a library
+          </a>
+          <a class="button button--ghost" href="/why-architecture-tests/">
+            Why test architecture?
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script>
+  const root = document.querySelector<HTMLElement>('[data-deep-how]');
+
+  if (root) {
+    const lab = root.querySelector<HTMLElement>('[data-evidence-lab]');
+    const runButton = lab?.querySelector<HTMLButtonElement>('[data-run-trace]');
+    const resetButton = lab?.querySelector<HTMLButtonElement>('[data-reset-trace]');
+    const logLines = Array.from(lab?.querySelectorAll<HTMLElement>('[data-log-line]') ?? []);
+    const graph = lab?.querySelector<HTMLElement>('[data-lab-graph]');
+    const logViewport = lab?.querySelector<HTMLElement>('[data-evidence-terminal] pre');
+    const stepLabel = lab?.querySelector<HTMLElement>('[data-lab-step]');
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    let timers: number[] = [];
+
+    const resetTrace = () => {
+      timers.forEach((timer) => window.clearTimeout(timer));
+      timers = [];
+      lab?.setAttribute('data-enhanced', '');
+      lab?.removeAttribute('data-running');
+      graph?.removeAttribute('data-edge-ready');
+      logLines.forEach((line) => line.removeAttribute('data-visible'));
+      if (logViewport) logViewport.scrollTop = 0;
+      if (stepLabel) stepLabel.textContent = 'Ready';
+      if (runButton) {
+        runButton.disabled = false;
+        runButton.textContent = 'Run the trace';
+      }
+    };
+
+    const runTrace = () => {
+      resetTrace();
+      lab?.setAttribute('data-running', '');
+      if (runButton) {
+        runButton.disabled = true;
+        runButton.textContent = 'Tracing...';
+      }
+
+      logLines.forEach((line, index) => {
+        const delay = reduceMotion ? 0 : index * 110;
+        const timer = window.setTimeout(() => {
+          line.setAttribute('data-visible', '');
+          if (logViewport) logViewport.scrollTop = logViewport.scrollHeight;
+          if (stepLabel) {
+            if (index < 5) stepLabel.textContent = 'Building compiler program';
+            else if (index < 8) stepLabel.textContent = 'Reading import evidence';
+            else if (index < 14) stepLabel.textContent = 'Resolving and projecting edges';
+            else stepLabel.textContent = 'Evaluating the rule';
+          }
+          if (index >= 8) graph?.setAttribute('data-edge-ready', '');
+          if (index === logLines.length - 1) {
+            lab?.removeAttribute('data-running');
+            if (runButton) {
+              runButton.disabled = false;
+              runButton.textContent = 'Run again';
+            }
+            if (stepLabel) stepLabel.textContent = '1 violation found';
+          }
+        }, delay);
+        timers.push(timer);
+      });
+    };
+
+    resetTrace();
+    runButton?.addEventListener('click', runTrace);
+    resetButton?.addEventListener('click', resetTrace);
+
+    const cycleLab = root.querySelector<HTMLElement>('[data-cycle-lab]');
+    const cycleButton = cycleLab?.querySelector<HTMLButtonElement>('[data-cycle-toggle]');
+    const cycleStatus = cycleLab?.querySelector<HTMLElement>('[data-cycle-status]');
+    cycleButton?.addEventListener('click', () => {
+      const visible = cycleLab?.toggleAttribute('data-cycle-visible') ?? false;
+      cycleButton.setAttribute('aria-pressed', String(visible));
+      cycleButton.textContent = visible ? 'Remove return edge' : 'Add return edge';
+      if (cycleStatus) {
+        cycleStatus.textContent = visible
+          ? 'Cycle: UI → DB → UI. The graph is directed and cyclic.'
+          : 'No cycle: UI depends on DB.';
+      }
+    });
+
+    const links = Array.from(root.querySelectorAll<HTMLAnchorElement>('[data-chapter-link]'));
+    const sections = links
+      .map((link) => document.getElementById(link.dataset.chapterLink ?? ''))
+      .filter((section): section is HTMLElement => section !== null);
+
+    let chapterFrame = 0;
+    const updateCurrentChapter = () => {
+      const marker = globalThis.scrollY + Math.max(150, globalThis.innerHeight * 0.28);
+      const current = sections.reduce((active, section) => {
+        const top = section.getBoundingClientRect().top + globalThis.scrollY;
+        return top <= marker ? section : active;
+      }, sections[0]);
+      links.forEach((link) =>
+        link.toggleAttribute('data-current', link.dataset.chapterLink === current?.id),
+      );
+    };
+    const scheduleChapterUpdate = () => {
+      if (chapterFrame) return;
+      chapterFrame = globalThis.requestAnimationFrame(() => {
+        updateCurrentChapter();
+        chapterFrame = 0;
+      });
+    };
+    globalThis.addEventListener('scroll', scheduleChapterUpdate, { passive: true });
+    updateCurrentChapter();
+  }
+</script>
+
+<style>
+  .deep-how {
+    --deep-blue: #69a7ff;
+    --deep-cyan: #74d1ff;
+    --deep-good: #6ed6ad;
+    --deep-warn: #ff9d87;
+    overflow: clip;
+    background: var(--ink);
+    color: var(--text);
+  }
+  .deep-shell {
+    width: min(1540px, calc(100vw - 48px));
+    margin-inline: auto;
+  }
+  .deep-hero {
+    position: relative;
+    padding: 156px 0 58px;
+    border-bottom: 1px solid var(--line);
+    background:
+      radial-gradient(circle at 76% 18%, rgba(105, 167, 255, 0.15), transparent 32%),
+      linear-gradient(180deg, var(--ink-raised), var(--ink));
+  }
+  .deep-hero::before {
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(var(--line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--line) 1px, transparent 1px);
+    background-size: 72px 72px;
+    content: '';
+    mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.48), transparent 76%);
+    pointer-events: none;
+  }
+  .deep-hero__grid {
+    position: relative;
+    display: grid;
+    grid-template-columns: minmax(0, 1.25fr) minmax(360px, 0.75fr);
+    gap: clamp(42px, 7vw, 120px);
+    align-items: end;
+  }
+  .deep-kicker {
+    margin-bottom: 20px;
+    color: var(--deep-blue);
+    font-size: 0.69rem;
+    font-weight: 760;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+  .deep-hero h1 {
+    max-width: 880px;
+    font-size: clamp(3.2rem, 6.4vw, 7.4rem);
+    line-height: 0.94;
+    letter-spacing: -0.066em;
+  }
+  .deep-hero__copy {
+    display: grid;
+    gap: 22px;
+    padding-bottom: 10px;
+    color: var(--muted-bright);
+    font-size: clamp(1.02rem, 1.25vw, 1.28rem);
+    line-height: 1.68;
+  }
+  .deep-equation {
+    position: relative;
+    display: flex;
+    margin-top: 72px;
+    padding: 17px;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    background: color-mix(in srgb, var(--ink-raised) 92%, transparent);
+    align-items: center;
+    gap: 12px;
+    overflow-x: auto;
+  }
+  .deep-equation span {
+    min-width: max-content;
+    padding: 10px 14px;
+    border-radius: 8px;
+    background: var(--ink-soft);
+    font-size: 0.78rem;
+    font-weight: 700;
+  }
+  .deep-equation b {
+    color: var(--deep-blue);
+    font-weight: 500;
+  }
+  .deep-chapters {
+    position: sticky;
+    z-index: 20;
+    top: 73px;
+    border-bottom: 1px solid var(--line);
+    background: color-mix(in srgb, var(--ink) 91%, transparent);
+    backdrop-filter: blur(18px);
+  }
+  .deep-chapters > div {
+    display: flex;
+    gap: 6px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .deep-chapters a {
+    min-width: max-content;
+    padding: 17px 14px 15px;
+    border-bottom: 2px solid transparent;
+    color: var(--muted);
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-decoration: none;
+    transition:
+      color 140ms ease,
+      border-color 140ms ease;
+  }
+  .deep-chapters a span {
+    margin-right: 7px;
+    color: var(--deep-blue);
+    font-variant-numeric: tabular-nums;
+  }
+  .deep-chapters a:hover,
+  .deep-chapters a[data-current] {
+    border-color: var(--deep-blue);
+    color: var(--text);
+  }
+  .deep-section {
+    padding: clamp(84px, 10vw, 154px) 0;
+    border-bottom: 1px solid var(--line);
+    scroll-margin-top: 136px;
+  }
+  .deep-section-heading {
+    max-width: 940px;
+    margin-bottom: 54px;
+  }
+  .deep-section-heading--wide {
+    max-width: 1180px;
+  }
+  .deep-section-heading h2 {
+    max-width: 1120px;
+    font-size: clamp(2.7rem, 5vw, 5.5rem);
+    line-height: 0.99;
+    letter-spacing: -0.055em;
+  }
+  .deep-section-heading > p:last-child {
+    max-width: 900px;
+    margin-top: 26px;
+    color: var(--muted-bright);
+    font-size: clamp(1.02rem, 1.35vw, 1.24rem);
+    line-height: 1.72;
+  }
+  .principle-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    border-top: 1px solid var(--line);
+    border-left: 1px solid var(--line);
+  }
+  .principle-grid article {
+    min-height: 285px;
+    padding: 30px;
+    border-right: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+  }
+  .principle-grid article > span,
+  .definition-band article > span,
+  .rule-parts article > span,
+  .trace-explanation article > span,
+  .algorithm-grid article > span {
+    color: var(--deep-blue);
+    font-size: 0.66rem;
+    font-weight: 760;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+  .principle-grid h3 {
+    margin: 50px 0 14px;
+    font-size: 1.8rem;
+    letter-spacing: -0.035em;
+  }
+  .principle-grid p,
+  .definition-band p,
+  .rule-parts p,
+  .trace-explanation p,
+  .algorithm-grid p {
+    color: var(--muted-bright);
+    line-height: 1.68;
+  }
+  .not-dag {
+    display: grid;
+    grid-template-columns: minmax(260px, 0.42fr) minmax(0, 1fr);
+    margin-top: 28px;
+    padding: 30px;
+    border: 1px solid var(--line-strong);
+    border-radius: 16px;
+    background: var(--lime-soft);
+    gap: 42px;
+  }
+  .not-dag strong {
+    font-size: 1.18rem;
+  }
+  .not-dag p {
+    max-width: 930px;
+    color: var(--muted-bright);
+    line-height: 1.7;
+  }
+  .deep-discovery {
+    background: var(--section-deep);
+  }
+  .definition-band {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    border-top: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+  }
+  .definition-band article {
+    padding: 30px;
+    border-right: 1px solid var(--line);
+  }
+  .definition-band article:last-child {
+    border-right: 0;
+  }
+  .definition-band h3 {
+    margin: 34px 0 18px;
+    font-size: clamp(1.5rem, 2vw, 2.1rem);
+    line-height: 1.12;
+  }
+  .deep-code-pair {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    margin-top: 56px;
+    gap: 24px;
+  }
+  .deep-code {
+    min-width: 0;
+  }
+  .deep-code > p {
+    margin: 0 0 12px;
+    color: var(--muted);
+    font-size: 0.76rem;
+  }
+  .deep-code > p span {
+    margin-right: 8px;
+    color: var(--deep-blue);
+    font-weight: 750;
+  }
+  .deep-code :global(.code-window) {
+    height: 100%;
+  }
+  .deep-code :global(.code-window__body pre) {
+    max-height: 520px;
+  }
+  .compiler-explainer,
+  .resolution-detail,
+  .evaluation-machine,
+  .assertion-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 0.82fr) minmax(500px, 1.18fr);
+    margin-top: 74px;
+    gap: clamp(34px, 5vw, 82px);
+    align-items: start;
+  }
+  .compiler-explainer h3,
+  .resolution-detail h3,
+  .graph-contract h3,
+  .cycle-lab h3,
+  .empty-test-note h3 {
+    margin-bottom: 18px;
+    font-size: clamp(1.9rem, 3vw, 3.2rem);
+    line-height: 1.04;
+    letter-spacing: -0.04em;
+  }
+  .compiler-explainer p,
+  .resolution-detail p,
+  .graph-contract > p,
+  .cycle-lab p,
+  .empty-test-note > p {
+    color: var(--muted-bright);
+    line-height: 1.72;
+  }
+  .compiler-explainer ol {
+    display: grid;
+    margin-top: 28px;
+    padding-left: 21px;
+    color: var(--muted-bright);
+    gap: 15px;
+    line-height: 1.6;
+  }
+  .evidence-lab {
+    display: grid;
+    grid-template-columns: minmax(0, 1.04fr) minmax(0, 0.96fr);
+    border: 1px solid var(--line-strong);
+    border-radius: 22px;
+    background: var(--ink-raised);
+    overflow: hidden;
+  }
+  .ide-frame {
+    min-width: 0;
+    border-right: 1px solid var(--line);
+  }
+  .ide-titlebar,
+  .terminal-bar,
+  .ide-tab {
+    display: flex;
+    min-height: 52px;
+    padding: 0 17px;
+    border-bottom: 1px solid var(--line);
+    align-items: center;
+  }
+  .ide-titlebar {
+    gap: 14px;
+  }
+  .ide-titlebar strong {
+    color: var(--muted-bright);
+    font-size: 0.75rem;
+    font-weight: 650;
+  }
+  .ide-titlebar button,
+  .terminal-foot button,
+  .cycle-lab button {
+    margin-left: auto;
+    padding: 9px 13px;
+    border: 1px solid color-mix(in srgb, var(--deep-blue) 60%, transparent);
+    border-radius: 8px;
+    background: var(--lime-soft);
+    color: var(--text);
+    cursor: pointer;
+    font-size: 0.72rem;
+    font-weight: 720;
+  }
+  .ide-titlebar button:disabled {
+    cursor: wait;
+    opacity: 0.62;
+  }
+  .ide-body {
+    display: grid;
+    grid-template-columns: 154px minmax(0, 1fr);
+    min-height: 360px;
+  }
+  .ide-body aside {
+    display: flex;
+    padding: 20px 10px;
+    border-right: 1px solid var(--line);
+    color: var(--muted);
+    flex-direction: column;
+    gap: 12px;
+    font:
+      0.68rem/1.35 ui-monospace,
+      SFMono-Regular,
+      Consolas,
+      monospace;
+  }
+  .ide-body aside span,
+  .ide-body aside button {
+    padding: 0 8px;
+  }
+  .ide-body aside button {
+    border: 0;
+    background: transparent;
+    color: var(--text);
+    text-align: left;
+  }
+  .ide-editor pre {
+    padding: 26px;
+    overflow-x: auto;
+    color: #e1e4e8;
+    font:
+      0.79rem/1.8 ui-monospace,
+      SFMono-Regular,
+      Consolas,
+      monospace;
+  }
+  .ide-tab {
+    width: max-content;
+    border-right: 1px solid var(--line);
+    color: var(--muted-bright);
+    font:
+      0.7rem ui-monospace,
+      SFMono-Regular,
+      Consolas,
+      monospace;
+  }
+  .token-comment {
+    color: #8b949e;
+  }
+  .token-keyword {
+    color: #ff7b72;
+  }
+  .token-string {
+    color: #a5d6ff;
+  }
+  .token-function {
+    color: #d2a8ff;
+  }
+  .token-punctuation {
+    color: #c9d1d9;
+  }
+  .lab-graph {
+    min-width: 0;
+    padding: 18px;
+  }
+  .lab-status {
+    display: flex;
+    color: var(--muted);
+    font-size: 0.68rem;
+    justify-content: space-between;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+  .lab-status span {
+    color: var(--deep-cyan);
+  }
+  .lab-graph svg {
+    margin-top: 8px;
+  }
+  .lab-graph .lab-edge {
+    fill: none;
+    stroke: var(--deep-blue);
+    stroke-dasharray: 7 8;
+    stroke-width: 3;
+    opacity: 0.25;
+    transition:
+      opacity 260ms ease,
+      stroke-dashoffset 1.2s linear;
+  }
+  .lab-graph[data-edge-ready] .lab-edge {
+    opacity: 1;
+    animation: edge-flow 1.2s linear infinite;
+  }
+  .lab-graph marker path,
+  .cycle-lab marker path {
+    fill: var(--deep-blue);
+  }
+  .lab-node rect,
+  .lab-edge-card rect {
+    fill: var(--ink-soft);
+    stroke: var(--line-strong);
+  }
+  .lab-node text,
+  .lab-edge-card text {
+    fill: var(--muted-bright);
+    font:
+      14px ui-monospace,
+      SFMono-Regular,
+      Consolas,
+      monospace;
+  }
+  .lab-node text:first-of-type,
+  .lab-edge-card text:first-of-type {
+    fill: var(--deep-blue);
+    font-size: 11px;
+    font-weight: 760;
+    letter-spacing: 0.1em;
+  }
+  .lab-graph > p {
+    padding: 0 14px 10px;
+    color: var(--muted);
+    font-size: 0.76rem;
+    line-height: 1.55;
+  }
+  .evidence-terminal {
+    grid-column: 1 / -1;
+    border-top: 1px solid var(--line);
+    background: #05070b;
+  }
+  .terminal-bar {
+    color: #8592a6;
+    font:
+      0.68rem ui-monospace,
+      SFMono-Regular,
+      Consolas,
+      monospace;
+    justify-content: space-between;
+  }
+  .evidence-terminal pre {
+    height: 390px;
+    margin: 0;
+    padding: 24px;
+    overflow: auto;
+    color: #d8e0eb;
+    font:
+      0.76rem/1.7 ui-monospace,
+      SFMono-Regular,
+      Consolas,
+      monospace;
+    white-space: pre-wrap;
+  }
+  .log-line {
+    display: block;
+  }
+  [data-enhanced] .log-line:not([data-visible]) {
+    display: none;
+  }
+  .log-line--debug {
+    color: #9eb0c9;
+  }
+  .log-line--info {
+    color: #8ecfff;
+  }
+  .log-line--warn {
+    color: #ffad98;
+  }
+  .terminal-foot {
+    display: flex;
+    padding: 18px 22px;
+    border-top: 1px solid rgba(127, 169, 225, 0.13);
+    color: #8b98ab;
+    align-items: center;
+    gap: 24px;
+  }
+  .terminal-foot p {
+    max-width: 1050px;
+    font-size: 0.72rem;
+    line-height: 1.55;
+  }
+  .trace-explanation,
+  .rule-parts,
+  .algorithm-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    margin-top: 28px;
+    gap: 1px;
+    background: var(--line);
+  }
+  .trace-explanation article,
+  .rule-parts article,
+  .algorithm-grid article {
+    padding: 28px;
+    background: var(--ink);
+  }
+  .trace-explanation p,
+  .rule-parts p,
+  .algorithm-grid p {
+    margin-top: 16px;
+  }
+  .resolution-detail {
+    grid-template-columns: minmax(0, 0.78fr) minmax(500px, 1.22fr);
+  }
+  .graph-contract {
+    display: grid;
+    grid-template-columns: 0.45fr 1fr;
+    margin-top: 80px;
+    padding: 38px;
+    border: 1px solid var(--line);
+    border-radius: 20px;
+    gap: 45px 70px;
+  }
+  .graph-contract dl {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 18px;
+  }
+  .graph-contract dl div {
+    padding: 18px;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: var(--ink-soft);
+  }
+  .graph-contract dt {
+    margin-bottom: 11px;
+  }
+  .graph-contract dd {
+    margin: 0;
+    color: var(--muted-bright);
+    line-height: 1.55;
+  }
+  .graph-contract > p {
+    grid-column: 2;
+  }
+  .cycle-lab {
+    display: grid;
+    grid-template-columns: 0.42fr 0.58fr;
+    margin-top: 38px;
+    padding: 38px;
+    border: 1px solid var(--line);
+    border-radius: 20px;
+    gap: 40px;
+    align-items: center;
+  }
+  .cycle-lab button {
+    margin: 25px 0 13px;
+  }
+  .cycle-lab [data-cycle-status] {
+    color: var(--deep-cyan);
+    font-size: 0.78rem;
+  }
+  .cycle-edge {
+    fill: none;
+    stroke: var(--deep-blue);
+    stroke-width: 3;
+  }
+  .cycle-edge--return {
+    stroke: var(--deep-warn);
+    stroke-dasharray: 8 7;
+    opacity: 0;
+    transition: opacity 220ms ease;
+  }
+  [data-cycle-visible] .cycle-edge--return {
+    opacity: 1;
+    animation: edge-flow 1.2s linear infinite reverse;
+  }
+  .cycle-lab circle {
+    fill: var(--ink-soft);
+    stroke: var(--line-strong);
+  }
+  .cycle-lab text {
+    fill: var(--text);
+    font:
+      700 17px ui-monospace,
+      SFMono-Regular,
+      Consolas,
+      monospace;
+    text-anchor: middle;
+  }
+  .cycle-lab text + text {
+    fill: var(--muted);
+    font-size: 12px;
+    font-weight: 500;
+  }
+  .deep-rule-section {
+    background: var(--section-deep);
+  }
+  .sentence-machine {
+    display: flex;
+    padding: 24px;
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    background: var(--ink-raised);
+    align-items: stretch;
+    gap: 10px;
+    overflow-x: auto;
+  }
+  .sentence-machine div {
+    min-width: 156px;
+    padding: 18px;
+    border-radius: 11px;
+    background: var(--ink-soft);
+  }
+  .sentence-machine span {
+    display: block;
+    margin-bottom: 20px;
+    color: var(--deep-blue);
+    font-size: 0.62rem;
+    font-weight: 760;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+  .sentence-machine strong {
+    font-size: 0.89rem;
+  }
+  .sentence-machine > b {
+    align-self: center;
+    color: var(--muted);
+    font-weight: 500;
+  }
+  .rule-parts {
+    grid-template-columns: repeat(4, 1fr);
+  }
+  .evaluation-machine {
+    grid-template-columns: minmax(460px, 0.95fr) minmax(0, 1.05fr);
+  }
+  .evaluation-flow {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1px;
+    background: var(--line);
+  }
+  .evaluation-flow article {
+    padding: 24px;
+    background: var(--ink-raised);
+  }
+  .evaluation-flow article > span,
+  .assertion-steps article > span {
+    display: inline-grid;
+    width: 31px;
+    height: 31px;
+    margin-bottom: 30px;
+    border: 1px solid var(--line-strong);
+    border-radius: 50%;
+    color: var(--deep-blue);
+    font-size: 0.65rem;
+    place-items: center;
+  }
+  .evaluation-flow strong {
+    display: block;
+    margin-bottom: 10px;
+  }
+  .evaluation-flow p,
+  .assertion-steps p {
+    color: var(--muted-bright);
+    font-size: 0.88rem;
+    line-height: 1.62;
+  }
+  .evaluation-example {
+    margin-top: 34px;
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    overflow-x: auto;
+  }
+  .eval-row {
+    display: grid;
+    grid-template-columns: 1.3fr 1.3fr 0.7fr 0.7fr 0.7fr;
+    min-width: 850px;
+    border-top: 1px solid var(--line);
+  }
+  .eval-row:first-child {
+    border-top: 0;
+  }
+  .eval-row > * {
+    padding: 16px 18px;
+    border-right: 1px solid var(--line);
+    font-size: 0.76rem;
+  }
+  .eval-row > *:last-child {
+    border-right: 0;
+  }
+  .eval-row--head {
+    background: var(--ink-soft);
+    color: var(--muted);
+    font-weight: 730;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .eval-row b {
+    color: var(--deep-warn);
+  }
+  .eval-row em {
+    color: var(--muted);
+    font-style: normal;
+  }
+  .empty-test-note {
+    display: grid;
+    grid-template-columns: 0.45fr 1fr;
+    margin-top: 34px;
+    padding: 32px;
+    border: 1px solid var(--line-strong);
+    border-radius: 16px;
+    background: var(--lime-soft);
+    gap: 50px;
+  }
+  .algorithm-grid article {
+    min-height: 310px;
+  }
+  .algorithm-grid h3 {
+    margin: 44px 0 16px;
+    font-size: 1.65rem;
+    line-height: 1.1;
+  }
+  .algorithm-grid strong {
+    display: block;
+    margin-top: 28px;
+    color: var(--deep-cyan);
+    font-size: 0.78rem;
+  }
+  .algorithm-visual {
+    display: flex;
+    margin-top: 32px;
+    padding: 40px;
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    align-items: center;
+    gap: 18px;
+    flex-wrap: wrap;
+  }
+  .algorithm-visual div {
+    display: grid;
+    width: 112px;
+    height: 112px;
+    border: 1px solid var(--deep-blue);
+    border-radius: 50%;
+    background: var(--lime-soft);
+    place-items: center;
+  }
+  .algorithm-visual div span {
+    font-size: 1.4rem;
+    font-weight: 800;
+  }
+  .algorithm-visual div small {
+    margin-top: -32px;
+    color: var(--muted);
+    font-size: 0.58rem;
+  }
+  .algorithm-visual i {
+    color: var(--deep-blue);
+    font-style: normal;
+  }
+  .algorithm-visual .algorithm-return {
+    color: var(--deep-warn);
+    font-size: 1.6rem;
+  }
+  .algorithm-visual .algorithm-isolated {
+    margin-left: 40px;
+    border-color: var(--line-strong);
+  }
+  .algorithm-visual p {
+    min-width: 300px;
+    color: var(--muted-bright);
+    flex: 1;
+    line-height: 1.65;
+  }
+  .deep-feedback-section {
+    background: var(--section-deep);
+  }
+  .assertion-grid {
+    grid-template-columns: minmax(540px, 1.1fr) minmax(0, 0.9fr);
+  }
+  .assertion-steps {
+    display: grid;
+    border-top: 1px solid var(--line);
+  }
+  .assertion-steps article {
+    display: grid;
+    grid-template-columns: 44px 1fr;
+    padding: 20px 0;
+    border-bottom: 1px solid var(--line);
+    gap: 18px;
+  }
+  .assertion-steps article > span {
+    margin: 0;
+  }
+  .trust-boundary {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    margin-top: 68px;
+    gap: 1px;
+    background: var(--line);
+  }
+  .trust-boundary > div {
+    padding: 34px;
+    background: var(--ink);
+  }
+  .trust-boundary span {
+    color: var(--deep-blue);
+    font-size: 0.72rem;
+    font-weight: 760;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+  .trust-boundary ul {
+    display: grid;
+    margin-top: 26px;
+    padding-left: 20px;
+    color: var(--muted-bright);
+    gap: 15px;
+    line-height: 1.62;
+  }
+  .deep-summary {
+    margin-top: 90px;
+    padding: clamp(42px, 6vw, 88px);
+    border: 1px solid var(--line-strong);
+    border-radius: 24px;
+    background:
+      radial-gradient(circle at 80% 20%, rgba(105, 167, 255, 0.14), transparent 32%),
+      var(--ink-raised);
+  }
+  .deep-summary h2 {
+    max-width: 1050px;
+    font-size: clamp(2.8rem, 5.4vw, 6rem);
+    line-height: 0.97;
+    letter-spacing: -0.055em;
+  }
+  .deep-summary > p:nth-of-type(2) {
+    max-width: 790px;
+    margin-top: 28px;
+    color: var(--muted-bright);
+    font-size: 1.08rem;
+    line-height: 1.7;
+  }
+  .deep-summary > div {
+    display: flex;
+    margin-top: 34px;
+    gap: 12px;
+  }
+  @keyframes edge-flow {
+    to {
+      stroke-dashoffset: -30;
+    }
+  }
+  @media (max-width: 1100px) {
+    .deep-hero__grid,
+    .compiler-explainer,
+    .resolution-detail,
+    .evaluation-machine,
+    .assertion-grid,
+    .graph-contract,
+    .cycle-lab,
+    .empty-test-note {
+      grid-template-columns: 1fr;
+    }
+    .principle-grid,
+    .rule-parts {
+      grid-template-columns: repeat(2, 1fr);
+    }
+    .definition-band,
+    .trace-explanation,
+    .algorithm-grid {
+      grid-template-columns: 1fr;
+    }
+    .definition-band article {
+      border-right: 0;
+      border-bottom: 1px solid var(--line);
+    }
+    .evidence-lab {
+      grid-template-columns: 1fr;
+    }
+    .ide-frame {
+      border-right: 0;
+      border-bottom: 1px solid var(--line);
+    }
+    .graph-contract > p {
+      grid-column: auto;
+    }
+    .algorithm-visual .algorithm-isolated {
+      margin-left: 0;
+    }
+  }
+  @media (max-width: 760px) {
+    .deep-shell {
+      width: min(100% - 28px, 1540px);
+    }
+    .deep-hero {
+      padding-top: 128px;
+    }
+    .deep-hero__grid {
+      grid-template-columns: 1fr;
+      gap: 34px;
+    }
+    .deep-hero h1 {
+      font-size: clamp(2.9rem, 14vw, 4.8rem);
+    }
+    .deep-equation {
+      margin-top: 44px;
+    }
+    .deep-chapters {
+      top: 64px;
+    }
+    .deep-chapters a {
+      padding-inline: 10px;
+    }
+    .deep-section {
+      padding: 76px 0;
+      scroll-margin-top: 116px;
+    }
+    .deep-section-heading h2,
+    .deep-summary h2 {
+      font-size: clamp(2.45rem, 11vw, 4.1rem);
+    }
+    .principle-grid,
+    .deep-code-pair,
+    .rule-parts,
+    .trust-boundary {
+      grid-template-columns: 1fr;
+    }
+    .principle-grid article {
+      min-height: 0;
+    }
+    .not-dag {
+      grid-template-columns: 1fr;
+      gap: 18px;
+    }
+    .ide-body {
+      grid-template-columns: 1fr;
+    }
+    .ide-body aside {
+      display: none;
+    }
+    .ide-editor pre {
+      padding: 20px;
+      font-size: 0.7rem;
+    }
+    .lab-graph {
+      padding: 10px 4px;
+    }
+    .evidence-terminal pre {
+      height: 420px;
+      padding: 18px;
+      font-size: 0.68rem;
+    }
+    .terminal-foot {
+      align-items: flex-start;
+      flex-direction: column;
+    }
+    .terminal-foot button {
+      margin-left: 0;
+    }
+    .graph-contract,
+    .cycle-lab,
+    .empty-test-note {
+      padding: 24px;
+    }
+    .graph-contract dl {
+      grid-template-columns: 1fr;
+    }
+    .evaluation-flow {
+      grid-template-columns: 1fr;
+    }
+    .algorithm-visual {
+      padding: 25px;
+    }
+    .algorithm-visual div {
+      width: 82px;
+      height: 82px;
+    }
+    .algorithm-visual p {
+      min-width: 100%;
+    }
+    .deep-summary > div {
+      align-items: stretch;
+      flex-direction: column;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .lab-graph[data-edge-ready] .lab-edge,
+    [data-cycle-visible] .cycle-edge--return {
+      animation: none;
+    }
+  }
+</style>
