@@ -309,11 +309,90 @@ test('the how-it-works walkthrough explains and advances the pipeline', async ({
   await page.goto('/how-archunit-works/');
   await expect(page.getByRole('heading', { name: /source code becomes a graph/i })).toBeVisible();
   await expect(page.locator('.deep-chapters a')).toHaveCount(7);
-  await expect(page.locator('.definition-band article')).toHaveCount(3);
+  await expect(page.getByRole('tab')).toHaveCount(9);
+  await expect(page.getByRole('tab')).toHaveText([
+    'Python',
+    'TypeScript',
+    '.NETPreview',
+    'RubyPreview',
+    'RustPreview',
+    'ZigPreview',
+    'GoPreview',
+    'JavaPreview',
+    'PHPPreview',
+  ]);
+  await expect(page.getByRole('tab', { name: /^Python/ })).toHaveAttribute('aria-selected', 'true');
+  await expect(
+    page.locator(
+      '[data-adapter-panel="python"][data-adapter-stage="discover"] .adapter-steps > li',
+    ),
+  ).toHaveCount(4);
   await expect(page.getByText(/directed acyclic graph/i)).toBeVisible();
-  await expect(page.getByText(/abstract syntax tree/i)).toBeVisible();
-  await expect(page.locator('#discover-parse .code-window')).toHaveCount(2);
-  await expect(page.locator('#discover-parse .ts-analog')).toHaveCount(3);
+  await expect(
+    page.getByRole('heading', { name: /directory root becomes decoded source text/i }),
+  ).toBeVisible();
+  await expect(
+    page.locator('[data-adapter-panel="python"][data-adapter-stage="discover"] .code-window'),
+  ).toHaveCount(2);
+  await expect(page.getByText(/This does not rename or delete folders/i)).toBeVisible();
+
+  const pythonCodeGeometry = await page
+    .locator('[data-adapter-panel="python"][data-adapter-stage="discover"]')
+    .evaluate((panel) => {
+      const blocks = Array.from(panel.querySelectorAll<HTMLElement>('.deep-code'));
+      return blocks.map((block) => {
+        const caption = block.querySelector<HTMLElement>(':scope > p')?.getBoundingClientRect();
+        const window = block.querySelector<HTMLElement>('.code-window')?.getBoundingClientRect();
+        return {
+          captionTop: caption?.top ?? 0,
+          captionBottom: caption?.bottom ?? 0,
+          windowTop: window?.top ?? 0,
+          windowBottom: window?.bottom ?? 0,
+        };
+      });
+    });
+  expect(pythonCodeGeometry).toHaveLength(2);
+  const firstPythonCode = pythonCodeGeometry[0];
+  const secondPythonCode = pythonCodeGeometry[1];
+  if (!firstPythonCode || !secondPythonCode) throw new Error('Expected two Python code blocks');
+  expect(firstPythonCode.captionBottom).toBeGreaterThan(firstPythonCode.captionTop);
+  expect(firstPythonCode.windowBottom).toBeGreaterThan(firstPythonCode.windowTop);
+  expect(firstPythonCode.captionBottom).toBeLessThanOrEqual(firstPythonCode.windowTop + 1);
+  expect(firstPythonCode.windowBottom).toBeLessThanOrEqual(secondPythonCode.captionTop - 1);
+
+  const pythonTab = page.getByRole('tab', { name: /^Python/ });
+  await pythonTab.focus();
+  await pythonTab.press('ArrowRight');
+  await expect(page.getByRole('tab', { name: /^TypeScript/ })).toBeFocused();
+  await expect(page.getByRole('tab', { name: /^TypeScript/ })).toHaveAttribute(
+    'aria-selected',
+    'true',
+  );
+  await expect(
+    page.locator('[data-adapter-panel="typescript"][data-adapter-stage="resolve"]'),
+  ).toBeVisible();
+  await page.getByRole('tab', { name: /^TypeScript/ }).press('End');
+  await expect(page.getByRole('tab', { name: /^PHP/ })).toBeFocused();
+  await page.getByRole('tab', { name: /^PHP/ }).press('Home');
+  await expect(pythonTab).toBeFocused();
+  await expect(page.locator('[role="tab"][tabindex="0"]')).toHaveCount(1);
+
+  await page.getByRole('tab', { name: /^TypeScript/ }).click();
+  await expect(page.getByRole('tab', { name: /^TypeScript/ })).toHaveAttribute(
+    'aria-selected',
+    'true',
+  );
+  await expect(page.getByText(/This recursion goes upward only/i)).toBeVisible();
+  await expect(page.getByText(/Project references are a separate step/i)).toBeVisible();
+  await expect(page.locator('[data-adapter-panel="python"]:visible')).toHaveCount(0);
+
+  await page.getByRole('tab', { name: /^Ruby/ }).click();
+  await expect(
+    page.locator('[data-adapter-panel="ruby"][data-adapter-stage="discover"]'),
+  ).toContainText(/detailed Ruby walkthrough is not available yet/i);
+  await page.reload();
+  await expect(page.getByRole('tab', { name: /^Ruby/ })).toHaveAttribute('aria-selected', 'true');
+  await page.getByRole('tab', { name: /^Python/ }).click();
   await expect(page.locator('[data-evidence-terminal] [data-log-line]')).toHaveCount(17);
   await expect(page.locator('[data-log-line]').first()).toBeVisible();
   await page.getByRole('button', { name: 'Replay trace' }).click();
@@ -365,6 +444,28 @@ test('the how-it-works walkthrough explains and advances the pipeline', async ({
       scroll: document.documentElement.scrollWidth,
     }));
     expect(viewportWidth.scroll).toBeLessThanOrEqual(viewportWidth.client + 1);
+    const mobileCodeGeometry = await page
+      .locator('[data-adapter-panel="python"][data-adapter-stage="discover"]')
+      .evaluate((panel) => {
+        const blocks = Array.from(panel.querySelectorAll<HTMLElement>('.deep-code'));
+        return blocks.map((block) => ({
+          captionTop:
+            block.querySelector<HTMLElement>(':scope > p')?.getBoundingClientRect().top ?? 0,
+          captionBottom:
+            block.querySelector<HTMLElement>(':scope > p')?.getBoundingClientRect().bottom ?? 0,
+          windowTop:
+            block.querySelector<HTMLElement>('.code-window')?.getBoundingClientRect().top ?? 0,
+          windowBottom:
+            block.querySelector<HTMLElement>('.code-window')?.getBoundingClientRect().bottom ?? 0,
+        }));
+      });
+    const firstMobileCode = mobileCodeGeometry[0];
+    const secondMobileCode = mobileCodeGeometry[1];
+    if (!firstMobileCode || !secondMobileCode) throw new Error('Expected two mobile code blocks');
+    expect(firstMobileCode.captionBottom).toBeGreaterThan(firstMobileCode.captionTop);
+    expect(firstMobileCode.windowBottom).toBeGreaterThan(firstMobileCode.windowTop);
+    expect(firstMobileCode.captionBottom).toBeLessThanOrEqual(firstMobileCode.windowTop + 1);
+    expect(firstMobileCode.windowBottom).toBeLessThanOrEqual(secondMobileCode.captionTop - 1);
   }
 });
 
@@ -374,6 +475,10 @@ test('the walkthrough keeps its evidence readable without JavaScript', async ({ 
   await page.goto('http://127.0.0.1:4321/how-archunit-works/');
   await expect(page.locator('[data-evidence-terminal] [data-log-line]')).toHaveCount(17);
   await expect(page.locator('[data-evidence-terminal] [data-log-line]').first()).toBeVisible();
+  await expect(page.locator('[data-adapter-picker]')).toBeHidden();
+  await expect(
+    page.locator('[data-adapter-panel="python"][data-adapter-stage="discover"]'),
+  ).toBeVisible();
   await expect(page.getByRole('button', { name: 'Replay trace' })).toBeHidden();
   await expect(page.getByRole('button', { name: 'Show complete trace' })).toBeHidden();
   await context.close();

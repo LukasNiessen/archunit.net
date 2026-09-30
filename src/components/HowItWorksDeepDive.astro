@@ -3,10 +3,15 @@ import CodeWindow from './CodeWindow.astro';
 import InlineCode from './InlineCode.astro';
 
 const pythonDiscovery = [
+  '# The fluent builder stores project_path. Extraction resolves it here.',
+  'root = os.path.abspath(project_path or os.getcwd())',
+  '',
   '# os.walk yields one directory at a time: its path,',
   '# mutable child-directory names, and the file names inside it.',
   'for dirpath, dirnames, filenames in os.walk(root):',
-  '    # Slice assignment prunes folders before os.walk enters them.',
+  '    # Example before filtering: ["src", ".venv", "build"]',
+  '    # Replace this same list\'s contents, so os.walk sees ["src"]',
+  '    # and never descends into .venv or build.',
   '    dirnames[:] = [',
   '        name for name in dirnames',
   '        if not _should_exclude_path(',
@@ -38,6 +43,7 @@ const pythonAst = [
   '        return []',
   '',
   '    imports = []',
+  '    ignore_directives = _find_ignore_directives(source)',
   '    type_checking_ranges = _find_type_checking_ranges(tree)',
   '    conditional_import_ranges = _find_conditional_import_ranges(tree)',
   '    # Walk descendants because imports may be nested in functions or try blocks.',
@@ -57,7 +63,113 @@ const pythonAst = [
   '        elif isinstance(node, ast.Call):',
   '            # Only literal importlib/__import__ module names can be recorded.',
   '            ...',
-  '    return imports',
+  '    # Apply inline and next-line # archunit: ignore directives.',
+  '    return [',
+  '        item for item in imports',
+  '        if not _is_ignored_import(item, ignore_directives)',
+  '    ]',
+].join('\n');
+
+const typescriptConfigDiscovery = [
+  '// projectFiles(explicitPath) uses that config. Without one, start at cwd.',
+  'const configFile = explicitPath ?? guessLocationOfTsconfig();',
+  '',
+  'function guessLocationOfTsconfigRecursively(directory: string) {',
+  '  const names = fs.readdirSync(directory);',
+  "  if (names.includes('tsconfig.json')) {",
+  "    return path.resolve(directory, 'tsconfig.json');",
+  '  }',
+  '',
+  "  const parent = path.resolve(directory, '..');",
+  '  if (parent === path.resolve(directory)) return undefined;',
+  '  // Search upward through parents, not downward through child folders.',
+  '  return guessLocationOfTsconfigRecursively(parent);',
+  '}',
+  '',
+  '// The directory containing the selected config becomes the root.',
+  'const rootDir = path.dirname(path.resolve(configFile));',
+].join('\n');
+
+const typescriptProgram = [
+  'function visitConfig(candidate: string) {',
+  '  const config = ts.readConfigFile(candidate, ts.sys.readFile);',
+  '  const parsed = ts.parseJsonConfigFileContent(',
+  '    config.config, ts.sys, path.dirname(candidate), {}, candidate',
+  '  );',
+  '',
+  '  contexts.push(parsed);',
+  '  // Project references are visited explicitly and protected by a Set.',
+  '  for (const reference of parsed.projectReferences ?? []) {',
+  '    visitConfig(ts.resolveProjectReferencePath(reference));',
+  '  }',
+  '}',
+  '',
+  'const files = [...new Set(contexts.flatMap(c => c.fileNames))];',
+  'const host = ts.createCompilerHost(rootOptions);',
+  'const program = ts.createProgram({ rootNames: files, options: rootOptions, host });',
+  '',
+  'for (const sourceFile of program.getSourceFiles()) {',
+  '  // At SourceFile level, this visits top-level syntax children.',
+  '  ts.forEachChild(sourceFile, node => {',
+  '    if (ts.isImportDeclaration(node)) recordImport(node, sourceFile);',
+  '  });',
+  '}',
+].join('\n');
+
+const typescriptResolution = [
+  '// The AST gives us module text, but not a concrete target file.',
+  'const moduleText = importNode.moduleSpecifier.text;',
+  'const normalizedSourceFileName = relativeToRoot(sourceFile.fileName);',
+  '',
+  '// A source file can belong to more than one referenced config.',
+  '// The Map deduplicates contexts that resolve to the same target.',
+  'const resolvedModules = new Map<string, ts.ResolvedModuleFull>();',
+  'for (const compilerOptions of sourceCompilerOptions) {',
+  '  try {',
+  '    let resolved = ts.resolveModuleName(',
+  '      moduleText, sourceFile.fileName, compilerOptions, compilerHost',
+  '    ).resolvedModule;',
+  '',
+  "    // If normal resolution fails, try the extractor's path suggestion.",
+  '    if (!resolved) {',
+  '      const suggestion = new ImportPathsResolver(compilerOptions)',
+  '        .getImportSuggestions(',
+  '          moduleText, path.dirname(normalizedSourceFileName)',
+  '        )?.[0];',
+  '      if (suggestion && suggestion !== moduleText) {',
+  '        resolved = ts.resolveModuleName(',
+  '          suggestion, sourceFile.fileName, compilerOptions, compilerHost',
+  '        ).resolvedModule;',
+  '      }',
+  '    }',
+  '',
+  '    if (!resolved) continue;',
+  '    const identity = `${normalizeFileIdentity(resolved.resolvedFileName)}:`',
+  '      + `${resolved.isExternalLibraryImport ?? false}`;',
+  '    resolvedModules.set(identity, resolved);',
+  '  } catch {',
+  '    // One failed compiler context does not prevent trying the others.',
+  '    continue;',
+  '  }',
+  '}',
+  '',
+  'for (const resolved of resolvedModules.values()) {',
+  '  const target = relativeToRoot(resolved.resolvedFileName);',
+  '  const excluded =',
+  '    (EXCLUDE_NODE_MODULES && target.startsWith("node_modules")) ||',
+  '    (EXCLUDE_DIST && target.startsWith("dist"));',
+  '  if (excluded) {',
+  '    continue;',
+  '  }',
+  '  edges.push({',
+  '    source: normalizedSourceFileName,',
+  '    target,',
+  '    external: resolved.isExternalLibraryImport ?? false,',
+  '    importKinds: determineImportKinds(importNode),',
+  '  });',
+  '}',
+  '',
+  '// A self-edge is also added for every project file.',
 ].join('\n');
 
 const pythonResolution = [
@@ -146,6 +258,51 @@ const pythonEvaluation = [
   '        ))',
 ].join('\n');
 
+const typescriptEvaluation = [
+  '// DependOnFileCondition.check(): extract, project, then delegate.',
+  'const graph = await extractGraph(configFileName, options);',
+  '// perEdge() keeps external and self-edges; equal label pairs are grouped.',
+  'const projectedEdges = projectEdges(graph, perEdge());',
+  '// These aliases shorten the current builder fields for this excerpt.',
+  'const sourceFilters = this.dependOnFileConditionBuilder',
+  '  .matchPatternFileConditionBuilder',
+  '  .filesShouldCondition.filters;',
+  'const targetFilters = this.dependencyFilters;',
+  'const isNegated = this.dependOnFileConditionBuilder',
+  '  .matchPatternFileConditionBuilder.isNegated;',
+  'const allowEmptyTests = options?.allowEmptyTests || false;',
+  'return gatherDependOnFileViolations(',
+  '  projectedEdges,',
+  '  sourceFilters,',
+  '  targetFilters,',
+  '  isNegated,',
+  '  allowEmptyTests,',
+  ');',
+  '',
+  '// gatherDependOnFileViolations(): select both ends of each edge.',
+  'const matchingSources = projectedEdges.filter((edge) =>',
+  '  matchesAllPatterns(edge.sourceLabel, sourceFilters),',
+  ');',
+  'const matchingTargets = projectedEdges.filter((edge) =>',
+  '  matchesAllPatterns(edge.targetLabel, targetFilters),',
+  ');',
+  'if (matchingSources.length === 0 && !allowEmptyTests) {',
+  '  return [new EmptyTestViolation(sourceFilters)];',
+  '}',
+  'if (matchingTargets.length === 0 && !allowEmptyTests) {',
+  '  return [new EmptyTestViolation(targetFilters)];',
+  '}',
+  '',
+  '// For shouldNot(), an edge selected at both ends is forbidden.',
+  'return projectedEdges',
+  '  .filter((edge) =>',
+  '    isNegated',
+  '      ? matchingSources.includes(edge) && matchingTargets.includes(edge)',
+  '      : !matchingSources.includes(edge) || !matchingTargets.includes(edge),',
+  '  )',
+  '  .map((edge) => new ViolatingFileDependency(edge, isNegated));',
+].join('\n');
+
 const assertionBoundary = [
   'def assert_passes(checkable, options=None):',
   '    # Keep evaluation as data until the test boundary.',
@@ -156,6 +313,27 @@ const assertionBoundary = [
   '        raise AssertionError(',
   '            format_violations(violations, because=because)',
   '        )',
+].join('\n');
+
+const typescriptAssertionBoundary = [
+  'expect.extend({',
+  '  async toPassAsync(checkable, options) {',
+  '    if (!checkable) {',
+  '      return ResultFactory.error(',
+  "        'expected something checkable as an argument for expect()',",
+  '      );',
+  '    }',
+  '',
+  '    // The rule still returns data at this point.',
+  '    const violations = await checkable.check(options);',
+  '    const testViolations = violations.map((violation) =>',
+  '      ViolationFactory.from(violation),',
+  '    );',
+  '',
+  '    // Jest or Vitest receives the final pass flag and message function.',
+  '    return ResultFactory.result(Boolean(this.isNot), testViolations);',
+  '  },',
+  '});',
 ].join('\n');
 
 const realTrace = [
@@ -196,6 +374,20 @@ const chapters = [
   ['algorithms', '06', 'Algorithms'],
   ['feedback', '07', 'Feedback'],
 ];
+
+const languageAdapters = [
+  { id: 'python', label: 'Python', available: true },
+  { id: 'typescript', label: 'TypeScript', available: true },
+  { id: 'dotnet', label: '.NET', available: false },
+  { id: 'ruby', label: 'Ruby', available: false },
+  { id: 'rust', label: 'Rust', available: false },
+  { id: 'zig', label: 'Zig', available: false },
+  { id: 'go', label: 'Go', available: false },
+  { id: 'java', label: 'Java', available: false },
+  { id: 'php', label: 'PHP', available: false },
+];
+
+const unavailableAdapters = languageAdapters.filter((adapter) => !adapter.available);
 ---
 
 <div class="deep-how" data-deep-how>
@@ -302,195 +494,412 @@ const chapters = [
     <div class="deep-shell">
       <div class="deep-section-heading deep-section-heading--wide">
         <p class="deep-kicker">Chapter 02 / Discover and parse</p>
-        <h2>Before a graph exists, the library must turn a project into trustworthy evidence.</h2>
+        <h2>Choose an adapter, then follow source code into syntax evidence.</h2>
         <p>
           Static analysis means inspecting program text and its structure without executing the
-          application. It can prove relationships represented by supported syntax. It does not guess
-          values that exist only at runtime.
+          application. The shared goal is the same in every language, but the project boundary,
+          parser, and supported syntax are language-specific.
         </p>
       </div>
 
-      <div class="definition-band">
-        <article>
-          <span>Step 1 / Discover files</span>
-          <h3>
-            <InlineCode code="os.walk()" language="python" /> finds candidate files.
-          </h3>
-          <p>
-            <InlineCode code="os" language="python" /> is Python's built-in operating-system module.
-            <InlineCode code="os.walk(root)" language="python" /> recursively yields a directory
-            path, its child-directory names, and its filenames. ArchUnitPython mutates
-            <InlineCode code="dirnames[:]" language="python" /> to stop recursion into excluded
-            environments, caches, builds, and paths from{' '}
-            <InlineCode code=".archignore" language="text" />. The slice updates the same list
-            object that <InlineCode code="os.walk()" language="python" /> will consult before
-            descending; rebinding <InlineCode code="dirnames" language="python" /> would not prune
-            traversal.
-          </p>
-          <aside class="ts-analog">
-            <span>TypeScript equivalent</span>
-            <p>
-              <InlineCode code="ts.parseJsonConfigFileContent()" language="typescript" /> expands
-              the project's <InlineCode code="include" language="json" />,
-              <InlineCode code="exclude" language="json" />, and
-              <InlineCode code="files" language="json" /> rules into
-              <InlineCode code="parsed.fileNames" language="typescript" />. The compiler config,
-              rather than a general directory walk, decides the input set.
-            </p>
-          </aside>
-        </article>
-        <article>
-          <span>Step 2 / Read and parse</span>
-          <h3>
-            <InlineCode code="ast.parse()" language="python" /> turns text into structure.
-          </h3>
-          <p>
-            AST stands for Abstract Syntax Tree. Python's built-in{' '}
-            <InlineCode code="ast" language="python" />
-            module parses characters into nodes such as{' '}
-            <InlineCode code="Import" language="python" />,
-            <InlineCode code="ImportFrom" language="python" />, and{' '}
-            <InlineCode code="Call" language="python" />. Parsing does not import the module and
-            does not execute its top-level code. Immediately before parsing,
-            <InlineCode code="file.read()" language="python" /> reads the complete file through a
-            UTF-8 decoder into one Python <InlineCode code="str" language="python" />. The
-            <InlineCode code='errors="replace"' language="python" /> option substitutes a marker for
-            malformed byte sequences instead of aborting the project scan.
-          </p>
-          <aside class="ts-analog">
-            <span>TypeScript equivalent</span>
-            <p>
-              <InlineCode code="ts.createProgram()" language="typescript" /> creates compiler
-              <InlineCode code="SourceFile" language="typescript" /> trees for the configured
-              project. Like Python's AST, these trees represent syntax without running the app.
-            </p>
-          </aside>
-        </article>
-        <article>
-          <span>Step 3 / Walk syntax</span>
-          <h3>
-            <InlineCode code="ast.walk()" language="python" /> visits every descendant.
-          </h3>
-          <p>
-            ArchUnitPython classifies ordinary imports, relative imports, imports under
-            <InlineCode code="TYPE_CHECKING" language="python" />, optional imports inside
-            <InlineCode code="try/except ImportError" language="python" />, and literal calls to
-            <InlineCode code="importlib.import_module()" language="python" /> or
-            <InlineCode code="__import__()" language="python" />.
-          </p>
-          <aside class="ts-analog">
-            <span>TypeScript equivalent</span>
-            <p>
-              In this extractor, <InlineCode code="ts.forEachChild()" language="typescript" />
-              visits the direct children of each
-              <InlineCode code="SourceFile" language="typescript" />. The predicate
-              <InlineCode code="ts.isImportDeclaration()" language="typescript" /> selects supported
-              top-level imports; it is not the recursive walk used by Python here.
-            </p>
-          </aside>
-        </article>
-      </div>
-
-      <div class="deep-code-pair deep-code-pair--foundations">
-        <div class="deep-code">
-          <p>
-            <span>Python</span> Source-faithful file-discovery path with teaching comments
-          </p>
-          <CodeWindow code={pythonDiscovery} filename="extract_graph.py" language="python" copy />
-        </div>
-        <div class="deep-code">
-          <p>
-            <span>Python</span> Abridged source: error handling, parsing, and one import branch
-          </p>
-          <CodeWindow
-            code={pythonAst}
-            filename="extract_graph.py · abridged source"
-            language="python"
-            copy
-          />
-        </div>
-      </div>
-
-      <div class="memory-checkpoint" aria-label="Values produced by Python parsing">
+      <div class="adapter-picker" data-adapter-picker hidden>
         <div>
-          <span>After reading</span>
-          <strong>
-            <InlineCode code="source: str" language="python" />
-          </strong>
-          <p>
-            The decoded characters from one complete <InlineCode code=".py" language="text" /> file.
-          </p>
+          <p class="deep-kicker">Language adapter</p>
+          <p>Select a language to change the discovery, parsing, and resolution walkthrough.</p>
         </div>
-        <b aria-hidden="true">→</b>
-        <div>
-          <span>After parsing</span>
-          <strong>
-            <InlineCode code="tree: ast.Module" language="python" />
-          </strong>
-          <p>A root node whose descendants mirror the file's syntax and source locations.</p>
+        <div class="adapter-tabs" role="tablist" aria-label="Choose a language adapter">
+          {languageAdapters.map((adapter, index) => (
+            <button
+              type="button"
+              role="tab"
+              id={'adapter-tab-' + adapter.id}
+              aria-controls={'adapter-discover-' + adapter.id + ' adapter-resolve-' + adapter.id}
+              aria-selected={index === 0 ? 'true' : 'false'}
+              tabindex={index === 0 ? '0' : '-1'}
+              data-adapter-tab={adapter.id}
+            >
+              {adapter.label}
+              {!adapter.available && <span>Preview</span>}
+            </button>
+          ))}
         </div>
-        <b aria-hidden="true">→</b>
-        <div>
-          <span>After walking</span>
-          <strong>located import evidence</strong>
-          <p>
-            <InlineCode code="_LocatedImport" language="python" /> stores module text, syntax and
-            resolution kinds, line number, fallbacks, and aliases. The outer file loop separately
-            supplies <InlineCode code="file_path" language="python" /> as the source identity.
-          </p>
-        </div>
-      </div>
-
-      <div class="ast-visual" aria-label="A Python import becoming a located import record">
-        <div>
-          <span>Source statement</span>
-          <InlineCode code="from ..db import session" language="python" />
-        </div>
-        <b aria-hidden="true">→</b>
-        <div>
-          <span>Python AST node</span>
-          <InlineCode code='ImportFrom(module="db", level=2)' language="python" />
-        </div>
-        <b aria-hidden="true">→</b>
-        <div>
-          <span>ArchUnitPython record</span>
-          <InlineCode
-            code='_LocatedImport(module_name="..db", import_kind=RELATIVE_IMPORT, line_number=12, resolution_kind=RELATIVE_IMPORT, aliases=("session",))'
-            language="python"
-          />
-        </div>
-      </div>
-
-      <aside class="analysis-limit">
-        <strong>Static evidence can be incomplete.</strong>
-        <p>
-          If a file cannot be read or Python raises
-          <InlineCode code="SyntaxError" language="python" />, this extractor returns no imports for
-          that file and continues. Computed dynamic module names are also skipped because their
-          target does not exist until runtime. The walkthrough describes supported evidence, not a
-          promise to infer behavior that source text cannot show.
+        <p class="adapter-status" data-adapter-status aria-live="polite">
+          Python adapter selected.
         </p>
-      </aside>
+      </div>
 
-      <aside class="language-analogy">
-        <div>
-          <p class="deep-kicker">The same stage in TypeScript</p>
-          <h3>Let the compiler define the project boundary.</h3>
+      <div
+        class="adapter-panel"
+        id="adapter-discover-python"
+        role="tabpanel"
+        aria-labelledby="adapter-tab-python"
+        data-adapter-panel="python"
+        data-adapter-stage="discover"
+      >
+        <div class="adapter-panel-intro">
+          <p class="deep-kicker">Python adapter</p>
+          <h3>A directory root becomes decoded source text, then an Abstract Syntax Tree.</h3>
+          <p>
+            Nothing is imported or executed. ArchUnitPython chooses a root, discovers supported
+            files below it, reads each file as text, and asks Python's standard parser for a syntax
+            tree.
+          </p>
         </div>
-        <p>
-          ArchUnitTS reads <InlineCode code="tsconfig.json" language="json" /> with
-          <InlineCode code="ts.readConfigFile()" language="typescript" />, expands the configured
-          input set with <InlineCode code="ts.parseJsonConfigFileContent()" language="typescript" />
-          , and creates a coherent compiler view with
-          <InlineCode code="ts.createProgram()" language="typescript" />. This is the TypeScript
-          analogue of discovering files and parsing their syntax. It also preserves path aliases,
-          JSX settings, and recursively loaded project references that a plain directory scan would
-          miss. ArchUnitTS then calls
-          <InlineCode code="program.getSourceFiles()" language="typescript" /> and checks top-level
-          <InlineCode code="ImportDeclaration" language="typescript" /> nodes exposed by
-          <InlineCode code="ts.forEachChild()" language="typescript" />.
-        </p>
-      </aside>
+
+        <ol class="adapter-steps">
+          <li>
+            <div class="adapter-step-number">01</div>
+            <div>
+              <h3>Establish the project root.</h3>
+              <p>
+                <InlineCode code='project_files("src/")' language="python" /> stores the supplied
+                path until <InlineCode code="check()" language="python" /> runs. Extraction turns it
+                into an absolute path. If no path is supplied,
+                <InlineCode code="os.getcwd()" language="python" /> uses the test process's current
+                working directory. This one root anchors discovery,
+                <InlineCode code=".archignore" language="text" />, caching, and the decision that a
+                resolved target belongs to this project.
+              </p>
+            </div>
+          </li>
+          <li>
+            <div class="adapter-step-number">02</div>
+            <div>
+              <h3>Walk the directory tree without entering excluded folders.</h3>
+              <p>
+                <InlineCode code="os" language="python" /> is Python's built-in operating-system
+                module. <InlineCode code="os.walk(root)" language="python" /> works top down and
+                yields three values for each folder: its path, a mutable list of immediate child
+                folder names, and a list of filenames.
+              </p>
+              <div
+                class="plain-example"
+                aria-label="How dirnames slice assignment prunes traversal"
+              >
+                <p>
+                  <strong>Before filtering</strong>{' '}
+                  <InlineCode code='["src", ".venv", "build"]' language="python" />
+                </p>
+                <p>
+                  <strong>
+                    After <InlineCode code="dirnames[:]" language="python" />
+                  </strong>{' '}
+                  <InlineCode code='["src"]' language="python" />
+                </p>
+              </div>
+              <p>
+                <InlineCode code="dirnames[:] = kept_names" language="python" /> replaces the
+                contents of that same list object. <InlineCode code="os.walk()" language="python" />
+                consults the list before descending, so it enters only
+                <InlineCode code="src" language="text" />. This does not rename or delete folders.
+                Assigning a new local list with{' '}
+                <InlineCode code="dirnames = kept_names" language="python" />
+                would not change the list held by <InlineCode code="os.walk()" language="python" />.
+              </p>
+            </div>
+          </li>
+          <li>
+            <div class="adapter-step-number">03</div>
+            <div>
+              <h3>Read one file into the form this parser uses.</h3>
+              <p>
+                A source file begins as bytes on disk. Opening it in text mode with UTF-8 decoding
+                and calling <InlineCode code="file.read()" language="python" /> consumes the
+                complete file to its end and returns one Python{' '}
+                <InlineCode code="str" language="python" />.
+                <InlineCode code='errors="replace"' language="python" /> substitutes malformed byte
+                sequences rather than aborting the whole scan. This implementation passes that
+                decoded source string to <InlineCode code="ast.parse()" language="python" />.
+              </p>
+            </div>
+          </li>
+          <li>
+            <div class="adapter-step-number">04</div>
+            <div>
+              <h3>Parse syntax, then visit its descendants.</h3>
+              <p>
+                AST means Abstract Syntax Tree.{' '}
+                <InlineCode code="ast.parse(source)" language="python" />
+                returns an <InlineCode code="ast.Module" language="python" /> whose child nodes
+                represent statements and expressions. The
+                <InlineCode code="filename=file_path" language="python" /> argument labels parser
+                diagnostics; it does not read the file.{' '}
+                <InlineCode code="ast.walk(tree)" language="python" />
+                recursively yields every descendant, so the outer loop can see imports nested in
+                functions, conditionals, and <InlineCode code="try" language="python" /> blocks. An
+                inner loop is needed because one statement such as
+                <InlineCode code="import a, b" language="python" /> contains two aliases and must
+                produce two import records.
+              </p>
+            </div>
+          </li>
+        </ol>
+
+        <div class="deep-code-pair deep-code-pair--foundations">
+          <div class="deep-code">
+            <p>
+              <span>Python</span> Source-faithful file-discovery path with teaching comments
+            </p>
+            <CodeWindow code={pythonDiscovery} filename="extract_graph.py" language="python" copy />
+          </div>
+          <div class="deep-code">
+            <p>
+              <span>Python</span> Abridged source: error handling, parsing, and one import branch
+            </p>
+            <CodeWindow
+              code={pythonAst}
+              filename="extract_graph.py · abridged source"
+              language="python"
+              copy
+            />
+          </div>
+        </div>
+
+        <div class="memory-checkpoint" aria-label="Values produced by Python parsing">
+          <div>
+            <span>After reading</span>
+            <strong>
+              <InlineCode code="source: str" language="python" />
+            </strong>
+            <p>
+              The decoded characters from one complete <InlineCode code=".py" language="text" />{' '}
+              file.
+            </p>
+          </div>
+          <b aria-hidden="true">→</b>
+          <div>
+            <span>After parsing</span>
+            <strong>
+              <InlineCode code="tree: ast.Module" language="python" />
+            </strong>
+            <p>A root node whose descendants mirror the file's syntax and source locations.</p>
+          </div>
+          <b aria-hidden="true">→</b>
+          <div>
+            <span>After walking</span>
+            <strong>located import evidence</strong>
+            <p>
+              <InlineCode code="_LocatedImport" language="python" /> stores module text, syntax and
+              resolution kinds, line number, fallbacks, and aliases. The outer file loop separately
+              supplies <InlineCode code="file_path" language="python" /> as the source identity.
+            </p>
+          </div>
+        </div>
+
+        <div class="ast-visual" aria-label="A Python import becoming a located import record">
+          <div>
+            <span>Source statement</span>
+            <InlineCode code="from ..db import session" language="python" />
+          </div>
+          <b aria-hidden="true">→</b>
+          <div>
+            <span>Python AST node</span>
+            <InlineCode code='ImportFrom(module="db", level=2)' language="python" />
+          </div>
+          <b aria-hidden="true">→</b>
+          <div>
+            <span>ArchUnitPython record</span>
+            <InlineCode
+              code='_LocatedImport(module_name="..db", import_kind=RELATIVE_IMPORT, line_number=12, resolution_kind=RELATIVE_IMPORT, aliases=("session",))'
+              language="python"
+            />
+          </div>
+        </div>
+
+        <aside class="analysis-limit">
+          <strong>Static evidence can be incomplete.</strong>
+          <p>
+            If a file cannot be read or Python raises
+            <InlineCode code="SyntaxError" language="python" />, this extractor returns no imports
+            for that file and continues. Computed dynamic module names are also skipped because
+            their target does not exist until runtime. The walkthrough describes supported evidence,
+            not a promise to infer behavior that source text cannot show.
+          </p>
+        </aside>
+      </div>
+
+      <div
+        class="adapter-panel"
+        id="adapter-discover-typescript"
+        role="tabpanel"
+        aria-labelledby="adapter-tab-typescript"
+        data-adapter-panel="typescript"
+        data-adapter-stage="discover"
+        hidden
+      >
+        <div class="adapter-panel-intro">
+          <p class="deep-kicker">TypeScript adapter</p>
+          <h3>A selected TypeScript configuration defines the project the compiler can see.</h3>
+          <p>
+            ArchUnitTS does not begin with a general directory walk. It finds or receives a
+            TypeScript config, asks the compiler to calculate its files and syntax trees, and keeps
+            the compiler options needed to resolve each import correctly.
+          </p>
+        </div>
+
+        <ol class="adapter-steps">
+          <li>
+            <div class="adapter-step-number">01</div>
+            <div>
+              <h3>Select the root configuration.</h3>
+              <p>
+                <InlineCode code="projectFiles('./tsconfig.app.json')" language="typescript" /> uses
+                that config. With <InlineCode code="projectFiles()" language="typescript" />, the
+                search starts in the Node process's current working directory. If
+                <InlineCode code="tsconfig.json" language="json" /> is absent, ArchUnitTS checks the
+                parent, then the parent's parent, until the filesystem root. This recursion goes
+                upward only; it does not search child folders. The directory containing the selected
+                root config becomes the base for displayed relative paths.
+              </p>
+            </div>
+          </li>
+          <li>
+            <div class="adapter-step-number">02</div>
+            <div>
+              <h3>Turn config files into exact file lists and compiler options.</h3>
+              <p>
+                <InlineCode code="ts.readConfigFile()" language="typescript" /> reads one config.
+                <InlineCode code="ts.parseJsonConfigFileContent()" language="typescript" /> applies
+                that config's <InlineCode code="files" language="json" />,
+                <InlineCode code="include" language="json" />,
+                <InlineCode code="exclude" language="json" />, inherited settings, and extension
+                rules to produce <InlineCode code="fileNames" language="typescript" /> and compiler
+                options. Project references are a separate step: ArchUnitTS follows each
+                <InlineCode code="projectReferences" language="typescript" /> entry itself, protects
+                the recursion with a visited-config set, and unions all resulting file lists.
+              </p>
+            </div>
+          </li>
+          <li>
+            <div class="adapter-step-number">03</div>
+            <div>
+              <h3>Let the compiler parse the complete program.</h3>
+              <p>
+                <InlineCode code="ts.createCompilerHost()" language="typescript" /> provides file
+                and module-system operations.{' '}
+                <InlineCode code="ts.createProgram()" language="typescript" />
+                receives the union of configured root files and returns a
+                <InlineCode code="Program" language="typescript" />. Its
+                <InlineCode code="getSourceFiles()" language="typescript" /> output contains project
+                files plus declarations and other files the compiler pulled in. That is why the real
+                trace later reports 2 project files but 199 source files in the program.
+              </p>
+            </div>
+          </li>
+          <li>
+            <div class="adapter-step-number">04</div>
+            <div>
+              <h3>Inspect the syntax this extractor supports.</h3>
+              <p>
+                The compiler has already converted each file into a
+                <InlineCode code="SourceFile" language="typescript" /> syntax tree. At that root
+                level, <InlineCode code="ts.forEachChild()" language="typescript" /> visits direct
+                top-level statements.{' '}
+                <InlineCode code="ts.isImportDeclaration()" language="typescript" />
+                keeps static ES import declarations. Unlike Python's
+                <InlineCode code="ast.walk()" language="python" />, this branch is not a recursive
+                walk through every descendant and does not currently capture dynamic
+                <InlineCode code="import()" language="typescript" />,
+                <InlineCode code="require()" language="typescript" />, or re-export declarations.
+              </p>
+            </div>
+          </li>
+        </ol>
+
+        <div class="deep-code-pair deep-code-pair--foundations">
+          <div class="deep-code">
+            <p>
+              <span>TypeScript</span> Abridged source: explicit or upward config discovery
+            </p>
+            <CodeWindow
+              code={typescriptConfigDiscovery}
+              filename="extract-graph.ts · abridged source"
+              language="typescript"
+              copy
+            />
+          </div>
+          <div class="deep-code">
+            <p>
+              <span>TypeScript</span> Abridged source: referenced configs, program, and syntax
+            </p>
+            <CodeWindow
+              code={typescriptProgram}
+              filename="extract-graph.ts · abridged source"
+              language="typescript"
+              copy
+            />
+          </div>
+        </div>
+
+        <div class="memory-checkpoint" aria-label="Values produced by TypeScript parsing">
+          <div>
+            <span>After config selection</span>
+            <strong>
+              <InlineCode code="configFile" language="typescript" />
+            </strong>
+            <p>
+              The selected config path. It may still be relative here;
+              <InlineCode code="path.resolve(configFile)" language="typescript" /> makes the
+              reporting root absolute when <InlineCode code="rootDir" language="typescript" /> is
+              derived.
+            </p>
+          </div>
+          <b aria-hidden="true">→</b>
+          <div>
+            <span>After config parsing</span>
+            <strong>
+              <InlineCode code="ParsedCommandLine[]" language="typescript" />
+            </strong>
+            <p>File lists and options for the root config and every visited reference.</p>
+          </div>
+          <b aria-hidden="true">→</b>
+          <div>
+            <span>After program creation</span>
+            <strong>
+              <InlineCode code="SourceFile[]" language="typescript" />
+            </strong>
+            <p>Compiler syntax trees ready for supported import extraction.</p>
+          </div>
+        </div>
+
+        <aside class="analysis-limit">
+          <strong>The compiler sees more than the extractor records.</strong>
+          <p>
+            The <InlineCode code="Program" language="typescript" /> may understand declarations,
+            aliases, JSX, and many expression forms. This extractor intentionally records supported
+            top-level <InlineCode code="ImportDeclaration" language="typescript" /> nodes. Compiler
+            understanding and ArchUnit edge extraction are related, but they are not identical.
+          </p>
+        </aside>
+      </div>
+
+      {unavailableAdapters.map((adapter) => (
+        <div
+          class="adapter-panel adapter-unavailable"
+          id={'adapter-discover-' + adapter.id}
+          role="tabpanel"
+          aria-labelledby={'adapter-tab-' + adapter.id}
+          data-adapter-panel={adapter.id}
+          data-adapter-stage="discover"
+          hidden
+        >
+          <p class="deep-kicker">{adapter.label} adapter</p>
+          <h3>The detailed {adapter.label} walkthrough is not available yet.</h3>
+          {adapter.id === 'php' ? (
+            <p>
+              ArchUnitPHP is at foundation stage, so there is no released extractor to document at
+              source-verified depth yet. This page does not infer an implementation from another
+              language.
+            </p>
+          ) : (
+            <p>
+              The library follows the shared source-to-graph model, but this page does not yet
+              document its parser and resolver at the same source-verified depth as Python and
+              TypeScript.
+            </p>
+          )}
+        </div>
+      ))}
     </div>
   </section>
 
@@ -498,105 +907,250 @@ const chapters = [
     <div class="deep-shell">
       <div class="deep-section-heading deep-section-heading--wide">
         <p class="deep-kicker">Chapter 03 / Resolve and build the graph</p>
-        <h2>An import statement is evidence. Resolution turns it into an edge.</h2>
+        <h2>Syntax proves that an import exists. Resolution proves what it points to.</h2>
         <p>
-          The text <InlineCode code="..db" language="python" /> is not yet a target. It must be
-          interpreted from the importing file under the project's language rules. Only then can the
-          graph say that <InlineCode code="src/ui/view.py" language="python" /> depends on
-          <InlineCode code="src/db.py" language="python" />.
+          A parser returns the written module text and its syntax context. The same text can
+          identify different files depending on the importing file, project root, package layout,
+          aliases, and language configuration. A graph needs stable file identities, so the adapter
+          must resolve that text before recording an edge.
         </p>
       </div>
 
-      <div class="python-edge-story" aria-label="One Python import becoming a graph edge">
-        <article>
-          <span>1 / Locate</span>
-          <strong>
-            <InlineCode code="src/ui/view.py" language="python" />
-          </strong>
+      <div
+        class="adapter-panel"
+        id="adapter-resolve-python"
+        role="tabpanel"
+        aria-labelledby="adapter-tab-python"
+        data-adapter-panel="python"
+        data-adapter-stage="resolve"
+      >
+        <div class="adapter-panel-intro adapter-panel-intro--compact">
+          <p class="deep-kicker">Python adapter</p>
+          <h3>
+            The AST describes <InlineCode code="..db" language="python" />; the resolver finds the
+            concrete file.
+          </h3>
           <p>
-            The outer file loop supplies the source identity. Inside that file, the parser finds
-            <InlineCode code="from ..db import database" language="python" /> on line 12.
+            <InlineCode code="_LocatedImport" language="python" /> is deliberately intermediate
+            evidence. It knows what was written, where it appeared, and whether the syntax was
+            relative, conditional, type-only, or dynamic. It cannot know the final target from
+            syntax alone.
           </p>
-        </article>
-        <article>
-          <span>2 / Classify</span>
-          <strong>
-            <InlineCode code="_LocatedImport" language="python" />
-          </strong>
+        </div>
+
+        <div class="python-edge-story" aria-label="One Python import becoming a graph edge">
+          <article>
+            <span>1 / Locate</span>
+            <strong>
+              <InlineCode code="src/ui/view.py" language="python" />
+            </strong>
+            <p>
+              The outer file loop supplies the source identity. Inside that file, the parser finds
+              <InlineCode code="from ..db import database" language="python" /> on line 12.
+            </p>
+          </article>
+          <article>
+            <span>2 / Classify</span>
+            <strong>
+              <InlineCode code="_LocatedImport" language="python" />
+            </strong>
+            <p>
+              The record keeps <InlineCode code='module_name="..db"' language="python" />, line 12,
+              alias <InlineCode code="database" language="python" />, and two kinds. The
+              <InlineCode code="import_kind" language="python" /> describes context, while
+              <InlineCode code="resolution_kind" language="python" /> preserves relative-path
+              semantics even if the import is also conditional or type-only.
+            </p>
+          </article>
+          <article>
+            <span>3 / Resolve</span>
+            <strong>
+              <InlineCode code="src/db.py" language="python" />
+            </strong>
+            <p>
+              Leading dots move from the importing package. The resolver tests a module file and
+              then a package <InlineCode code="__init__.py" language="python" />. A path inside the
+              discovered project becomes an internal target.
+            </p>
+          </article>
+          <article>
+            <span>4 / Record</span>
+            <strong>
+              <InlineCode code="Edge(view.py → db.py)" language="python" />
+            </strong>
+            <p>
+              Only after resolution can ArchUnitPython store the importing path, resolved target,
+              <InlineCode code="external=False" language="python" />, and the import kinds as one
+              directed evidence record.
+            </p>
+          </article>
+        </div>
+
+        <div class="resolution-detail">
+          <div>
+            <p class="deep-kicker">Python resolution in source</p>
+            <h3>Resolve against files that actually exist.</h3>
+            <p>
+              Relative imports move from the source directory. Absolute imports are tested from the
+              project root and its parent. One from-import can yield multiple namespace-package
+              alias targets, so <InlineCode code="_resolve_import_targets()" language="python" />{' '}
+              returns a list rather than one answer.
+            </p>
+            <p>
+              The excerpt is abridged only around its enclosing loops. Every shown branch and record
+              field comes from the current extractor.
+            </p>
+          </div>
+          <div class="deep-code">
+            <CodeWindow
+              code={pythonResolution}
+              filename="extract_graph.py · abridged source"
+              language="python"
+              copy
+            />
+          </div>
+        </div>
+
+        <div class="raw-graph-note">
+          <h3>What Python records after resolution</h3>
           <p>
-            The record keeps <InlineCode code='module_name="..db"' language="python" />, line 12,
-            alias <InlineCode code="database" language="python" />, and two kinds. The
-            <InlineCode code="import_kind" language="python" /> describes context, while
-            <InlineCode code="resolution_kind" language="python" /> preserves relative-path
-            semantics even if the import is also conditional or type-only.
+            The raw graph is <InlineCode code="Graph = list[Edge]" language="python" />. Each
+            immutable edge stores a normalized absolute source path. Internal targets are absolute
+            file paths too. An external target may remain a module identifier such as
+            <InlineCode code="os" language="python" />, while an unresolved relative import or a
+            module found outside the project root can remain a normalized absolute candidate path.
+            The edge also carries an <InlineCode code="external" language="python" /> flag and
+            import kinds such as
+            <InlineCode code="relative" language="text" />,
+            <InlineCode code="conditional" language="text" />, or
+            <InlineCode code="type" language="text" />. There is no separate node table. A self-edge
+            for every discovered file preserves files with no imports; equal source-target pairs are
+            merged and their import kinds are combined.
           </p>
-        </article>
-        <article>
-          <span>3 / Resolve</span>
-          <strong>
-            <InlineCode code="src/db.py" language="python" />
-          </strong>
-          <p>
-            Leading dots move from the importing package. The resolver tests a module file and then
-            a package <InlineCode code="__init__.py" language="python" />. A path inside the
-            discovered project becomes an internal target.
-          </p>
-        </article>
-        <article>
-          <span>4 / Record</span>
-          <strong>
-            <InlineCode code="Edge(view.py → db.py)" language="python" />
-          </strong>
-          <p>
-            Only after resolution can ArchUnitPython store the importing path, resolved target,
-            <InlineCode code="external=False" language="python" />, and the import kinds as one
-            directed evidence record.
-          </p>
-        </article>
+        </div>
       </div>
 
-      <div class="resolution-detail">
-        <div>
-          <p class="deep-kicker">Python resolution in source</p>
-          <h3>Resolve against files that actually exist.</h3>
+      <div
+        class="adapter-panel"
+        id="adapter-resolve-typescript"
+        role="tabpanel"
+        aria-labelledby="adapter-tab-typescript"
+        data-adapter-panel="typescript"
+        data-adapter-stage="resolve"
+        hidden
+      >
+        <div class="adapter-panel-intro adapter-panel-intro--compact">
+          <p class="deep-kicker">TypeScript adapter</p>
+          <h3>The import specifier becomes a target only inside a compiler context.</h3>
           <p>
-            Relative imports move from the source directory. Absolute imports are tested from the
-            project root and its parent. One from-import can yield multiple namespace-package alias
-            targets, so <InlineCode code="_resolve_import_targets()" language="python" /> returns a
-            list rather than one answer.
-          </p>
-          <p>
-            The excerpt is abridged only around its enclosing loops. Every shown branch and record
-            field comes from the current extractor.
+            Parsing can prove that <InlineCode code="ui.ts" language="typescript" /> contains
+            <InlineCode code="import '../db/db'" language="typescript" />. It cannot yet prove which
+            file that string names. A path alias such as
+            <InlineCode code="@payments/domain" language="typescript" /> could refer to a local
+            source file, a referenced project, or an installed package depending on the applicable
+            compiler options.
           </p>
         </div>
-        <div class="deep-code">
-          <CodeWindow
-            code={pythonResolution}
-            filename="extract_graph.py · abridged source"
-            language="python"
-            copy
-          />
+
+        <div class="python-edge-story" aria-label="One TypeScript import becoming a graph edge">
+          <article>
+            <span>1 / Observe</span>
+            <strong>
+              <InlineCode code="src/ui/ui.ts" language="typescript" />
+            </strong>
+            <p>The outer program loop supplies the importer; the AST supplies the module text.</p>
+          </article>
+          <article>
+            <span>2 / Choose context</span>
+            <strong>
+              <InlineCode code="sourceCompilerOptions" language="typescript" />
+            </strong>
+            <p>
+              ArchUnitTS finds every parsed config whose file list contains this source. A file can
+              belong to several referenced projects, so more than one context may be tried.
+            </p>
+          </article>
+          <article>
+            <span>3 / Resolve</span>
+            <strong>
+              <InlineCode code="ts.resolveModuleName()" language="typescript" />
+            </strong>
+            <p>
+              TypeScript combines module text, importer filename, compiler options, and the compiler
+              host. Results are deduplicated by target filename and external-library status.
+            </p>
+          </article>
+          <article>
+            <span>4 / Record</span>
+            <strong>
+              <InlineCode code="Edge(ui.ts → db.ts)" language="typescript" />
+            </strong>
+            <p>
+              Paths are normalized relative to the root config directory, then stored with the
+              external flag and import kinds such as default, named, namespace, type, or value. A
+              side-effect-only import still creates an edge, but it contributes no import-kind
+              label.
+            </p>
+          </article>
+        </div>
+
+        <div class="resolution-detail">
+          <div>
+            <p class="deep-kicker">TypeScript resolution in source</p>
+            <h3>One source file may be resolved under several project contexts.</h3>
+            <p>
+              Unresolved imports are skipped. ArchUnitTS also skips a resolved target when its
+              root-relative path begins with <InlineCode code="node_modules" language="text" /> or
+              <InlineCode code="dist" language="text" />. Those prefixes are extractor constants,
+              not settings read from the selected config. The abridged excerpt below keeps the
+              fallback, cross-context deduplication, prefix checks, and error boundary while
+              condensing logging and counters.
+            </p>
+          </div>
+          <div class="deep-code">
+            <CodeWindow
+              code={typescriptResolution}
+              filename="extract-graph.ts · abridged source"
+              language="typescript"
+              copy
+            />
+          </div>
+        </div>
+
+        <div class="raw-graph-note">
+          <h3>What TypeScript records after resolution</h3>
+          <p>
+            The raw graph is an <InlineCode code="Edge[]" language="typescript" /> with source,
+            target, external status, and import kinds. It has no separate node table. ArchUnitTS
+            adds a self-edge for each project source file so import-free files remain represented.
+            Unlike the Python extractor, it does not merge duplicate endpoint pairs before
+            projection.
+          </p>
         </div>
       </div>
 
-      <aside class="language-analogy language-analogy--compact">
-        <div>
-          <p class="deep-kicker">The same stage in TypeScript</p>
-          <h3>Ask the configured compiler host to resolve the target.</h3>
+      {unavailableAdapters.map((adapter) => (
+        <div
+          class="adapter-panel adapter-unavailable"
+          id={'adapter-resolve-' + adapter.id}
+          role="tabpanel"
+          aria-labelledby={'adapter-tab-' + adapter.id}
+          data-adapter-panel={adapter.id}
+          data-adapter-stage="resolve"
+          hidden
+        >
+          <p class="deep-kicker">{adapter.label} adapter</p>
+          <h3>The detailed {adapter.label} resolution walkthrough is not available yet.</h3>
+          <p>
+            The shared graph, projection, fluent-rule, and evaluation chapters below still describe
+            the architecture-testing model used across the library family.
+          </p>
         </div>
-        <p>
-          <InlineCode code="ts.resolveModuleName()" language="typescript" /> receives the import
-          text, importing filename, compiler options, and compiler host. Its answer accounts for
-          aliases, extension rules, package metadata, and referenced configurations. ArchUnitTS
-          normalizes the resolved filename relative to the configuration root, then records the same
-          source, target, external flag, and import-kind evidence required by the graph model.
-        </p>
-      </aside>
+      ))}
 
       <div class="trace-intro">
-        <p class="deep-kicker">Verified execution evidence</p>
-        <h3>The equivalent TypeScript path is observable in a real debug run.</h3>
+        <p class="deep-kicker">Concrete trace from ArchUnitTS</p>
+        <h3>A real run makes the source-to-violation pipeline observable.</h3>
         <p>
           ArchUnitPython does not currently emit an equivalent edge-by-edge debug trace. The lab
           therefore uses ArchUnitTS to make discovery, compiler setup, import resolution,
@@ -743,7 +1297,8 @@ const chapters = [
           <p>
             A TypeScript <InlineCode code="Program" language="typescript" /> includes project files
             plus declaration files required by its configured type environment. The trace identifies
-            2 project files and 197 files from installed type packages.
+            2 project files and 197 files classified by the logger as coming from
+            <InlineCode code="node_modules" language="text" />.
           </p>
         </article>
         <article>
@@ -751,105 +1306,99 @@ const chapters = [
           <p>
             <InlineCode code="Processing import" language="text" /> and
             <InlineCode code="Resolved" language="text" /> show syntax becoming a target. The full
-            run recorded 132 raw edges; projection narrowed that to 124 dependency edges for rule
-            evaluation.
+            run recorded 132 raw edges. The file-rule projection grouped duplicate source-target
+            labels into 124 candidates for evaluation.
           </p>
         </article>
         <article>
           <span>Stages 5–6 / Select and judge</span>
           <p>
-            <InlineCode code="Found edge" language="text" /> is the projected candidate selected by
-            the rule. The following <InlineCode code="Violation found" language="text" /> line keeps
-            its source, target, accumulated raw evidence, and negated mood. The full unfiltered run,
-            unlike this displayed excerpt, also contains the self-edges that preserve isolated
-            files.
+            <InlineCode code="Found edge" language="text" /> logs each projected candidate before
+            the rule's filters and mood are applied. The following
+            <InlineCode code="Violation found" language="text" /> line is where this candidate is
+            confirmed as forbidden; it keeps the source, target, accumulated raw evidence, and
+            negated mood. The full raw run also contains the self-edges that preserve import-free
+            files, although this excerpt focuses on the forbidden UI-to-database dependency.
           </p>
         </article>
       </div>
 
       <div class="graph-contract">
-        <div>
-          <p class="deep-kicker">The graph contract</p>
-          <h3>In Python, the raw graph is a list of immutable edge records.</h3>
+        <p class="deep-kicker">Raw graph versus projected graph</p>
+        <h3>
+          Projection changes the viewing scale for one question. It does not discover new
+          dependencies.
+        </h3>
+        <p>
+          The raw graph is the adapter's file-level evidence. A rule may need to ask about those
+          exact files, or it may need a coarser view such as folders, layers, or business slices. A
+          projection is the small mapping step between those two levels. It can discard edges that
+          are irrelevant to the question, assign labels to each endpoint, and group edges that now
+          have the same label pair.
+        </p>
+
+        <div
+          class="projection-example"
+          aria-label="Two raw file dependencies projected into one slice dependency"
+        >
+          <div>
+            <span>Raw file facts</span>
+            <InlineCode code="orders/api.py → payments/client.py" language="text" />
+            <InlineCode code="orders/jobs.py → payments/client.py" language="text" />
+          </div>
+          <b aria-hidden="true">become</b>
+          <div>
+            <span>One slice-level candidate</span>
+            <InlineCode code="Orders → Payments" language="text" />
+            <p>
+              <InlineCode code="cumulated_edges" language="python" /> still contains both raw file
+              edges.
+            </p>
+          </div>
+        </div>
+
+        <p>
+          In this grouping example, neither contributing import is lost. The projected edge gives
+          the rule one <InlineCode code="Orders → Payments" language="text" /> candidate, while its
+          accumulated evidence still identifies the two exact imports to report when the rule fails.
+          A different projection may deliberately skip edges outside its question. This is why the
+          model needs both a raw graph and a projected graph.
+        </p>
+
+        <ol class="projection-steps">
+          <li>
+            <strong>Map or skip.</strong> A mapper returns labels for a raw edge or no value when
+            that edge is irrelevant.
+          </li>
+          <li>
+            <strong>Group equal labels.</strong> Edges with the same projected source and target
+            become one candidate.
+          </li>
+          <li>
+            <strong>Retain proof.</strong> Every contributing raw edge remains attached for
+            diagnostics and reports.
+          </li>
+        </ol>
+
+        <div class="projection-language-notes">
           <p>
-            <InlineCode code="Graph = list[Edge]" language="python" />. There is no separate node
-            table at this stage. Nodes are inferred from edge endpoints, and one self-edge per file
-            preserves source files that import nothing.
+            <strong>Python file dependency rules:</strong>
+            <InlineCode code="per_internal_edge()" language="python" /> removes external and
+            self-edges, keeps the full paths as labels, and groups equal pairs.
+          </p>
+          <p>
+            <strong>TypeScript file dependency rules:</strong>
+            <InlineCode code="perEdge()" language="typescript" /> keeps each raw edge's labels and
+            groups duplicate pairs. It does not automatically remove external or self-edges. The
+            real trace's 132 to 124 change is grouping, not a second scan.
           </p>
         </div>
-        <dl>
-          <div>
-            <dt>
-              <InlineCode code="source" language="python" />
-            </dt>
-            <dd>The importing file identity.</dd>
-          </div>
-          <div>
-            <dt>
-              <InlineCode code="target" language="python" />
-            </dt>
-            <dd>The resolved file or external module identity.</dd>
-          </div>
-          <div>
-            <dt>
-              <InlineCode code="external" language="python" />
-            </dt>
-            <dd>Whether the target belongs outside the analyzed project.</dd>
-          </div>
-          <div>
-            <dt>
-              <InlineCode code="import_kinds" language="python" />
-            </dt>
-            <dd>Syntax and context such as relative, type-only, conditional, value, or named.</dd>
-          </div>
-        </dl>
-        <p>
-          ArchUnitPython stores normalized absolute paths in raw edges. ArchUnitTS stores paths
-          relative to its configuration root. Each implementation must be internally stable;
-          projections create the labels that selectors and reports consume. Before projection,
-          <InlineCode code="_merge_edges()" language="python" /> combines equal source-target pairs
-          and unions their <InlineCode code="import_kinds" language="python" />.
-        </p>
-        <div class="projection-strip" aria-label="Raw graph projection steps">
-          <article>
-            <span>1 / Filter</span>
-            <strong>
-              <InlineCode code="per_internal_edge()" language="python" />
-            </strong>
-            <p>Return no mapping for external edges or self-edges.</p>
-          </article>
-          <b aria-hidden="true">→</b>
-          <article>
-            <span>2 / Label</span>
-            <strong>
-              <InlineCode code="MappedEdge" language="python" />
-            </strong>
-            <p>Turn surviving raw paths into stable source and target labels.</p>
-          </article>
-          <b aria-hidden="true">→</b>
-          <article>
-            <span>3 / Group</span>
-            <strong>
-              <InlineCode code="project_edges()" language="python" />
-            </strong>
-            <p>Group records that map to the same label pair.</p>
-          </article>
-          <b aria-hidden="true">→</b>
-          <article>
-            <span>4 / Preserve proof</span>
-            <strong>
-              <InlineCode code="cumulated_edges" language="python" />
-            </strong>
-            <p>Keep every contributing raw edge inside the projected edge.</p>
-          </article>
-        </div>
+
         <div class="stage-output">
           <span>Output of this chapter</span>
           <p>
-            A raw <InlineCode code="list[Edge]" language="python" /> plus the projected
-            <InlineCode code="list[ProjectedEdge]" language="python" /> a rule will inspect. The
-            latter is smaller because external edges, self-edges, and duplicate label pairs are no
-            longer separate candidates.
+            A raw edge list containing resolved facts, plus a question-specific list of projected
+            candidates whose accumulated edges preserve the underlying proof.
           </p>
         </div>
       </div>
@@ -865,6 +1414,12 @@ const chapters = [
           Building the chain records a subject, a mood, a predicate, an object, and optionally a
           rationale. Expensive work begins only at the terminal
           <InlineCode code="check()" language="python" /> or the test-framework assertion.
+        </p>
+        <p>
+          Chapters 02 and 03 use the language selector because discovery, parsing, and resolution
+          are adapter-specific. From this chapter onward, the machine is shared. Python and
+          TypeScript implementation differences are labeled explicitly; unavailable adapters are not
+          inferred from another language.
         </p>
       </div>
 
@@ -975,7 +1530,12 @@ const chapters = [
           <article>
             <span>2</span>
             <strong>Project</strong>
-            <p>Keep internal edges and create stable source and target labels.</p>
+            <p>
+              Create stable source and target labels for this rule. Python file-dependency rules
+              keep internal edges; TypeScript uses{' '}
+              <InlineCode code="perEdge()" language="typescript" />
+              and retains external and self-edges.
+            </p>
           </article>
           <article>
             <span>3</span>
@@ -1001,16 +1561,30 @@ const chapters = [
             <p>Keep the projected edge and its underlying raw imports.</p>
           </article>
         </div>
-        <div class="deep-code">
-          <p>
-            <span>Python</span> Two source-faithful excerpts, shown in execution order
-          </p>
-          <CodeWindow
-            code={pythonEvaluation}
-            filename="files.py + depend_on_files.py"
-            language="python"
-            copy
-          />
+        <div class="evaluation-code-stack">
+          <div class="deep-code">
+            <p>
+              <span>Python</span> Extract, project internal edges, then evaluate
+            </p>
+            <CodeWindow
+              code={pythonEvaluation}
+              filename="files.py + depend_on_files.py"
+              language="python"
+              copy
+            />
+          </div>
+          <div class="deep-code">
+            <p>
+              <span>TypeScript</span> Extract, project per edge, guard empty selections, then
+              evaluate
+            </p>
+            <CodeWindow
+              code={typescriptEvaluation}
+              filename="files.ts + depend-on-files.ts · abridged"
+              language="typescript"
+              copy
+            />
+          </div>
         </div>
       </div>
 
@@ -1022,6 +1596,16 @@ const chapters = [
           <p>
             This is logical AND across every configured filter. A source or target must satisfy all
             of them, not merely one.
+          </p>
+        </article>
+        <article>
+          <span>
+            <InlineCode code="EmptyTestViolation" language="typescript" />
+          </span>
+          <p>
+            TypeScript reports an empty-test violation when no source or target candidate matches,
+            unless <InlineCode code="allowEmptyTests" language="typescript" /> is enabled. This
+            prevents a misspelled path from passing silently.
           </p>
         </article>
         <article>
@@ -1061,13 +1645,13 @@ const chapters = [
         </div>
         <div class="eval-row">
           <strong>src/ui/view.py</strong>
-          <strong>src/ui/view.py</strong>
+          <strong>src/ui/presenter.py</strong>
           <span>yes</span>
           <span>no</span>
           <em>ignored</em>
         </div>
         <div class="eval-row">
-          <strong>src/db.py</strong>
+          <strong>src/core/config.py</strong>
           <strong>src/db.py</strong>
           <span>no</span>
           <span>yes</span>
@@ -1087,16 +1671,20 @@ const chapters = [
           <InlineCode code="allow_empty_tests" language="python" /> is enabled. The Python
           <InlineCode code="DependOnFileCondition" language="python" /> shown above does not
           currently add that guard. This is concrete terminal behavior, not a magical property of
-          the graph, and callers should scope dependency rules deliberately.
+          the graph, and callers should scope dependency rules deliberately. TypeScript's dependency
+          condition checks both the source and target selections and returns an
+          <InlineCode code="EmptyTestViolation" language="typescript" /> by default when either is
+          empty.
         </p>
       </div>
 
       <div class="stage-output">
         <span>Output of evaluation</span>
         <p>
-          A <InlineCode code="list[Violation]" language="python" />. Each dependency finding keeps
-          the projected edge, its <InlineCode code="cumulated_edges" language="python" />, and
-          whether the rule was negated. Nothing has failed the test runner yet.
+          Python returns a <InlineCode code="list[Violation]" language="python" />; TypeScript
+          resolves a <InlineCode code={'Promise<Violation[]>'} language="typescript" />. Each
+          dependency finding keeps the projected edge, its accumulated raw edges, and whether the
+          rule was negated. Nothing has failed the test runner yet.
         </p>
       </div>
     </div>
@@ -1189,7 +1777,7 @@ const chapters = [
         </p>
       </div>
 
-      <div class="assertion-grid">
+      <div class="assertion-code-pair">
         <div class="deep-code">
           <p>
             <span>Python</span> Abridged source from the test assertion adapter
@@ -1201,38 +1789,51 @@ const chapters = [
             copy
           />
         </div>
-        <div class="assertion-steps">
-          <article>
-            <span>01</span>
-            <p>
-              <InlineCode code="checkable.check(options)" language="python" /> returns a list of
-              typed violations.
-            </p>
-          </article>
-          <article>
-            <span>02</span>
-            <p>
-              If the list is empty, <InlineCode code="assert_passes()" language="python" /> returns
-              normally.
-            </p>
-          </article>
-          <article>
-            <span>03</span>
-            <p>
-              If findings exist, the formatter includes their concrete details and the optional{' '}
-              <InlineCode code="because_reason" language="python" />.
-            </p>
-          </article>
-          <article>
-            <span>04</span>
-            <p>
-              Only then does the adapter raise{' '}
-              <InlineCode code="AssertionError" language="python" />. TypeScript's{' '}
-              <InlineCode code="toPassAsync()" language="typescript" /> performs the corresponding
-              runner integration.
-            </p>
-          </article>
+        <div class="deep-code">
+          <p>
+            <span>TypeScript</span> The shared Jest and Vitest matcher boundary
+          </p>
+          <CodeWindow
+            code={typescriptAssertionBoundary}
+            filename="jest-adapter.ts · equivalent path in Vitest"
+            language="typescript"
+            copy
+          />
         </div>
+      </div>
+      <div class="assertion-steps assertion-steps--wide">
+        <article>
+          <span>01</span>
+          <p>
+            Python <InlineCode code="checkable.check(options)" language="python" /> and TypeScript{' '}
+            <InlineCode code="checkable.check(options)" language="typescript" /> return typed
+            violation data rather than failing a test themselves.
+          </p>
+        </article>
+        <article>
+          <span>02</span>
+          <p>
+            With no findings, Python returns normally. TypeScript's matcher produces a result with
+            <InlineCode code="pass: true" language="typescript" />.
+          </p>
+        </article>
+        <article>
+          <span>03</span>
+          <p>
+            With findings, Python formats concrete details and the optional
+            <InlineCode code="because_reason" language="python" />. TypeScript maps each finding
+            through <InlineCode code="ViolationFactory.from()" language="typescript" /> and keeps
+            every accumulated raw edge for diagnostics.
+          </p>
+        </article>
+        <article>
+          <span>04</span>
+          <p>
+            Python raises <InlineCode code="AssertionError" language="python" />. TypeScript returns
+            <InlineCode code="{ pass, message }" language="typescript" />; Jest or Vitest turns
+            <InlineCode code="pass: false" language="typescript" /> into the failed test.
+          </p>
+        </article>
       </div>
 
       <div class="stage-output">
@@ -1290,6 +1891,64 @@ const chapters = [
   const root = document.querySelector<HTMLElement>('[data-deep-how]');
 
   if (root) {
+    const adapterPicker = root.querySelector<HTMLElement>('[data-adapter-picker]');
+    const adapterTabs = Array.from(root.querySelectorAll<HTMLButtonElement>('[data-adapter-tab]'));
+    const adapterPanels = Array.from(root.querySelectorAll<HTMLElement>('[data-adapter-panel]'));
+    const adapterStatus = root.querySelector<HTMLElement>('[data-adapter-status]');
+    const validAdapters = new Set(adapterTabs.map((tab) => tab.dataset.adapterTab ?? ''));
+
+    const selectAdapter = (adapterId: string, focusTab = false, persist = true) => {
+      if (!validAdapters.has(adapterId)) return;
+      adapterTabs.forEach((tab) => {
+        const selected = tab.dataset.adapterTab === adapterId;
+        tab.setAttribute('aria-selected', selected ? 'true' : 'false');
+        tab.tabIndex = selected ? 0 : -1;
+        if (selected && focusTab) tab.focus();
+      });
+      adapterPanels.forEach((panel) => {
+        panel.hidden = panel.dataset.adapterPanel !== adapterId;
+      });
+      root.dataset.adapter = adapterId;
+      const selectedTab = adapterTabs.find((tab) => tab.dataset.adapterTab === adapterId);
+      const label = selectedTab?.childNodes[0]?.textContent?.trim() ?? adapterId;
+      if (adapterStatus) adapterStatus.textContent = `${label} adapter selected.`;
+      if (persist) {
+        try {
+          globalThis.localStorage.setItem('archunit-how-language', adapterId);
+        } catch {
+          // The selected tab still works when storage is unavailable.
+        }
+      }
+    };
+
+    let initialAdapter = 'python';
+    const queryAdapter = new URL(globalThis.location.href).searchParams.get('language');
+    try {
+      const storedAdapter = globalThis.localStorage.getItem('archunit-how-language');
+      if (storedAdapter && validAdapters.has(storedAdapter)) initialAdapter = storedAdapter;
+    } catch {
+      // Keep the Python default when storage is unavailable.
+    }
+    if (queryAdapter && validAdapters.has(queryAdapter)) initialAdapter = queryAdapter;
+
+    adapterTabs.forEach((tab, index) => {
+      tab.addEventListener('click', () => selectAdapter(tab.dataset.adapterTab ?? 'python'));
+      tab.addEventListener('keydown', (event) => {
+        let nextIndex: number;
+        if (event.key === 'ArrowRight') nextIndex = (index + 1) % adapterTabs.length;
+        else if (event.key === 'ArrowLeft') {
+          nextIndex = (index - 1 + adapterTabs.length) % adapterTabs.length;
+        } else if (event.key === 'Home') nextIndex = 0;
+        else if (event.key === 'End') nextIndex = adapterTabs.length - 1;
+        else return;
+        event.preventDefault();
+        const nextId = adapterTabs[nextIndex]?.dataset.adapterTab;
+        if (nextId) selectAdapter(nextId, true);
+      });
+    });
+    selectAdapter(initialAdapter, false, false);
+    adapterPicker?.removeAttribute('hidden');
+
     const lab = root.querySelector<HTMLElement>('[data-evidence-lab]');
     const runButton = lab?.querySelector<HTMLButtonElement>('[data-run-trace]');
     const showAllButton = lab?.querySelector<HTMLButtonElement>('[data-show-trace]');
@@ -2334,6 +2993,11 @@ const chapters = [
   .evaluation-machine {
     grid-template-columns: minmax(460px, 0.95fr) minmax(0, 1.05fr);
   }
+  .evaluation-code-stack {
+    display: grid;
+    min-width: 0;
+    gap: 34px;
+  }
   .evaluation-flow {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
@@ -2368,7 +3032,7 @@ const chapters = [
   }
   .evaluation-notes {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     margin-top: 20px;
     gap: 12px;
   }
@@ -2497,12 +3161,25 @@ const chapters = [
   .deep-feedback-section {
     background: var(--section-deep);
   }
+  .assertion-code-pair {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    margin-top: 58px;
+    gap: clamp(28px, 4vw, 58px);
+    align-items: start;
+  }
   .assertion-grid {
     grid-template-columns: minmax(540px, 1.1fr) minmax(0, 0.9fr);
   }
   .assertion-steps {
     display: grid;
     border-top: 1px solid var(--line);
+  }
+  .assertion-steps--wide {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    max-width: 1080px;
+    margin-top: 42px;
+    column-gap: 34px;
   }
   .assertion-steps article {
     display: grid;
@@ -2580,6 +3257,7 @@ const chapters = [
     .resolution-detail,
     .evaluation-machine,
     .assertion-grid,
+    .assertion-code-pair,
     .graph-contract,
     .empty-test-note {
       grid-template-columns: 1fr;
@@ -2690,6 +3368,9 @@ const chapters = [
     .evaluation-notes {
       grid-template-columns: 1fr;
     }
+    .assertion-steps--wide {
+      grid-template-columns: 1fr;
+    }
     .memory-checkpoint > b,
     .ast-visual > b {
       transform: rotate(90deg);
@@ -2782,6 +3463,7 @@ const chapters = [
   .resolution-detail > *,
   .evaluation-machine > *,
   .assertion-grid > *,
+  .assertion-code-pair > *,
   .graph-contract > *,
   .terminal-foot > * {
     min-width: 0;
@@ -2796,6 +3478,340 @@ const chapters = [
     }
     .deep-equation {
       padding: 12px;
+    }
+  }
+  /* Language-adapter teaching layer. These late rules intentionally simplify the earlier card UI. */
+  .deep-how [hidden] {
+    display: none !important;
+  }
+  .deep-section-heading {
+    max-width: 960px;
+    padding: 0 0 30px;
+    border-bottom: 1px solid var(--line);
+    border-left: 0;
+  }
+  .deep-section-heading h2 {
+    font-size: clamp(1.9rem, 2.6vw, 2.75rem);
+  }
+  .adapter-picker {
+    display: grid;
+    grid-template-columns: minmax(220px, 0.32fr) minmax(0, 1fr);
+    padding: 22px 0;
+    border-top: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+    gap: 30px;
+    align-items: center;
+  }
+  .adapter-picker > div:first-child > p:last-child {
+    max-width: 440px;
+    color: var(--muted-bright);
+    font-size: 0.9rem;
+    line-height: 1.55;
+  }
+  .adapter-tabs {
+    display: flex;
+    min-width: 0;
+    gap: 7px;
+    flex-wrap: wrap;
+  }
+  .adapter-tabs button {
+    display: inline-flex;
+    min-height: 40px;
+    padding: 9px 13px;
+    border: 1px solid var(--line-strong);
+    border-radius: 999px;
+    background: transparent;
+    color: var(--muted-bright);
+    font: inherit;
+    font-size: 0.78rem;
+    font-weight: 710;
+    align-items: center;
+    gap: 7px;
+    cursor: pointer;
+  }
+  .adapter-tabs button:hover {
+    border-color: color-mix(in srgb, var(--deep-blue) 60%, var(--line));
+    color: var(--text);
+  }
+  .adapter-tabs button[aria-selected='true'] {
+    border-color: var(--deep-blue);
+    background: color-mix(in srgb, var(--deep-blue) 14%, var(--ink-raised));
+    color: var(--text);
+  }
+  .adapter-tabs button:focus-visible {
+    outline: 2px solid var(--deep-cyan);
+    outline-offset: 3px;
+  }
+  .adapter-tabs button span {
+    color: var(--muted);
+    font-size: 0.57rem;
+    font-weight: 750;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .adapter-status {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+  .adapter-panel {
+    margin-top: 46px;
+    scroll-margin-top: 76px;
+  }
+  .adapter-panel-intro {
+    max-width: 920px;
+    margin-bottom: 30px;
+  }
+  .adapter-panel-intro--compact {
+    margin-bottom: 26px;
+  }
+  .adapter-panel-intro h3 {
+    max-width: 820px;
+    margin-top: 9px;
+    font-size: clamp(1.55rem, 2.2vw, 2.15rem);
+    line-height: 1.14;
+    letter-spacing: -0.035em;
+  }
+  .adapter-panel-intro > p:last-child,
+  .raw-graph-note p,
+  .graph-contract > p {
+    max-width: 850px;
+    margin-top: 16px;
+    color: var(--muted-bright);
+    line-height: 1.72;
+  }
+  .adapter-steps {
+    max-width: 1040px;
+    margin: 0;
+    padding: 0;
+    border-top: 1px solid var(--line);
+    list-style: none;
+  }
+  .adapter-steps > li {
+    display: grid;
+    grid-template-columns: 56px minmax(0, 1fr);
+    padding: 28px 0;
+    border-bottom: 1px solid var(--line);
+    gap: 24px;
+  }
+  .adapter-step-number {
+    padding-top: 4px;
+    color: var(--deep-blue);
+    font-size: 0.72rem;
+    font-weight: 780;
+    letter-spacing: 0.12em;
+  }
+  .adapter-steps h3 {
+    margin: 0 0 12px;
+    font-size: clamp(1.18rem, 1.55vw, 1.46rem);
+    line-height: 1.2;
+  }
+  .adapter-steps p {
+    max-width: 860px;
+    color: var(--muted-bright);
+    line-height: 1.72;
+  }
+  .plain-example {
+    display: grid;
+    max-width: 760px;
+    margin: 18px 0;
+    border-top: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+  }
+  .plain-example p {
+    display: grid;
+    grid-template-columns: 150px minmax(0, 1fr);
+    padding: 11px 0;
+    gap: 18px;
+  }
+  .plain-example p + p {
+    border-top: 1px solid var(--line);
+  }
+  .deep-code-pair--foundations {
+    align-items: start;
+  }
+  .deep-code {
+    display: grid;
+    min-width: 0;
+    grid-template-rows: auto auto;
+    gap: 12px;
+    align-content: start;
+  }
+  .deep-code > p {
+    margin: 0;
+  }
+  .deep-code :global(.code-window) {
+    height: auto;
+    min-height: 0;
+  }
+  .deep-code :global(.code-window__bar) {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+  }
+  .deep-code :global(.code-window__filename) {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .raw-graph-note {
+    max-width: 980px;
+    margin-top: 34px;
+    padding-top: 26px;
+    border-top: 1px solid var(--line);
+  }
+  .raw-graph-note h3 {
+    font-size: 1.35rem;
+  }
+  .adapter-unavailable {
+    max-width: 820px;
+    padding: 34px 0;
+    border-top: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+  }
+  .adapter-unavailable h3 {
+    margin-top: 10px;
+    font-size: clamp(1.45rem, 2.2vw, 2.05rem);
+  }
+  .adapter-unavailable > p:last-child {
+    max-width: 690px;
+    margin-top: 16px;
+    color: var(--muted-bright);
+    line-height: 1.68;
+  }
+  .graph-contract {
+    display: block;
+    max-width: 1100px;
+    margin-top: 60px;
+    padding: 34px 0 0;
+    border: 0;
+    border-top: 1px solid var(--line-strong);
+    border-radius: 0;
+  }
+  .graph-contract h3 {
+    max-width: 900px;
+    margin-top: 10px;
+    font-size: clamp(1.65rem, 2.45vw, 2.45rem);
+    line-height: 1.12;
+    letter-spacing: -0.035em;
+  }
+  .projection-example {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 0.9fr);
+    margin: 30px 0;
+    padding: 24px 0;
+    border-top: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+    gap: 28px;
+    align-items: center;
+  }
+  .projection-example > div {
+    display: grid;
+    min-width: 0;
+    gap: 9px;
+  }
+  .projection-example span {
+    margin-bottom: 3px;
+    color: var(--deep-blue);
+    font-size: 0.68rem;
+    font-weight: 760;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+  .projection-example code {
+    overflow-wrap: anywhere;
+    color: var(--text);
+    font-size: 0.86rem;
+  }
+  .projection-example > b {
+    color: var(--muted);
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .projection-example p {
+    color: var(--muted-bright);
+    font-size: 0.82rem;
+    line-height: 1.55;
+  }
+  .projection-steps {
+    display: grid;
+    max-width: 880px;
+    margin: 26px 0 0;
+    padding: 0;
+    border-top: 1px solid var(--line);
+    list-style: none;
+  }
+  .projection-steps li {
+    padding: 15px 0;
+    border-bottom: 1px solid var(--line);
+    color: var(--muted-bright);
+    line-height: 1.62;
+  }
+  .projection-steps strong {
+    color: var(--text);
+  }
+  .projection-language-notes {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    margin-top: 28px;
+    gap: 30px;
+  }
+  .projection-language-notes p {
+    color: var(--muted-bright);
+    font-size: 0.9rem;
+    line-height: 1.66;
+  }
+  .projection-language-notes strong {
+    display: block;
+    margin-bottom: 7px;
+    color: var(--text);
+  }
+  .graph-contract .stage-output {
+    display: block;
+    margin-top: 32px;
+  }
+  @media (max-width: 760px) {
+    .deep-section-heading {
+      padding-left: 0;
+    }
+    .adapter-picker {
+      grid-template-columns: 1fr;
+      gap: 18px;
+    }
+    .adapter-tabs {
+      padding: 3px 1px 8px;
+      overflow-x: auto;
+      flex-wrap: nowrap;
+      scrollbar-width: thin;
+    }
+    .adapter-tabs button {
+      flex: 0 0 auto;
+    }
+    .adapter-panel {
+      margin-top: 38px;
+      scroll-margin-top: 68px;
+    }
+    .adapter-steps > li {
+      grid-template-columns: 38px minmax(0, 1fr);
+      gap: 14px;
+    }
+    .plain-example p {
+      grid-template-columns: 1fr;
+      gap: 6px;
+    }
+    .projection-example,
+    .projection-language-notes {
+      grid-template-columns: 1fr;
+    }
+    .projection-example > b {
+      justify-self: start;
     }
   }
 </style>
