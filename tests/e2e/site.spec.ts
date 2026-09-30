@@ -143,6 +143,8 @@ test('ArchUnitGo uses its official mark, a muted demo, and readable installation
     'playlist=dFtiuRMr_MQ',
     'playsinline=1',
     'controls=1',
+    'enablejsapi=1',
+    'origin=https%3A%2F%2Fwww.archunit.net',
   ]) {
     expect(demoSource).toContain(parameter);
   }

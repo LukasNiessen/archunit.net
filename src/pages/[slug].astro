@@ -22,7 +22,7 @@ interface Props {
 const { project } = Astro.props;
 const documentation = documentationBySlug[project.slug]!;
 const demoEmbedUrl = project.demo
-  ? `https://www.youtube-nocookie.com/embed/${project.demo.youtubeId}?autoplay=1&mute=1&loop=1&playlist=${project.demo.youtubeId}&playsinline=1&controls=1&rel=0`
+  ? `https://www.youtube-nocookie.com/embed/${project.demo.youtubeId}?autoplay=1&mute=1&loop=1&playlist=${project.demo.youtubeId}&playsinline=1&controls=1&rel=0&enablejsapi=1&origin=https%3A%2F%2Fwww.archunit.net`
   : undefined;
 const related = projects
   .filter((candidate) => candidate.slug !== project.slug)
@@ -156,6 +156,7 @@ const schema = [
             <iframe
               src={demoEmbedUrl}
               title={project.demo.title}
+              data-project-demo-player
               loading="lazy"
               allow="autoplay; encrypted-media; picture-in-picture; web-share"
               referrerpolicy="strict-origin-when-cross-origin"
@@ -360,5 +361,23 @@ const schema = [
         }, 1600);
       });
     });
+
+    const demoPlayer = document.querySelector<HTMLIFrameElement>('[data-project-demo-player]');
+    if (demoPlayer) {
+      const mutePlayer = () => {
+        demoPlayer.contentWindow?.postMessage(
+          JSON.stringify({ event: 'command', func: 'mute', args: [] }),
+          'https://www.youtube-nocookie.com',
+        );
+      };
+      const guaranteeMutedStart = () => {
+        mutePlayer();
+        window.setTimeout(mutePlayer, 400);
+        window.setTimeout(mutePlayer, 1200);
+      };
+
+      demoPlayer.addEventListener('load', guaranteeMutedStart);
+      guaranteeMutedStart();
+    }
   </script>
 </BaseLayout>
