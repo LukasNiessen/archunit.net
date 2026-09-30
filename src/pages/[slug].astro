@@ -21,8 +21,9 @@ interface Props {
 
 const { project } = Astro.props;
 const documentation = documentationBySlug[project.slug]!;
-const logo =
-  project.slug === 'typescript' ? 'typescript' : project.slug === 'python' ? 'python' : undefined;
+const demoEmbedUrl = project.demo
+  ? `https://www.youtube-nocookie.com/embed/${project.demo.youtubeId}?autoplay=1&mute=1&loop=1&playlist=${project.demo.youtubeId}&playsinline=1&controls=1&rel=0`
+  : undefined;
 const related = projects
   .filter((candidate) => candidate.slug !== project.slug)
   .sort((a, b) => {
@@ -83,7 +84,7 @@ const schema = [
                 accent={project.accent}
                 accentSoft={project.accentSoft}
                 size="large"
-                logo={logo}
+                logo={project.logo}
               />
               <h1>{project.name}</h1>
             </div>
@@ -131,6 +132,39 @@ const schema = [
         </div>
       </div>
     </section>
+
+    {project.demo && demoEmbedUrl && (
+      <section
+        class="project-content-section project-demo-section"
+        aria-labelledby="project-demo-title"
+      >
+        <div class="shell project-demo-grid">
+          <div class="project-demo-copy" data-reveal>
+            <p class="eyebrow">Silent product demo</p>
+            <h2 id="project-demo-title">{project.demo.heading}</h2>
+            <p>{project.demo.description}</p>
+            <a
+              class="text-link project-demo-link"
+              href={`https://www.youtube.com/watch?v=${project.demo.youtubeId}`}
+              target="_blank"
+              rel="noreferrer"
+            >
+              Watch on YouTube ↗
+            </a>
+          </div>
+          <div class="project-demo-frame" data-reveal>
+            <iframe
+              src={demoEmbedUrl}
+              title={project.demo.title}
+              loading="lazy"
+              allow="autoplay; encrypted-media; picture-in-picture; web-share"
+              referrerpolicy="strict-origin-when-cross-origin"
+              allowfullscreen
+            ></iframe>
+          </div>
+        </div>
+      </section>
+    )}
 
     <section class="project-content-section language-primer-section">
       <div class="language-primer shell">

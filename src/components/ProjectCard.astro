@@ -8,8 +8,6 @@ interface Props {
 }
 
 const { project, featured = false } = Astro.props;
-const logo =
-  project.slug === 'typescript' ? 'typescript' : project.slug === 'python' ? 'python' : undefined;
 const href = '/' + project.slug + '/';
 const style = '--card-accent:' + project.accent + ';--card-soft:' + project.accentSoft;
 ---
@@ -27,7 +25,7 @@ const style = '--card-accent:' + project.accent + ';--card-soft:' + project.acce
       accent={project.accent}
       accentSoft={project.accentSoft}
       size={featured ? 'large' : 'medium'}
-      logo={logo}
+      logo={project.logo}
     />
     {project.slug === 'php' && (
       <span class:list={['status-pill', 'status-pill--' + project.status]}>

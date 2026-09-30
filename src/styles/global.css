@@ -4864,13 +4864,15 @@
     padding: 16px 18px;
     border: 1px solid var(--line);
     border-radius: 11px;
-    background: rgba(255, 255, 255, 0.025);
-    color: var(--project-accent);
+    background: var(--ink-raised);
+    color: var(--text);
     font-family: var(--mono);
     font-size: 0.73rem;
   }
   .install-command code {
     overflow: hidden;
+    color: var(--text);
+    font-weight: 650;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
@@ -4884,6 +4886,49 @@
     color: var(--muted);
     cursor: pointer;
     font-size: 0.65rem;
+  }
+  .install-command button:hover {
+    color: var(--text);
+  }
+
+  .project-demo-section {
+    background: var(--section-deep);
+  }
+  .project-demo-grid {
+    display: grid;
+    align-items: center;
+    grid-template-columns: minmax(260px, 0.62fr) minmax(0, 1.38fr);
+    gap: clamp(48px, 7vw, 104px);
+  }
+  .project-demo-copy h2 {
+    max-width: 560px;
+    margin-block: 18px 22px;
+    font-size: clamp(2.2rem, 4.25vw, 4.5rem);
+  }
+  .project-demo-copy > p:last-of-type {
+    max-width: 580px;
+    color: var(--muted-bright);
+    font-size: clamp(1rem, 1.2vw, 1.14rem);
+  }
+  .project-demo-link {
+    display: inline-flex;
+    margin-top: 28px;
+  }
+  .project-demo-frame {
+    position: relative;
+    overflow: hidden;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    border: 1px solid var(--line-strong);
+    border-radius: 16px;
+    background: #03060a;
+  }
+  .project-demo-frame iframe {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border: 0;
   }
 
   .feature-grid {
@@ -5507,6 +5552,7 @@
     .detail-hero__grid,
     .language-primer,
     .deep-dive-grid,
+    .project-demo-grid,
     .origin-grid {
       grid-template-columns: 1fr;
     }
@@ -5640,6 +5686,7 @@
     .blog-grid,
     .language-primer,
     .deep-dive-grid,
+    .project-demo-grid,
     .origin-grid {
       grid-template-columns: 1fr;
     }
@@ -5681,6 +5728,7 @@
     }
     .language-primer,
     .deep-dive-grid,
+    .project-demo-grid,
     .origin-grid {
       gap: 52px;
     }

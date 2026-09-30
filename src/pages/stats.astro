@@ -69,12 +69,6 @@ const schema = {
         {libraryStats.map((library) => {
           const project = projectBySlug.get(library.slug)!;
           const width = maxStars === 0 ? 0 : Math.max((library.stars / maxStars) * 100, 0.8);
-          const logo =
-            library.slug === 'typescript'
-              ? 'typescript'
-              : library.slug === 'python'
-                ? 'python'
-                : undefined;
           return (
             <a class="stars-row" href={'/' + library.slug + '/'}>
               <ProjectMark
@@ -83,7 +77,7 @@ const schema = {
                 accent={project.accent}
                 accentSoft={project.accentSoft}
                 size="small"
-                logo={logo}
+                logo={project.logo}
               />
               <span class="stars-row__name">{library.name}</span>
               <span class="stars-row__track" aria-hidden="true">

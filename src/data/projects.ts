@@ -1,4 +1,12 @@
 export type ProjectStatus = 'stable' | 'preview' | 'planned';
+export type ProjectLogo = 'typescript' | 'python' | 'go';
+
+export interface ProjectDemo {
+  youtubeId: string;
+  title: string;
+  heading: string;
+  description: string;
+}
 
 export interface ArcUnitProject {
   slug: string;
@@ -26,6 +34,8 @@ export interface ArcUnitProject {
   docsUrl?: string;
   packageUrl?: string;
   packageLabel?: string;
+  logo?: ProjectLogo;
+  demo?: ProjectDemo;
   features: string[];
   useCases: string[];
   maturityNote: string;
@@ -42,6 +52,7 @@ export const projects: ArcUnitProject[] = [
     name: 'ArchUnitTS',
     language: 'TypeScript',
     monogram: 'TS',
+    logo: 'typescript',
     repo: github + '/ArchUnitTS',
     description:
       'Architecture tests for TypeScript and JavaScript, from dependency rules to metrics and diagrams.',
@@ -114,6 +125,7 @@ export const projects: ArcUnitProject[] = [
     name: 'ArchUnitPython',
     language: 'Python',
     monogram: 'PY',
+    logo: 'python',
     repo: github + '/ArchUnitPython',
     description:
       'Zero-runtime-dependency architecture tests for Python projects and any test framework.',
@@ -483,6 +495,7 @@ export const projects: ArcUnitProject[] = [
     name: 'ArchUnitGo',
     language: 'Go',
     monogram: 'GO',
+    logo: 'go',
     repo: github + '/ArchUnitGo',
     description:
       'Architecture policies as plain Go test values, backed by the Go toolchain and x/tools.',
@@ -501,6 +514,13 @@ export const projects: ArcUnitProject[] = [
     accentSoft: 'rgba(114, 216, 232, 0.14)',
     install: 'go get github.com/LukasNiessen/ArchUnitGo',
     installLabel: 'Go module',
+    demo: {
+      youtubeId: 'dFtiuRMr_MQ',
+      title: 'ArchUnitGo architecture test demo',
+      heading: 'Watch an architecture rule run with go test.',
+      description:
+        'This silent walkthrough follows an ArchUnitGo rule from fluent definition to test output. Playback starts muted, loops in place, and keeps standard controls available so you can pause at any step.',
+    },
     code: [
       'package architecture_test',
       '',

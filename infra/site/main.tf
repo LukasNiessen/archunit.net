@@ -149,7 +149,7 @@ resource "aws_cloudfront_response_headers_policy" "security" {
 
   security_headers_config {
     content_security_policy {
-      content_security_policy = "default-src 'self'; base-uri 'none'; frame-ancestors 'none'; form-action 'none'; object-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://avatars.githubusercontent.com; font-src 'self'; connect-src 'self'; upgrade-insecure-requests"
+      content_security_policy = "default-src 'self'; base-uri 'none'; frame-ancestors 'none'; frame-src https://www.youtube-nocookie.com; form-action 'none'; object-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://avatars.githubusercontent.com; font-src 'self'; connect-src 'self'; upgrade-insecure-requests"
       override                = true
     }
 

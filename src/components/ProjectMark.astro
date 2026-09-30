@@ -1,15 +1,22 @@
 ---
+import type { ProjectLogo } from '@data/projects';
+
 interface Props {
   monogram: string;
   name: string;
   accent: string;
   accentSoft: string;
   size?: 'small' | 'medium' | 'large';
-  logo?: 'typescript' | 'python' | undefined;
+  logo?: ProjectLogo | undefined;
 }
 
 const { monogram, name, accent, accentSoft, size = 'medium', logo } = Astro.props;
 const style = '--mark-accent:' + accent + ';--mark-soft:' + accentSoft;
+const logoSources: Record<ProjectLogo, string> = {
+  typescript: '/logos/archunitts.png',
+  python: '/logos/archunitpython.png',
+  go: '/logos/archunitgo.jpg',
+};
 ---
 
 <span
@@ -18,13 +25,7 @@ const style = '--mark-accent:' + accent + ';--mark-soft:' + accentSoft;
   aria-hidden="true"
 >
   {logo ? (
-    <img
-      src={logo === 'typescript' ? '/logos/archunitts.png' : '/logos/archunitpython.png'}
-      alt=""
-      width="96"
-      height="96"
-      loading="lazy"
-    />
+    <img src={logoSources[logo]} alt="" width="96" height="96" loading="lazy" />
   ) : (
     <span>{monogram}</span>
   )}

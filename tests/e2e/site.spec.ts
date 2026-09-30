@@ -122,6 +122,70 @@ test('every implementation has an indexable detail page', async ({ page }) => {
   }
 });
 
+test('ArchUnitGo uses its official mark, a muted demo, and readable installation text', async ({
+  page,
+}) => {
+  await page.goto('/go/');
+
+  await expect(page.locator('.detail-title-row .project-mark img')).toHaveAttribute(
+    'src',
+    '/logos/archunitgo.jpg',
+  );
+
+  const demo = page.getByTitle('ArchUnitGo architecture test demo');
+  await expect(demo).toHaveCount(1);
+  const demoSource = (await demo.getAttribute('src')) ?? '';
+  expect(demoSource).toContain('https://www.youtube-nocookie.com/embed/dFtiuRMr_MQ?');
+  for (const parameter of [
+    'autoplay=1',
+    'mute=1',
+    'loop=1',
+    'playlist=dFtiuRMr_MQ',
+    'playsinline=1',
+    'controls=1',
+  ]) {
+    expect(demoSource).toContain(parameter);
+  }
+  await expect(page.getByRole('link', { name: 'Watch on YouTube' })).toHaveAttribute(
+    'href',
+    'https://www.youtube.com/watch?v=dFtiuRMr_MQ',
+  );
+
+  const frame = await page.locator('.project-demo-frame').boundingBox();
+  expect(frame).not.toBeNull();
+  expect((frame?.width ?? 0) / (frame?.height ?? 1)).toBeCloseTo(16 / 9, 1);
+
+  await page.evaluate(() => {
+    globalThis.localStorage.setItem('archunit-theme', 'light');
+    document.documentElement.dataset.theme = 'light';
+  });
+  const installContrast = await page.locator('.install-command').evaluate((element) => {
+    const channel = (value: number) => {
+      const normalized = value / 255;
+      return normalized <= 0.04045 ? normalized / 12.92 : ((normalized + 0.055) / 1.055) ** 2.4;
+    };
+    const luminance = (value: string) => {
+      const [red = 0, green = 0, blue = 0] = value.match(/[\d.]+/g)?.map(Number) ?? [];
+      return 0.2126 * channel(red) + 0.7152 * channel(green) + 0.0722 * channel(blue);
+    };
+    const foreground = luminance(getComputedStyle(element.querySelector('code')!).color);
+    const background = luminance(getComputedStyle(element).backgroundColor);
+    return (Math.max(foreground, background) + 0.05) / (Math.min(foreground, background) + 0.05);
+  });
+  expect(installContrast).toBeGreaterThanOrEqual(4.5);
+
+  await page.goto('/');
+  await expect(page.locator('.project-card[href="/go/"] .project-mark img')).toHaveAttribute(
+    'src',
+    '/logos/archunitgo.jpg',
+  );
+  await page.goto('/stats/');
+  await expect(page.locator('.stars-row[href="/go/"] .project-mark img')).toHaveAttribute(
+    'src',
+    '/logos/archunitgo.jpg',
+  );
+});
+
 test('library cards keep the active theme when hovered', async ({ page }) => {
   await page.goto('/');
   await page.evaluate(() => globalThis.localStorage.setItem('archunit-theme', 'light'));
@@ -510,7 +574,7 @@ test('stats, privacy, and thank-you pages expose intentional metadata', async ({
 });
 
 test('every rendered image has an alt attribute', async ({ page }) => {
-  for (const route of ['/', '/team/', '/team/lukas-niessen/', '/typescript/']) {
+  for (const route of ['/', '/team/', '/team/lukas-niessen/', '/typescript/', '/go/']) {
     await page.goto(route);
     const missingAlt = await page.locator('img:not([alt])').count();
     expect(missingAlt).toBe(0);
@@ -524,6 +588,7 @@ test('key pages do not overflow the viewport', async ({ page }) => {
     '/team/',
     '/team/lukas-niessen/',
     '/typescript/',
+    '/go/',
     '/blog/',
     '/how-archunit-works/',
     '/stats/',
