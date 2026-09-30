@@ -61,9 +61,22 @@ for (const [sectionId, screenshotName] of [
   await desktop.waitForTimeout(120);
   await desktop.screenshot({ path: `qa/${screenshotName}`, fullPage: false });
 }
-await desktop.getByRole('button', { name: 'Run the trace' }).click();
-await desktop.locator('[data-log-line]').last().waitFor({ state: 'visible', timeout: 10_000 });
+await desktop.locator('.memory-checkpoint').scrollIntoViewIfNeeded();
+await desktop.waitForTimeout(120);
+await desktop.screenshot({ path: 'qa/how-dark-python-checkpoint.png', fullPage: false });
+await desktop.locator('[data-evidence-lab]').scrollIntoViewIfNeeded();
+await desktop.waitForTimeout(120);
+await desktop.screenshot({ path: 'qa/how-dark-evidence-lab-detail.png', fullPage: false });
+await desktop.locator('.graph-contract').scrollIntoViewIfNeeded();
+await desktop.waitForTimeout(120);
+await desktop.screenshot({ path: 'qa/how-dark-projection.png', fullPage: false });
+await desktop.getByRole('button', { name: 'Replay trace' }).click();
+await desktop.getByText('Replay complete. One forbidden edge became one violation.').waitFor({
+  state: 'visible',
+  timeout: 10_000,
+});
 await desktop.locator('[data-evidence-terminal]').scrollIntoViewIfNeeded();
+await desktop.waitForTimeout(120);
 await desktop.screenshot({ path: 'qa/how-dark-real-trace.png', fullPage: false });
 await desktop.screenshot({ path: 'qa/how-dark-desktop.png', fullPage: true });
 await desktop.evaluate(() => globalThis.localStorage.setItem('archunit-theme', 'light'));
@@ -112,6 +125,9 @@ for (const [sectionId, screenshotName] of [
   await mobile.waitForTimeout(120);
   await mobile.screenshot({ path: `qa/${screenshotName}`, fullPage: false });
 }
+await mobile.locator('.graph-contract').scrollIntoViewIfNeeded();
+await mobile.waitForTimeout(120);
+await mobile.screenshot({ path: 'qa/how-mobile-projection.png', fullPage: false });
 await mobile.screenshot({ path: 'qa/how-mobile.png', fullPage: true });
 await mobile.goto(new URL('/stats/', target).href, { waitUntil: 'networkidle' });
 await mobile.screenshot({ path: 'qa/stats-mobile-viewport.png', fullPage: false });

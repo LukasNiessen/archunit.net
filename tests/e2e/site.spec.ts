@@ -312,10 +312,19 @@ test('the how-it-works walkthrough explains and advances the pipeline', async ({
   await expect(page.locator('.definition-band article')).toHaveCount(3);
   await expect(page.getByText(/directed acyclic graph/i)).toBeVisible();
   await expect(page.getByText(/abstract syntax tree/i)).toBeVisible();
-  await expect(page.locator('#discover-parse .code-window')).toHaveCount(3);
+  await expect(page.locator('#discover-parse .code-window')).toHaveCount(2);
+  await expect(page.locator('#discover-parse .ts-analog')).toHaveCount(3);
   await expect(page.locator('[data-evidence-terminal] [data-log-line]')).toHaveCount(17);
-  await page.getByRole('button', { name: 'Run the trace' }).click();
-  await expect(page.locator('[data-log-line]').first()).toHaveAttribute('data-visible', '');
+  await expect(page.locator('[data-log-line]').first()).toBeVisible();
+  await page.getByRole('button', { name: 'Replay trace' }).click();
+  await expect(page.getByRole('button', { name: 'Replaying...' })).toBeDisabled();
+  await expect(page.locator('[data-log-line]').first()).toHaveAttribute('data-complete', '');
+  await page.getByRole('button', { name: 'Show complete trace' }).click();
+  await expect(page.getByRole('button', { name: 'Replay trace' })).toBeEnabled();
+  await page.waitForTimeout(420);
+  await expect(page.locator('[data-log-line][data-active]')).toHaveCount(0);
+  await expect(page.locator('[data-log-line][data-complete]')).toHaveCount(17);
+  await expect(page.locator('[data-evidence-terminal] pre')).toHaveAttribute('aria-busy', 'false');
   await expect(page.locator('.evaluation-machine')).toBeVisible();
   await expect(page.getByText('What static analysis can support')).toBeVisible();
   const unformattedCodeCount = await page
@@ -332,11 +341,52 @@ test('the how-it-works walkthrough explains and advances the pipeline', async ({
     globalThis.scrollTo({ top: section.getBoundingClientRect().top + globalThis.scrollY - 140 });
   });
   await expect(page.locator('[data-chapter-link="evaluate"]')).toHaveAttribute('data-current', '');
-  await page.getByRole('button', { name: /add return edge/i }).click();
-  await expect(page.getByRole('button', { name: /remove return edge/i })).toHaveAttribute(
-    'aria-pressed',
-    'true',
+  await expect(page.locator('[data-chapter-link="evaluate"]')).toHaveAttribute(
+    'aria-current',
+    'location',
   );
+  await expect(page.locator('[data-chapter-link][aria-current="location"]')).toHaveCount(1);
+  const stickyGeometry = await page.locator('.deep-chapters').evaluate((navigation) => {
+    const section = document.querySelector<HTMLElement>('#evaluate');
+    return {
+      navigationTop: navigation.getBoundingClientRect().top,
+      navigationBottom: navigation.getBoundingClientRect().bottom,
+      sectionTop: section?.getBoundingClientRect().top ?? -1,
+    };
+  });
+  expect(Math.abs(stickyGeometry.navigationTop)).toBeLessThanOrEqual(1);
+  expect(stickyGeometry.sectionTop).toBeGreaterThan(stickyGeometry.navigationBottom);
+
+  for (const width of [320, 375]) {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto('/how-archunit-works/');
+    const viewportWidth = await page.evaluate(() => ({
+      client: document.documentElement.clientWidth,
+      scroll: document.documentElement.scrollWidth,
+    }));
+    expect(viewportWidth.scroll).toBeLessThanOrEqual(viewportWidth.client + 1);
+  }
+});
+
+test('the walkthrough keeps its evidence readable without JavaScript', async ({ browser }) => {
+  const context = await browser.newContext({ javaScriptEnabled: false });
+  const page = await context.newPage();
+  await page.goto('http://127.0.0.1:4321/how-archunit-works/');
+  await expect(page.locator('[data-evidence-terminal] [data-log-line]')).toHaveCount(17);
+  await expect(page.locator('[data-evidence-terminal] [data-log-line]').first()).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Replay trace' })).toBeHidden();
+  await expect(page.getByRole('button', { name: 'Show complete trace' })).toBeHidden();
+  await context.close();
+});
+
+test('the walkthrough trace respects reduced-motion preferences', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.goto('/how-archunit-works/');
+  await page.getByRole('button', { name: 'Replay trace' }).click();
+  await expect(page.locator('[data-log-line][data-complete]')).toHaveCount(17);
+  await expect(page.locator('[data-log-line][data-active]')).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Replay trace' })).toBeEnabled();
+  await expect(page.locator('[data-evidence-terminal] pre')).toHaveAttribute('aria-busy', 'false');
 });
 
 test('stats, privacy, and thank-you pages expose intentional metadata', async ({ page }) => {
