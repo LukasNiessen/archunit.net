@@ -221,7 +221,7 @@ export const documentationBySlug: Record<string, ProjectDocumentation> = {
         points: [
           'Architecture disagreements are values; invalid selectors are user errors; parsing, I/O, and allocation failures are technical errors.',
           'assertAllPass combines heterogeneous rules without losing the rule sentence behind each finding.',
-          'The v0.0.1 release is a preview pinned to Zig 0.16 rather than a stable compatibility promise.',
+          'The v0.0.2 release is a preview pinned to Zig 0.16 rather than a stable compatibility promise.',
         ],
       },
     ],

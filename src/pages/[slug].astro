@@ -6,6 +6,7 @@ import ProjectMark from '@components/ProjectMark.astro';
 import SectionHeading from '@components/SectionHeading.astro';
 import { documentationBySlug } from '@data/documentation';
 import { projects, type ArcUnitProject } from '@data/projects';
+import { libraryStatBySlug, statsSnapshot } from '@data/stats';
 import BaseLayout from '@layouts/BaseLayout.astro';
 
 export function getStaticPaths() {
@@ -21,6 +22,8 @@ interface Props {
 
 const { project } = Astro.props;
 const documentation = documentationBySlug[project.slug]!;
+const adoption = libraryStatBySlug.get(project.slug)!;
+const number = new Intl.NumberFormat('en-US');
 const demoEmbedUrl = project.demo
   ? `https://www.youtube-nocookie.com/embed/${project.demo.youtubeId}?autoplay=1&mute=1&loop=1&playlist=${project.demo.youtubeId}&playsinline=1&controls=1&rel=0&enablejsapi=1&origin=https%3A%2F%2Fwww.archunit.net`
   : undefined;
@@ -181,6 +184,61 @@ const schema = [
               <p>{highlight}</p>
             </div>
           ))}
+        </div>
+      </div>
+    </section>
+
+    <section class="project-content-section adoption-section">
+      <div class="shell">
+        <div class="adoption-panel" data-reveal>
+          <div class="adoption-panel__copy">
+            <p class="eyebrow">Adoption snapshot</p>
+            <h2>Public adoption, in context.</h2>
+            <p>{adoption.downloadOverview}</p>
+            <div class="detail-actions">
+              <a
+                class="button button--ghost"
+                href={adoption.sourceUrl}
+                target="_blank"
+                rel="noreferrer"
+              >
+                View {adoption.sourceLabel} ↗
+              </a>
+              <a class="text-link" href="/stats/">
+                Compare all libraries →
+              </a>
+            </div>
+          </div>
+          <dl class="adoption-facts" aria-label={`${project.name} adoption facts`}>
+            <div>
+              <dt>Package status</dt>
+              <dd>{adoption.packageStatus}</dd>
+              <span>{adoption.downloadAccessLabel}</span>
+            </div>
+            <div>
+              <dt>Reported history</dt>
+              <dd>
+                {adoption.lifetimeDownloads === null
+                  ? 'Unavailable'
+                  : number.format(adoption.lifetimeDownloads)}
+              </dd>
+              <span>{adoption.lifetimeLabel ?? adoption.lifetimeUnavailableLabel}</span>
+            </div>
+            <div>
+              <dt>Latest 30 days</dt>
+              <dd>
+                {adoption.recentDownloads === null
+                  ? 'Unavailable'
+                  : number.format(adoption.recentDownloads)}
+              </dd>
+              <span>{adoption.recentWindow ?? adoption.recentUnavailableLabel}</span>
+            </div>
+            <div>
+              <dt>GitHub stars</dt>
+              <dd>{number.format(adoption.stars)}</dd>
+              <span>Snapshot of {statsSnapshot.dateLabel}</span>
+            </div>
+          </dl>
         </div>
       </div>
     </section>

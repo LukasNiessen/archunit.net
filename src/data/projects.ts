@@ -71,6 +71,13 @@ export const projects: ArcUnitProject[] = [
     accentSoft: 'rgba(134, 227, 255, 0.14)',
     install: 'npm install --save-dev archunit',
     installLabel: 'npm',
+    demo: {
+      youtubeId: 'P9ax9rfPrCM',
+      title: 'ArchUnitTS architecture test demo',
+      heading: 'Watch architecture rules run in TypeScript.',
+      description:
+        'This silent walkthrough follows ArchUnitTS from a fluent rule to the resulting test feedback. Playback starts muted, loops in place, and keeps standard controls available so you can inspect each step.',
+    },
     code: [
       "import { projectFiles } from 'archunit';",
       '',
@@ -360,10 +367,10 @@ export const projects: ArcUnitProject[] = [
       'Strong fit for systems, infrastructure, and CLI software',
     ],
     status: 'preview',
-    statusLabel: 'Git preview',
+    statusLabel: 'Published preview',
     accent: '#ffc29a',
     accentSoft: 'rgba(255, 194, 154, 0.14)',
-    install: 'cargo add --dev --git https://github.com/LukasNiessen/ArchUnitRust archunit',
+    install: 'cargo add --dev archunit@0.0.2',
     installLabel: 'Cargo',
     code: [
       'use archunit::{assert_passes, project_files};',
@@ -399,8 +406,8 @@ export const projects: ArcUnitProject[] = [
     ].join('\n'),
     deepDiveFilename: 'tests/cycles.rs',
     docsUrl: 'https://lukasniessen.github.io/ArchUnitRust/',
-    packageUrl: github + '/ArchUnitRust',
-    packageLabel: 'Install from Git',
+    packageUrl: 'https://crates.io/crates/archunit',
+    packageLabel: 'View on crates.io',
     features: [
       'Cargo workspace discovery',
       'File, layer, and captured-slice policies',
@@ -411,8 +418,8 @@ export const projects: ArcUnitProject[] = [
     ],
     useCases: ['Cargo workspaces', 'CLI tools', 'Rust services', 'Systems projects'],
     maturityNote:
-      'Usable directly from Git and under active development. It is not yet published on crates.io.',
-    release: '0.0.1 from Git',
+      'Published on crates.io as version 0.0.2. The API remains an early pre-1.0 preview while Cargo-native discovery and architecture policies continue to mature.',
+    release: '0.0.2 preview',
     runtime: 'Rust 1.85+',
     license: 'MIT',
   },
@@ -438,7 +445,7 @@ export const projects: ArcUnitProject[] = [
     accent: '#ffcf73',
     accentSoft: 'rgba(255, 207, 115, 0.14)',
     install:
-      'zig fetch --save-exact=archunit https://github.com/LukasNiessen/ArchUnitZig/archive/refs/tags/v0.0.1.tar.gz',
+      'zig fetch --save-exact=archunit https://github.com/LukasNiessen/ArchUnitZig/archive/refs/tags/v0.0.2.tar.gz',
     installLabel: 'Zig package',
     code: [
       'const std = @import("std");',
@@ -473,7 +480,7 @@ export const projects: ArcUnitProject[] = [
     ].join('\n'),
     deepDiveFilename: 'test/boundaries.zig',
     docsUrl: github + '/ArchUnitZig/blob/main/README.md',
-    packageUrl: github + '/ArchUnitZig/releases/tag/v0.0.1',
+    packageUrl: github + '/ArchUnitZig/releases/tag/v0.0.2',
     packageLabel: 'View release',
     features: [
       'File, layer, and slice dependency policies',
@@ -485,8 +492,8 @@ export const projects: ArcUnitProject[] = [
     ],
     useCases: ['Zig libraries', 'Systems tools', 'Native services', 'Compiler projects'],
     maturityNote:
-      'The v0.0.1 preview targets exactly Zig 0.16.0 and documents ownership and compatibility explicitly.',
-    release: '0.0.1 preview',
+      'The v0.0.2 preview targets exactly Zig 0.16.0 and documents ownership and compatibility explicitly.',
+    release: '0.0.2 preview',
     runtime: 'Zig 0.16.0',
     license: 'MIT',
   },

@@ -98,6 +98,7 @@ test('every implementation has an indexable detail page', async ({ page }) => {
     );
     await expect(page.locator('script[type="application/ld+json"]')).toHaveCount(1);
     await expect(page.locator('.documentation-topic')).toHaveCount(3);
+    await expect(page.locator('.adoption-panel')).toHaveCount(1);
     if (slug !== 'php') {
       await expect(page.locator('.detail-meta')).not.toContainText(/Production ready|preview/i);
     }
@@ -106,7 +107,7 @@ test('every implementation has an indexable detail page', async ({ page }) => {
         'href',
         'https://lukasniessen.github.io/ArchUnitJava/',
       );
-      await expect(page.getByRole('link', { name: /Maven Central/i })).toHaveAttribute(
+      await expect(page.getByRole('link', { name: /Maven Central/i }).first()).toHaveAttribute(
         'href',
         'https://central.sonatype.com/artifact/io.github.tristankruse/archunitjava/0.1.0',
       );
@@ -185,6 +186,22 @@ test('ArchUnitGo uses its official mark, a muted demo, and readable installation
   await expect(page.locator('.stars-row[href="/go/"] .project-mark img')).toHaveAttribute(
     'src',
     '/logos/archunitgo.jpg',
+  );
+});
+
+test('ArchUnitTS presents its silent product demo on the library page', async ({ page }) => {
+  await page.goto('/typescript/');
+
+  const demo = page.getByTitle('ArchUnitTS architecture test demo');
+  await expect(demo).toHaveCount(1);
+  const demoSource = (await demo.getAttribute('src')) ?? '';
+  expect(demoSource).toContain('https://www.youtube-nocookie.com/embed/P9ax9rfPrCM?');
+  expect(demoSource).toContain('mute=1');
+  expect(demoSource).toContain('loop=1');
+  expect(demoSource).toContain('playlist=P9ax9rfPrCM');
+  await expect(page.getByRole('link', { name: 'Watch on YouTube' })).toHaveAttribute(
+    'href',
+    'https://www.youtube.com/watch?v=P9ax9rfPrCM',
   );
 });
 
@@ -562,10 +579,20 @@ test('the walkthrough trace respects reduced-motion preferences', async ({ page 
 
 test('stats, privacy, and thank-you pages expose intentional metadata', async ({ page }) => {
   await page.goto('/stats/');
-  await expect(page.getByText('1,181', { exact: true })).toBeVisible();
-  await expect(page.getByText('1,080,471', { exact: true })).toBeVisible();
+  await expect(page.getByText('1,189', { exact: true })).toBeVisible();
+  await expect(page.getByText('1,132,664', { exact: true })).toBeVisible();
+  await expect(page.getByText('241,184', { exact: true })).toBeVisible();
   await expect(page.locator('.stars-row')).toHaveCount(9);
   await expect(page.locator('.downloads-table tbody tr')).toHaveCount(9);
+  await expect(
+    page.locator('.downloads-table tbody tr', { hasText: 'ArchUnitJava' }),
+  ).toContainText('Publisher-only analytics');
+  await expect(page.locator('.downloads-table tbody tr', { hasText: 'ArchUnitGo' })).toContainText(
+    'No ecosystem download counter',
+  );
+  await expect(page.locator('.downloads-table tbody tr', { hasText: 'ArchUnitPHP' })).toContainText(
+    'No package published',
+  );
 
   await page.goto('/privacy/');
   await expect(page).toHaveTitle(/Privacy policy/);

@@ -32,8 +32,9 @@ const schema = {
         Adoption, without the <em>guesswork.</em>
       </h1>
       <p>
-        Public signals from GitHub and package registries. Every number names its scope, and a blank
-        stays blank when an ecosystem does not publish a comparable metric.
+        Public signals from GitHub and package registries. Every number names its scope, while each
+        unavailable value explains whether the package is unpublished, the ecosystem has no counter,
+        or the analytics are visible only to publishers.
       </p>
       <dl class="stats-totals" aria-label="ArchUnit totals">
         <div>
@@ -44,7 +45,7 @@ const schema = {
         <div>
           <dt>Known package downloads</dt>
           <dd>{number.format(statsSnapshot.knownLifetimeDownloads)}</dd>
-          <span>npm, PyPI, NuGet, and RubyGems</span>
+          <span>npm, PyPI, NuGet, RubyGems, and crates.io</span>
         </div>
         <div>
           <dt>Latest 30-day downloads</dt>
@@ -102,17 +103,21 @@ const schema = {
           <h2>Downloads, with context.</h2>
         </div>
         <p>
-          Registry counters use different windows and definitions. Totals below are reported as
-          published, without pretending that an unavailable Go or Git installation count is zero.
+          Registry counters use different windows and definitions. Package publication and download
+          visibility are shown separately, so an unavailable number is never presented as zero.
         </p>
       </div>
       <div class="downloads-table-wrap">
         <table class="downloads-table">
+          <caption class="sr-only">
+            Package status and public download availability for each ArchUnit library
+          </caption>
           <thead>
             <tr>
               <th>Library</th>
+              <th>Availability</th>
               <th>Latest 30 days</th>
-              <th>Reported total</th>
+              <th>Reported history</th>
               <th>Source and scope</th>
             </tr>
           </thead>
@@ -123,9 +128,13 @@ const schema = {
                   <a href={'/' + library.slug + '/'}>{library.name}</a>
                   <span>{library.language}</span>
                 </th>
+                <td class={`download-access download-access--${library.downloadAccess}`}>
+                  <strong>{library.packageStatus}</strong>
+                  <span>{library.downloadAccessLabel}</span>
+                </td>
                 <td>
                   {library.recentDownloads === null ? (
-                    <span class="stat-unavailable">Not reported</span>
+                    <span class="stat-unavailable">{library.recentUnavailableLabel}</span>
                   ) : (
                     <>
                       <strong>{number.format(library.recentDownloads)}</strong>
@@ -135,7 +144,7 @@ const schema = {
                 </td>
                 <td>
                   {library.lifetimeDownloads === null ? (
-                    <span class="stat-unavailable">Not reported</span>
+                    <span class="stat-unavailable">{library.lifetimeUnavailableLabel}</span>
                   ) : (
                     <>
                       <strong>{number.format(library.lifetimeDownloads)}</strong>

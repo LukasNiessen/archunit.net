@@ -106,6 +106,18 @@ describe('statistics snapshot', () => {
       statsSnapshot.knownLifetimeDownloads,
     );
     expect(libraryStats.every((library) => library.sourceUrl.startsWith('https://'))).toBe(true);
+    expect(libraryStats.every((library) => library.downloadOverview.length > 80)).toBe(true);
+    expect(libraryStats.find((library) => library.slug === 'java')?.downloadAccess).toBe(
+      'publisher-only',
+    );
+    expect(
+      libraryStats
+        .filter((library) => ['go', 'zig'].includes(library.slug))
+        .every((library) => library.downloadAccess === 'not-reported'),
+    ).toBe(true);
+    expect(libraryStats.find((library) => library.slug === 'php')?.packageStatus).toMatch(
+      /No Composer package/i,
+    );
   });
 });
 
