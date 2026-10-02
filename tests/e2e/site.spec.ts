@@ -221,6 +221,22 @@ test('ArchUnitRust presents its silent product demo on the library page', async 
   );
 });
 
+test('ArchUnitPython presents its silent product demo on the library page', async ({ page }) => {
+  await page.goto('/python/');
+
+  const demo = page.getByTitle('ArchUnitPython architecture test demo');
+  await expect(demo).toHaveCount(1);
+  const demoSource = (await demo.getAttribute('src')) ?? '';
+  expect(demoSource).toContain('https://www.youtube-nocookie.com/embed/WPnNqbkCWuk?');
+  expect(demoSource).toContain('mute=1');
+  expect(demoSource).toContain('loop=1');
+  expect(demoSource).toContain('playlist=WPnNqbkCWuk');
+  await expect(page.getByRole('link', { name: 'Watch on YouTube' })).toHaveAttribute(
+    'href',
+    'https://www.youtube.com/watch?v=WPnNqbkCWuk',
+  );
+});
+
 test('library cards keep the active theme when hovered', async ({ page }) => {
   await page.goto('/');
   await page.evaluate(() => globalThis.localStorage.setItem('archunit-theme', 'light'));

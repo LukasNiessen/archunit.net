@@ -151,6 +151,13 @@ export const projects: ArcUnitProject[] = [
     accentSoft: 'rgba(255, 214, 107, 0.14)',
     install: 'pip install archunitpython',
     installLabel: 'PyPI',
+    demo: {
+      youtubeId: 'WPnNqbkCWuk',
+      title: 'ArchUnitPython architecture test demo',
+      heading: 'Watch architecture rules run in Python.',
+      description:
+        'This silent walkthrough follows an ArchUnitPython rule from its test definition to the resulting architecture feedback. Playback starts muted, loops in place, and keeps standard controls available so you can inspect each step.',
+    },
     code: [
       'from archunitpython import project_files, assert_passes',
       '',
