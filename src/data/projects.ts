@@ -372,6 +372,13 @@ export const projects: ArcUnitProject[] = [
     accentSoft: 'rgba(255, 194, 154, 0.14)',
     install: 'cargo add --dev archunit@0.0.2',
     installLabel: 'Cargo',
+    demo: {
+      youtubeId: 'LOTMheu2exo',
+      title: 'ArchUnitRust architecture test demo',
+      heading: 'Watch architecture rules run in Rust.',
+      description:
+        'This silent walkthrough follows an ArchUnitRust rule from its Cargo-native test definition to the resulting architecture feedback. Playback starts muted, loops in place, and keeps standard controls available so you can inspect each step.',
+    },
     code: [
       'use archunit::{assert_passes, project_files};',
       '',
