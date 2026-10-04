@@ -611,9 +611,9 @@ test('the walkthrough trace respects reduced-motion preferences', async ({ page 
 
 test('stats, privacy, and thank-you pages expose intentional metadata', async ({ page }) => {
   await page.goto('/stats/');
-  await expect(page.getByText('1,189', { exact: true })).toBeVisible();
-  await expect(page.getByText('1,132,664', { exact: true })).toBeVisible();
-  await expect(page.getByText('241,184', { exact: true })).toBeVisible();
+  await expect(page.getByText('1,184', { exact: true })).toBeVisible();
+  await expect(page.getByText('1,207,908', { exact: true })).toBeVisible();
+  await expect(page.getByText('276,861', { exact: true })).toBeVisible();
   await expect(page.locator('.stars-row')).toHaveCount(9);
   await expect(page.locator('.downloads-table tbody tr')).toHaveCount(9);
   await expect(
