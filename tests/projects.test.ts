@@ -40,7 +40,7 @@ describe('project catalogue', () => {
       expect(project.deepDiveCode.split('\n').length).toBeGreaterThan(5);
       expect(project.features.length).toBeGreaterThanOrEqual(6);
       expect(project.useCases.length).toBeGreaterThanOrEqual(4);
-      expect(project.repo).toMatch(/^https:\/\/github\.com\/LukasNiessen\//);
+      expect(project.repo).toMatch(/^https:\/\/github\.com\/(?:LukasNiessen|dragonsec-ai)\//);
       expect(projectBySlug.get(project.slug)).toBe(project);
       const documentation = documentationBySlug[project.slug];
       expect(documentation).toBeDefined();

@@ -1,5 +1,6 @@
 ---
 import { contactEmail } from '@data/contributors';
+import { githubRepositoriesUrl } from '@data/projects';
 
 const year = new Date().getUTCFullYear();
 const contactHref = `mailto:${contactEmail}?subject=${encodeURIComponent('ArchUnit inquiry')}`;
@@ -48,11 +49,7 @@ const demoHref = `mailto:${contactEmail}?subject=${encodeURIComponent('ArchUnit 
       </div>
       <div>
         <p class="footer-label">Open source</p>
-        <a
-          href="https://github.com/LukasNiessen?tab=repositories&q=ArchUnit"
-          target="_blank"
-          rel="noreferrer"
-        >
+        <a href={githubRepositoriesUrl} target="_blank" rel="noreferrer">
           GitHub
         </a>
         <a href="https://github.com/sponsors/LukasNiessen" target="_blank" rel="noreferrer">

@@ -5,7 +5,7 @@ import ProjectCard from '@components/ProjectCard.astro';
 import SectionHeading from '@components/SectionHeading.astro';
 import { contributors } from '@data/contributors';
 import { postsByNewest } from '@data/posts';
-import { projects, stableProjects } from '@data/projects';
+import { githubRepositoriesUrl, projects, stableProjects } from '@data/projects';
 import { enterpriseResources } from '@data/resources';
 import BaseLayout from '@layouts/BaseLayout.astro';
 
@@ -305,12 +305,7 @@ const homeSchema = [
           <a class="button button--lime" href="/team/">
             Meet the team
           </a>
-          <a
-            class="button"
-            href="https://github.com/LukasNiessen?tab=repositories&q=ArchUnit"
-            target="_blank"
-            rel="noreferrer"
-          >
+          <a class="button" href={githubRepositoriesUrl} target="_blank" rel="noreferrer">
             Contribute on GitHub ↗
           </a>
         </div>
