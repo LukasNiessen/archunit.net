@@ -19,7 +19,7 @@ test('homepage presents the full library family', async ({ page }) => {
   await expect(page.locator('.header-github')).toHaveAttribute('aria-label', 'GitHub');
   await expect(page.locator('.header-github')).toHaveAttribute(
     'href',
-    'https://github.com/LukasNiessen?tab=repositories&q=ArchUnit',
+    'https://github.com/search?q=ArchUnit+user%3ALukasNiessen+org%3Adragonsec-ai&type=repositories',
   );
   const libraryWord = page.locator('[data-library-word]');
   const initialLibraryWord = (await libraryWord.textContent()) ?? '';
@@ -105,7 +105,7 @@ test('every implementation has an indexable detail page', async ({ page }) => {
     if (slug === 'java') {
       await expect(page.getByRole('link', { name: /Documentation/i }).first()).toHaveAttribute(
         'href',
-        'https://lukasniessen.github.io/ArchUnitJava/',
+        'https://dragonsec-ai.github.io/ArchUnitJava/',
       );
       await expect(page.getByRole('link', { name: /Maven Central/i }).first()).toHaveAttribute(
         'href',

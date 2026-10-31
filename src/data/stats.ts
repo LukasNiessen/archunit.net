@@ -146,7 +146,7 @@ export const libraryStats: LibraryStat[] = [
     downloadNote: 'Installed from the pinned v0.0.2 release archive',
     downloadOverview:
       'ArchUnitZig is installed from its versioned GitHub release. Zig has no central package registry that reports a comparable download total.',
-    sourceUrl: 'https://github.com/LukasNiessen/ArchUnitZig/releases/tag/v0.0.2',
+    sourceUrl: 'https://github.com/dragonsec-ai/ArchUnitZig/releases/tag/v0.0.2',
     sourceLabel: 'GitHub release',
   },
   {

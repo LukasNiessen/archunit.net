@@ -45,6 +45,10 @@ export interface ArcUnitProject {
 }
 
 const github = 'https://github.com/LukasNiessen';
+const dragonsecGithub = 'https://github.com/dragonsec-ai';
+
+export const githubRepositoriesUrl =
+  'https://github.com/search?q=ArchUnit+user%3ALukasNiessen+org%3Adragonsec-ai&type=repositories';
 
 export const projects: ArcUnitProject[] = [
   {
@@ -214,7 +218,7 @@ export const projects: ArcUnitProject[] = [
     name: 'ArchUnit.NET',
     language: '.NET',
     monogram: 'C#',
-    repo: github + '/ArchUnitNET',
+    repo: dragonsecGithub + '/ArchUnitNET',
     description:
       'Architecture rules and reports for C# solutions, with adapters for major .NET test frameworks.',
     longDescription:
@@ -264,7 +268,7 @@ export const projects: ArcUnitProject[] = [
       'Assert.True(result.Passed, result.Format());',
     ].join('\n'),
     deepDiveFilename: 'CycleRules.cs',
-    docsUrl: github + '/ArchUnitNET/tree/main/docs',
+    docsUrl: dragonsecGithub + '/ArchUnitNET/tree/main/docs',
     packageUrl: 'https://www.nuget.org/packages/ArchUnit/',
     packageLabel: 'View on NuGet',
     features: [
@@ -292,7 +296,7 @@ export const projects: ArcUnitProject[] = [
     name: 'ArchUnitRuby',
     language: 'Ruby',
     monogram: 'RB',
-    repo: github + '/ArchUnitRuby',
+    repo: dragonsecGithub + '/ArchUnitRuby',
     description:
       'Executable architecture rules for Ruby and Rails, with RSpec and Minitest-friendly assertions.',
     longDescription:
@@ -338,7 +342,7 @@ export const projects: ArcUnitProject[] = [
       'ArchUnit.assert_passes(rule)',
     ].join('\n'),
     deepDiveFilename: 'cycle_spec.rb',
-    docsUrl: 'https://lukasniessen.github.io/ArchUnitRuby/',
+    docsUrl: 'https://dragonsec-ai.github.io/ArchUnitRuby/',
     packageUrl: 'https://rubygems.org/gems/archunit',
     packageLabel: 'View on RubyGems',
     features: [
@@ -361,7 +365,7 @@ export const projects: ArcUnitProject[] = [
     name: 'ArchUnitRust',
     language: 'Rust',
     monogram: 'RS',
-    repo: github + '/ArchUnitRust',
+    repo: dragonsecGithub + '/ArchUnitRust',
     description:
       'Cargo-native architecture tests with immutable builders and structured, source-backed violations.',
     longDescription:
@@ -419,7 +423,7 @@ export const projects: ArcUnitProject[] = [
       '}',
     ].join('\n'),
     deepDiveFilename: 'tests/cycles.rs',
-    docsUrl: 'https://lukasniessen.github.io/ArchUnitRust/',
+    docsUrl: 'https://dragonsec-ai.github.io/ArchUnitRust/',
     packageUrl: 'https://crates.io/crates/archunit',
     packageLabel: 'View on crates.io',
     features: [
@@ -442,7 +446,7 @@ export const projects: ArcUnitProject[] = [
     name: 'ArchUnitZig',
     language: 'Zig',
     monogram: 'ZG',
-    repo: github + '/ArchUnitZig',
+    repo: dragonsecGithub + '/ArchUnitZig',
     description:
       'Allocator-aware architecture checks for Zig projects, compiled as ordinary zig tests.',
     longDescription:
@@ -459,7 +463,7 @@ export const projects: ArcUnitProject[] = [
     accent: '#ffcf73',
     accentSoft: 'rgba(255, 207, 115, 0.14)',
     install:
-      'zig fetch --save-exact=archunit https://github.com/LukasNiessen/ArchUnitZig/archive/refs/tags/v0.0.2.tar.gz',
+      'zig fetch --save-exact=archunit https://github.com/dragonsec-ai/ArchUnitZig/archive/refs/tags/v0.0.2.tar.gz',
     installLabel: 'Zig package',
     code: [
       'const std = @import("std");',
@@ -493,8 +497,8 @@ export const projects: ArcUnitProject[] = [
       '}',
     ].join('\n'),
     deepDiveFilename: 'test/boundaries.zig',
-    docsUrl: github + '/ArchUnitZig/blob/main/README.md',
-    packageUrl: github + '/ArchUnitZig/releases/tag/v0.0.2',
+    docsUrl: dragonsecGithub + '/ArchUnitZig/blob/main/README.md',
+    packageUrl: dragonsecGithub + '/ArchUnitZig/releases/tag/v0.0.2',
     packageLabel: 'View release',
     features: [
       'File, layer, and slice dependency policies',
@@ -517,7 +521,7 @@ export const projects: ArcUnitProject[] = [
     language: 'Go',
     monogram: 'GO',
     logo: 'go',
-    repo: github + '/ArchUnitGo',
+    repo: dragonsecGithub + '/ArchUnitGo',
     description:
       'Architecture policies as plain Go test values, backed by the Go toolchain and x/tools.',
     longDescription:
@@ -574,7 +578,7 @@ export const projects: ArcUnitProject[] = [
       '}',
     ].join('\n'),
     deepDiveFilename: 'cycles_test.go',
-    docsUrl: 'https://lukasniessen.github.io/ArchUnitGo/',
+    docsUrl: 'https://dragonsec-ai.github.io/ArchUnitGo/',
     packageUrl: 'https://pkg.go.dev/github.com/LukasNiessen/ArchUnitGo',
     packageLabel: 'View on pkg.go.dev',
     features: [
@@ -597,7 +601,7 @@ export const projects: ArcUnitProject[] = [
     name: 'ArchUnitJava',
     language: 'Java',
     monogram: 'JV',
-    repo: github + '/ArchUnitJava',
+    repo: dragonsecGithub + '/ArchUnitJava',
     description:
       'Public-beta architecture testing for compiled Java code, with deterministic policies, JUnit integration, and CI-ready evidence.',
     longDescription:
@@ -649,7 +653,7 @@ export const projects: ArcUnitProject[] = [
       '}',
     ].join('\n'),
     deepDiveFilename: 'ArchitectureTest.java',
-    docsUrl: 'https://lukasniessen.github.io/ArchUnitJava/',
+    docsUrl: 'https://dragonsec-ai.github.io/ArchUnitJava/',
     packageUrl: 'https://central.sonatype.com/artifact/io.github.tristankruse/archunitjava/0.1.0',
     packageLabel: 'View 0.1.0 on Maven Central',
     features: [
