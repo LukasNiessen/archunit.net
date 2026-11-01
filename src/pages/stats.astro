@@ -48,9 +48,9 @@ const schema = {
           <span>npm, PyPI, NuGet, RubyGems, and crates.io</span>
         </div>
         <div>
-          <dt>Latest 30-day downloads</dt>
+          <dt>Shared 30-day downloads</dt>
           <dd>{number.format(statsSnapshot.knownRecentDownloads)}</dd>
-          <span>npm and PyPI, the registries reporting this window</span>
+          <span>npm, PyPI, and crates.io · {statsSnapshot.recentWindowLabel}</span>
         </div>
       </dl>
     </div>
@@ -104,7 +104,8 @@ const schema = {
         </div>
         <p>
           Registry counters use different windows and definitions. Package publication and download
-          visibility are shown separately, so an unavailable number is never presented as zero.
+          visibility are shown separately, so an unavailable number is never presented as zero.{' '}
+          {statsSnapshot.recentWindowNote}
         </p>
       </div>
       <div class="downloads-table-wrap">
@@ -116,7 +117,7 @@ const schema = {
             <tr>
               <th>Library</th>
               <th>Availability</th>
-              <th>Latest 30 days</th>
+              <th>Shared 30-day window</th>
               <th>Reported history</th>
               <th>Source and scope</th>
             </tr>
