@@ -314,6 +314,13 @@ export const projects: ArcUnitProject[] = [
     accentSoft: 'rgba(255, 139, 139, 0.14)',
     install: 'gem install archunit',
     installLabel: 'RubyGems',
+    demo: {
+      youtubeId: 'yMbZWEv8DJA',
+      title: 'ArchUnitRuby architecture test demo',
+      heading: 'Watch architecture rules run in Ruby.',
+      description:
+        'This silent walkthrough shows dependency, cycle, and file-size rules in RSpec, from failing tests to fixes. Playback starts muted, loops in place, and keeps standard controls available so you can inspect each step.',
+    },
     code: [
       "require 'archunit'",
       '',
@@ -465,6 +472,13 @@ export const projects: ArcUnitProject[] = [
     install:
       'zig fetch --save-exact=archunit https://github.com/dragonsec-ai/ArchUnitZig/archive/refs/tags/v0.0.2.tar.gz',
     installLabel: 'Zig package',
+    demo: {
+      youtubeId: '-S7aOLmPi9w',
+      title: 'ArchUnitZig architecture test demo',
+      heading: 'Watch architecture rules run in Zig.',
+      description:
+        'This silent walkthrough shows dependency, cycle, and file-size rules as native Zig tests, from failing tests to fixes. Playback starts muted, loops in place, and keeps standard controls available so you can inspect each step.',
+    },
     code: [
       'const std = @import("std");',
       'const archunit = @import("archunit");',
