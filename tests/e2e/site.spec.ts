@@ -109,7 +109,7 @@ test('every implementation has an indexable detail page', async ({ page }) => {
       );
       await expect(page.getByRole('link', { name: /Maven Central/i }).first()).toHaveAttribute(
         'href',
-        'https://central.sonatype.com/artifact/io.github.tristankruse/archunitjava/0.1.0',
+        'https://central.sonatype.com/artifact/io.github.tristankruse/archunitjava/1.0.0',
       );
     }
     if (slug === 'ruby') {
@@ -611,9 +611,9 @@ test('the walkthrough trace respects reduced-motion preferences', async ({ page 
 
 test('stats, privacy, and thank-you pages expose intentional metadata', async ({ page }) => {
   await page.goto('/stats/');
-  await expect(page.getByText('1,299', { exact: true })).toBeVisible();
-  await expect(page.getByText('1,665,071', { exact: true })).toBeVisible();
-  await expect(page.getByText('396,987', { exact: true })).toBeVisible();
+  await expect(page.getByText('1,380', { exact: true })).toBeVisible();
+  await expect(page.getByText('1,751,211', { exact: true })).toBeVisible();
+  await expect(page.getByText('406,990', { exact: true })).toBeVisible();
   await expect(page.locator('.stars-row')).toHaveCount(9);
   await expect(page.locator('.downloads-table tbody tr')).toHaveCount(9);
   await expect(
