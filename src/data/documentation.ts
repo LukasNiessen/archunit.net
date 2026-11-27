@@ -185,7 +185,7 @@ export const documentationBySlug: Record<string, ProjectDocumentation> = {
         points: [
           'Check options control exclusions, logging, empty selections, dependency kinds, and cache refresh.',
           'Typed violations remain data until the assertion or reporting boundary phrases them for a human.',
-          'The Git-based preview is intentionally explicit about its compatibility status and installation source.',
+          'The crate is published on crates.io as a pre-1.0 preview and supports Rust 1.85 or newer.',
         ],
       },
     ],

@@ -1,5 +1,5 @@
 export type ProjectStatus = 'stable' | 'preview' | 'planned';
-export type ProjectLogo = 'typescript' | 'python' | 'go';
+export type ProjectLogo = 'typescript' | 'python' | 'go' | 'rust';
 
 export interface ProjectDemo {
   youtubeId: string;
@@ -372,6 +372,7 @@ export const projects: ArcUnitProject[] = [
     name: 'ArchUnitRust',
     language: 'Rust',
     monogram: 'RS',
+    logo: 'rust',
     repo: dragonsecGithub + '/ArchUnitRust',
     description:
       'Cargo-native architecture tests with immutable builders and structured, source-backed violations.',
@@ -388,7 +389,7 @@ export const projects: ArcUnitProject[] = [
     statusLabel: 'Published preview',
     accent: '#ffc29a',
     accentSoft: 'rgba(255, 194, 154, 0.14)',
-    install: 'cargo add --dev archunit@0.0.2',
+    install: 'cargo add --dev archunit@0.0.4',
     installLabel: 'Cargo',
     demo: {
       youtubeId: 'LOTMheu2exo',
@@ -443,8 +444,8 @@ export const projects: ArcUnitProject[] = [
     ],
     useCases: ['Cargo workspaces', 'CLI tools', 'Rust services', 'Systems projects'],
     maturityNote:
-      'Published on crates.io as version 0.0.2. The API remains an early pre-1.0 preview while Cargo-native discovery and architecture policies continue to mature.',
-    release: '0.0.2 preview',
+      'Published on crates.io as version 0.0.4. The API remains an early pre-1.0 preview while Cargo-native discovery and architecture policies continue to mature.',
+    release: '0.0.4 preview',
     runtime: 'Rust 1.85+',
     license: 'MIT',
   },
